@@ -1,4 +1,7 @@
 import { MongoClient, Collection } from 'mongodb';
+import consoleStamp = require("console-stamp");
+
+consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
 
 export class DB {
     dbIp = process.env.DB_IP || "127.0.0.1"

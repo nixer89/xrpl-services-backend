@@ -1,6 +1,7 @@
 # dependencies
 /node_modules
 /dist
+local_config.txt
 
 # IDE - VSCode
 .vscode/*

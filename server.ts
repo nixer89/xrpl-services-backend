@@ -1,6 +1,9 @@
 import * as Xumm from './xumm';
 const fastify = require('fastify')({ trustProxy: true })
 import * as apiRoute from './api';
+import consoleStamp = require("console-stamp");
+
+consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
 
 console.log("adding cors");
 fastify.register(require('fastify-cors'), {
