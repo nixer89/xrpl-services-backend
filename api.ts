@@ -6,6 +6,7 @@ consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
 let xummBackend = new Xumm.Xumm();
 
 export async function registerRoutes(fastify, opts, next) {
+    xummBackend.init();
     fastify.post('/payload', async (request, reply) => {
         console.log("body: " + JSON.stringify(request.body));
         try {

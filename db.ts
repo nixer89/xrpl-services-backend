@@ -7,22 +7,21 @@ export class DB {
     dbIp = process.env.DB_IP || "127.0.0.1"
     userIdCollection:Collection = null;    
 
-    async init() {
+    async initDb() {
+        console.log("init mongodb");
         this.userIdCollection = await this.getNewDbModel("UserIdCollection");
-
-        if(this.userIdCollection)
-            await this.ensureIndexes(this.userIdCollection);
     }
 
     async saveUser(userId:string, xummId: string) {
+        console.log("saving user: " + JSON.stringify({frontendUserId: userId, xummUserId: xummId}))
         try {
-            if((await this.userIdCollection.find({xummUserId: xummId}).toArray()).length == 0) {
+            if((await this.userIdCollection.find({frontendUserId: userId, xummUserId: xummId}).toArray()).length == 0) {
                 console.log("inserting new user");
                 let saveResult = await this.userIdCollection.insertOne({frontendUserId: userId, xummUserId: xummId});
                 console.log("saving user result: " + JSON.stringify(saveResult.result));
             } else {
                 console.log("updating user");
-                let updateResult = await this.userIdCollection.updateOne({xummUserId: xummId}, {$set: { frontendUserId : userId }}, {upsert: true});
+                let updateResult = await this.userIdCollection.updateOne({frontendUserId: userId}, {$set: {xummUserId: xummId}}, {upsert: true});
                 console.log("updating user result: " + JSON.stringify(updateResult.result));
             }
         } catch(err) {
@@ -55,14 +54,17 @@ export class DB {
             return null;
     }
 
-    async ensureIndexes(collection: Collection): Promise<Collection> {
+    async ensureIndexes(): Promise<void> {
         try {
-            await collection.createIndex({frontendUserId: -1});
-            await collection.createIndex({xummUserId: -1}, {unique: true});
+            console.log("ensureIndexes");
+            if((await this.userIdCollection.indexes).length>0)
+                await this.userIdCollection.dropIndexes();
+                
+            await this.userIdCollection.createIndex({frontendUserId: -1});
+            await this.userIdCollection.createIndex({xummUserId: -1});
+            await this.userIdCollection.createIndex({frontendUserId: -1 , xummUserId: -1}, {unique: true});
         } catch(err) {
             console.log(JSON.stringify(err));
         }
-    
-        return collection;
     }
 }

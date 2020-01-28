@@ -11,8 +11,8 @@ export class Xumm {
     userMap:Map<string, any> = new Map();
     db = new DB.DB();
 
-    constructor() {
-        this.db.init();
+    async init() {
+        await this.db.initDb();
     }
 
     async pingXummBackend(): Promise<boolean> {
@@ -50,6 +50,9 @@ export class Xumm {
                     } catch(err) {
                         console.log(JSON.stringify(err))
                     }
+                    websocket.close();
+                    this.userMap.delete(message['payload_uuidv4']);
+                } else if(message.expired || message.expires_in_seconds <= 0) {
                     websocket.close();
                     this.userMap.delete(message['payload_uuidv4']);
                 }

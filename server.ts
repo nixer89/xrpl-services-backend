@@ -1,4 +1,5 @@
 import * as Xumm from './xumm';
+import * as DB from './db';
 const fastify = require('fastify')({ trustProxy: true })
 import * as apiRoute from './api';
 import consoleStamp = require("console-stamp");
@@ -31,7 +32,10 @@ const start = async () => {
     try {
       //init routes
       let xummBackend:Xumm.Xumm = new Xumm.Xumm();
-
+      let mongo = new DB.DB();
+      await mongo.initDb();
+      await mongo.ensureIndexes()
+      
       if(await xummBackend.pingXummBackend()) {
 
         await fastify.listen(4001,'0.0.0.0');
