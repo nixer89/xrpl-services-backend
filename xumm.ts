@@ -7,7 +7,7 @@ import * as WS from 'ws';
 export class Xumm {
 
     proxy = new HttpsProxyAgent("http://proxy:81");
-    useProxy = true;
+    useProxy = false;
     userMap:Map<string, any> = new Map();
     db = new DB.DB();
 
