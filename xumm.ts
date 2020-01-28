@@ -1,7 +1,7 @@
 import * as fetch from 'node-fetch';
 import * as config from './config';
 import * as HttpsProxyAgent from 'https-proxy-agent';
-import * as DB from './db.';
+import * as DB from './db';
 import * as WS from 'ws';
 
 export class Xumm {
