@@ -79,7 +79,8 @@ export async function registerRoutes(fastify, opts, next) {
         try {
             let payloadInfo:any = await xummBackend.getPayloadInfo(request.params.id);
 
-            if(payloadInfo.meta.exists && payloadInfo.meta.submit && payloadInfo.meta.finished)
+            if(payloadInfo.meta.exists && payloadInfo.meta.submit && payloadInfo.meta.finished
+                && payloadInfo.response.txid && payloadInfo.response.hex && payloadInfo.response.account)
                 return {success: true }
             else
                 return {success: false }
