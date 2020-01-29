@@ -21,22 +21,28 @@ export class Xumm {
         return pingResponse && pingResponse.pong;
     }
 
-    async submitPayload(frontendId:string, payload:any): Promise<any> {
+    async submitPayload(payload:any): Promise<any> {
         //trying to resolve xumm user if from given frontendId:
+        let frontendId:string;
+        let pushDisabled:boolean = payload.pushDisabled;
         try {
-            let xummId:string = await this.db.getXummId(frontendId);
-            if(xummId && xummId.trim().length > 0)
-                payload.user_token = xummId;
-
+            if(frontendId = payload.frontendId) {
+                let xummId:string = await this.db.getXummId(payload.frontendId);
+                if(!pushDisabled && xummId && xummId.trim().length > 0)
+                    payload.user_token = xummId;
+                
+                delete payload.frontendId;
+                delete payload.pushDisabled;
+            }
         } catch(err) {
             console.log(JSON.stringify(err));
         }
 
-
         let payloadResponse = await this.callXumm("payload", "POST", payload);
         console.log("submitPayload response: " + JSON.stringify(payloadResponse))
 
-        if(!payload.user_token) {
+        //only check for user token when frontend id was delivered
+        if(frontendId && !payload.user_token) {
             //open websocket to obtain user_token
             let websocket = new WS(payloadResponse.refs.websocket_status, {agent: this.useProxy ? this.proxy : null});
             websocket.on("message", async data => {

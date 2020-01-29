@@ -7,9 +7,11 @@ export class DB {
     dbIp = process.env.DB_IP || "127.0.0.1"
     userIdCollection:Collection = null;    
 
-    async initDb() {
+    async initDb(): Promise<void> {
         console.log("init mongodb");
         this.userIdCollection = await this.getNewDbModel("UserIdCollection");
+
+        return Promise.resolve();
     }
 
     async saveUser(userId:string, xummId: string) {
