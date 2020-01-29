@@ -19,11 +19,11 @@ export class DB {
         try {
             if((await this.userIdCollection.find({frontendUserId: userId, xummUserId: xummId}).toArray()).length == 0) {
                 console.log("inserting new user");
-                let saveResult = await this.userIdCollection.insertOne({frontendUserId: userId, xummUserId: xummId});
+                let saveResult = await this.userIdCollection.insertOne({frontendUserId: userId, xummUserId: xummId, created: new Date()});
                 console.log("saving user result: " + JSON.stringify(saveResult.result));
             } else {
                 console.log("updating user");
-                let updateResult = await this.userIdCollection.updateOne({frontendUserId: userId}, {$set: {xummUserId: xummId}}, {upsert: true});
+                let updateResult = await this.userIdCollection.updateOne({frontendUserId: userId}, {$set: {xummUserId: xummId, updated: new Date()}}, {upsert: true});
                 console.log("updating user result: " + JSON.stringify(updateResult.result));
             }
         } catch(err) {
