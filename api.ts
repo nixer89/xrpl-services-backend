@@ -28,12 +28,21 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
+    fastify.delete('/payload/:id', async (request, reply) => {
+        console.log("request: " + JSON.stringify(request.params));
+        try {
+            return xummBackend.deletePayload(request.params.id);
+        } catch {
+            reply.code(500).send('Something went wrong. Please check your query params');
+        }
+    });
+
     fastify.get('/checkPayment/:id', async (request, reply) => {
         console.log("request: " + JSON.stringify(request.params));
         try {
             let payloadInfo:any = await xummBackend.getPayloadInfo(request.params.id);
 
-            if(payloadInfo && payloadInfo.meta && payloadInfo.payload && payloadInfo.response) {
+            if(payloadInfo && !payloadInfo.error && payloadInfo.meta && payloadInfo.payload && payloadInfo.response) {
                 if(payloadInfo.meta.exists && payloadInfo.meta.submit && payloadInfo.meta.finished
                     && payloadInfo.payload.tx_destination === 'rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF' && payloadInfo.response.dispatched_result === 'tesSUCCESS') {
                         return { success : true };
@@ -59,8 +68,8 @@ export async function registerRoutes(fastify, opts, next) {
 
                 console.log(transactionDate.toUTCString())
 
-                if(payloadInfo.meta.exists && payloadInfo.meta.submit && payloadInfo.meta.finished
-                    && payloadInfo.payload.tx_destination === 'rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF' && payloadInfo.response.dispatched_result === 'tesSUCCESS'
+                if(!payloadInfo.error && payloadInfo.meta && payloadInfo.meta.exists && payloadInfo.meta.submit && payloadInfo.meta.finished
+                    && payloadInfo.payload && payloadInfo.payload.tx_destination === 'rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF' && payloadInfo.response && payloadInfo.response.dispatched_result === 'tesSUCCESS'
                     && (transactionDate && transactionDate.setTime(transactionDate.getTime()+86400000) > Date.now())) {
                         return { success : true };
                 } else {
@@ -79,8 +88,8 @@ export async function registerRoutes(fastify, opts, next) {
         try {
             let payloadInfo:any = await xummBackend.getPayloadInfo(request.params.id);
 
-            if(payloadInfo.meta.exists && payloadInfo.meta.submit && payloadInfo.meta.finished
-                && payloadInfo.response.txid && payloadInfo.response.hex && payloadInfo.response.account)
+            if(payloadInfo && !payloadInfo.error && payloadInfo.meta && payloadInfo.meta.exists && payloadInfo.meta.submit && payloadInfo.meta.finished
+                && payloadInfo.response && payloadInfo.response.txid && payloadInfo.response.hex && payloadInfo.response.account)
                 return {success: true }
             else
                 return {success: false }

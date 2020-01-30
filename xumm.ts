@@ -80,6 +80,12 @@ export class Xumm {
         return payloadResponse;
     }
 
+    async deletePayload(payload_id:string): Promise<any> {
+        let payloadResponse = await this.callXumm("payload/"+payload_id, "DELETE");
+        console.log("getPayloadInfo response: " + JSON.stringify(payloadResponse))
+        return payloadResponse;
+    }
+
     async callXumm(path:string, method:string, body?:any): Promise<any> {
         try {
             console.log("calling xumm: " + config.XUMM_API_URL+path);
@@ -97,7 +103,7 @@ export class Xumm {
                 },
             );
 
-            if(xummResponse && xummResponse.ok)
+            if(xummResponse)
                 return xummResponse.json();
             else
                 return null;
