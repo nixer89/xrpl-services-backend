@@ -41,6 +41,16 @@ export class Xumm {
         let payloadResponse = await this.callXumm("payload", "POST", payload);
         console.log("submitPayload response: " + JSON.stringify(payloadResponse))
 
+        //saving payloadId to frontendId
+        if(frontendId && payloadResponse && payloadResponse.uuid) {
+            this.db.storePayloadForFrontendId(frontendId, payloadResponse.uuid);
+        }
+
+        //saving payloadId to xummId
+        if(payloadResponse && payload.user_token) {
+            this.db.storePayloadForXummId(payload.user_token, payloadResponse.uuid);
+        }
+
         //only check for user token when frontend id was delivered
         if(frontendId && !payload.user_token) {
             //open websocket to obtain user_token
@@ -52,7 +62,10 @@ export class Xumm {
                     try {
                         let payloadUUID = message['payload_uuidv4'];
                         let payloadInfo:any = await this.getPayloadInfo(payloadUUID);
-                        await this.db.saveUser(this.userMap.get(payloadUUID).frontendUserId, payloadInfo.application.issued_user_token);
+                        if(payloadInfo && payloadInfo.application && payloadInfo.application.issued_user_token) {
+                            await this.db.saveUser(this.userMap.get(payloadUUID).frontendUserId, payloadInfo.application.issued_user_token);
+                            await this.db.storePayloadForXummId(payloadInfo.application.issued_user_token, payloadInfo.meta.uuid);
+                        }
                     } catch(err) {
                         console.log(JSON.stringify(err))
                     }
@@ -76,13 +89,13 @@ export class Xumm {
 
     async getPayloadInfo(payload_id:string): Promise<any> {
         let payloadResponse = await this.callXumm("payload/"+payload_id, "GET");
-        console.log("getPayloadInfo response: " + JSON.stringify(payloadResponse))
+        //console.log("getPayloadInfo response: " + JSON.stringify(payloadResponse))
         return payloadResponse;
     }
 
     async deletePayload(payload_id:string): Promise<any> {
         let payloadResponse = await this.callXumm("payload/"+payload_id, "DELETE");
-        console.log("getPayloadInfo response: " + JSON.stringify(payloadResponse))
+        console.log("deletePayload response: " + JSON.stringify(payloadResponse))
         return payloadResponse;
     }
 
@@ -107,6 +120,32 @@ export class Xumm {
                 return xummResponse.json();
             else
                 return null;
+        } catch(err) {
+            console.log(JSON.stringify(err));
+        }
+    }
+
+    async validateFrontendIdToPayloadId(frontendUserId:string, payloadId): Promise<boolean> {
+        let payloadIdsForFrontendId:string[] = await this.db.getPayloadIdsByFrontendId(frontendUserId);
+
+        return payloadIdsForFrontendId.includes(payloadId);
+    }
+
+    async validateXummIdToPayloadId(xummUserId:string, payloadId): Promise<boolean> {
+        let payloadIdsForXummUserId:string[] = await this.db.getPayloadIdsByXummId(xummUserId);
+
+        return payloadIdsForXummUserId.includes(payloadId);
+    }
+
+    async validateOnLedgerPayment(trxHash:string): Promise<boolean> {
+        //deactivated for the moment as long as tests going on
+        return true;
+
+        try {
+            let ledgerTrx:any = await fetch.default("https://data.ripple.com/v2/transactions/"+trxHash, {agent: this.useProxy ? this.proxy : null});
+            return ledgerTrx && ledgerTrx.result.success && ledgerTrx.transaction && ledgerTrx.transaction.tx && ledgerTrx.transaction.meta &&
+                ledgerTrx.transaction.tx.TransactionType === 'Payment' && ledgerTrx.tx.Destination === 'rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF'
+                    && ledgerTrx.transaction.meta.TransactionResult === 'tesSUCCESS';
         } catch(err) {
             console.log(JSON.stringify(err));
         }

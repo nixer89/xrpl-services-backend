@@ -19,24 +19,26 @@ fastify.register(require('fastify-compress'));
 console.log("adding some security headers");
 fastify.register(require('fastify-helmet'));
 
-console.log("declaring routes");
-fastify.register(apiRoute.registerRoutes);
-
-fastify.get('/', async (request, reply) => {
-    reply.code(200).send('I am alive!'); 
-});
-
 // Run the server!
 const start = async () => {
     console.log("starting server");
     try {
       //init routes
-      let xummBackend:Xumm.Xumm = new Xumm.Xumm();
       let mongo = new DB.DB();
       await mongo.initDb();
       await mongo.ensureIndexes()
       
+      let xummBackend:Xumm.Xumm = new Xumm.Xumm();
+
       if(await xummBackend.pingXummBackend()) {
+
+        console.log("declaring 200er reponse")
+        fastify.get('/', async (request, reply) => {
+          reply.code(200).send('I am alive!'); 
+        });
+
+        console.log("declaring routes");
+        fastify.register(apiRoute.registerRoutes);
 
         await fastify.listen(4001,'0.0.0.0');
         console.log(`server listening on ${fastify.server.address().port}`);
