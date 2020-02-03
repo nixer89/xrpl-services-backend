@@ -8,7 +8,10 @@ consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
 
 console.log("adding cors");
 fastify.register(require('fastify-cors'), {
-  origin: true,
+  origin: [
+    'https://xrptipbot-stats.com',
+    'amzn1.ask.skill.e39ea66a-8b1e-44d9-9e3a-45011e90dc62'
+  ],
   methods: 'GET, POST, DELETE',
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin']
 });
