@@ -8,6 +8,7 @@ let xummBackend = new Xumm.Xumm();
 export async function registerRoutes(fastify, opts, next) {
     await xummBackend.init();
     fastify.post('/payload', async (request, reply) => {
+        console.log("headers: " + JSON.stringify(request.headers));
         console.log("body: " + JSON.stringify(request.body));
         try {
             let xummResponse:any = await xummBackend.submitPayload(request.body);

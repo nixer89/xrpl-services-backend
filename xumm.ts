@@ -142,10 +142,10 @@ export class Xumm {
         return true;
 
         try {
-            let ledgerTrx:any = await fetch.default("https://data.ripple.com/v2/transactions/"+trxHash, {agent: this.useProxy ? this.proxy : null});
-            return ledgerTrx && ledgerTrx.result.success && ledgerTrx.transaction && ledgerTrx.transaction.tx && ledgerTrx.transaction.meta &&
-                ledgerTrx.transaction.tx.TransactionType === 'Payment' && ledgerTrx.tx.Destination === 'rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF'
-                    && ledgerTrx.transaction.meta.TransactionResult === 'tesSUCCESS';
+            let ledgerTrx:any = await fetch.default("https://test.bithomp.com/api/v2/transaction/"+trxHash, {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN },agent: this.useProxy ? this.proxy : null});
+            return ledgerTrx && ledgerTrx.type.toLowerCase() === 'payment'
+                && ledgerTrx.specification && ledgerTrx.specification.destination && ledgerTrx.specification.destination.address === 'rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF'
+                    && ledgerTrx.outcome  && ledgerTrx.outcome.result === 'tesSUCCESS';
         } catch(err) {
             console.log(JSON.stringify(err));
         }

@@ -9,7 +9,7 @@ consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
 console.log("adding cors");
 fastify.register(require('fastify-cors'), {
   origin: true,
-  methods: 'GET, POST',
+  methods: 'GET, POST, DELETE',
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin']
 });
 
