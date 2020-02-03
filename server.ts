@@ -6,16 +6,6 @@ import consoleStamp = require("console-stamp");
 
 consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
 
-console.log("adding cors");
-fastify.register(require('fastify-cors'), {
-  origin: [
-    'https://xrptipbot-stats.com',
-    'amzn1.ask.skill.e39ea66a-8b1e-44d9-9e3a-45011e90dc62'
-  ],
-  methods: 'GET, POST, DELETE',
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin']
-});
-
 console.log("adding response compression");
 fastify.register(require('fastify-compress'));
 
@@ -30,6 +20,16 @@ const start = async () => {
       let mongo = new DB.DB();
       await mongo.initDb();
       await mongo.ensureIndexes()
+
+      console.log("adding cors");
+      let allowedOrigins:string[] = await mongo.getAllowedOrigins();
+
+      console.log("settiing allowed origins: " + allowedOrigins);
+      fastify.register(require('fastify-cors'), {
+        origin: allowedOrigins,
+        methods: 'GET, POST, DELETE',
+        allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin']
+      });
       
       let xummBackend:Xumm.Xumm = new Xumm.Xumm();
 

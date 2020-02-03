@@ -10,8 +10,12 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.post('/payload', async (request, reply) => {
         console.log("headers: " + JSON.stringify(request.headers));
         console.log("body: " + JSON.stringify(request.body));
+
+        if(!request.headers.origin)
+            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+
         try {
-            let xummResponse:any = await xummBackend.submitPayload(request.body);
+            let xummResponse:any = await xummBackend.submitPayload(request.body, request.headers.origin);
             console.log("returning xummResponse: " + JSON.stringify(xummResponse));
 
             return xummResponse;
@@ -22,6 +26,9 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.get('/payload/:id', async (request, reply) => {
         console.log("request params: " + JSON.stringify(request.params));
+        if(!request.headers.origin)
+            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+
         try {
             return xummBackend.getPayloadInfo(request.params.id);
         } catch {
@@ -31,6 +38,9 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.delete('/payload/:id', async (request, reply) => {
         console.log("request params: " + JSON.stringify(request.params));
+        if(!request.headers.origin)
+            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+
         try {
             return xummBackend.deletePayload(request.params.id);
         } catch {
@@ -40,13 +50,15 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.get('/checkPayment/:frontendUserId/:payloadId', async (request, reply) => {
         console.log("request params: " + JSON.stringify(request.params));
+        if(!request.headers.origin)
+            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+
         try {
-            let payloadInfo:any = await getPayloadInfoForFrontendId(request.params);
+            let payloadInfo:any = await getPayloadInfoForFrontendId(request.headers.origin, request.params);
 
             if(payloadInfo && !payloadInfo.error && payloadInfo.meta && payloadInfo.payload && payloadInfo.response) {
-                if(payloadInfo.meta.exists && payloadInfo.meta.submit && payloadInfo.meta.finished
-                    && payloadInfo.payload.tx_destination === 'rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF' && payloadInfo.response.dispatched_result === 'tesSUCCESS') {
-                        return { success : (await xummBackend.validateOnLedgerPayment(payloadInfo.response.txid)) };
+                if(payloadInfo.meta.exists && payloadInfo.meta.submit && payloadInfo.meta.finished) {
+                    return xummBackend.validatePayment(payloadInfo.response.txid, request.headers.origin);
                 }
             }
 
@@ -60,8 +72,11 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.get('/checkTimedPayment/:frontendUserId/:payloadId', async (request, reply) => {
         console.log("request params: " + JSON.stringify(request.params));
+        if(!request.headers.origin)
+            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+
         try {
-            let payloadInfo:any = await getPayloadInfoForFrontendId(request.params);
+            let payloadInfo:any = await getPayloadInfoForFrontendId(request.headers.origin, request.params);
 
             let transactionDate:Date;
             if(payloadInfo && payloadInfo.meta && payloadInfo.payload && payloadInfo.response) {
@@ -72,7 +87,7 @@ export async function registerRoutes(fastify, opts, next) {
                 if(!payloadInfo.error && payloadInfo.meta && payloadInfo.meta.exists && payloadInfo.meta.submit && payloadInfo.meta.finished
                     && payloadInfo.payload && payloadInfo.response && payloadInfo.response.dispatched_result === 'tesSUCCESS'
                     && (transactionDate && transactionDate.setTime(transactionDate.getTime()+86400000) > Date.now())) {
-                        return { success : (await xummBackend.validateOnLedgerPayment(payloadInfo.response.txid)) };
+                        return xummBackend.validatePayment(payloadInfo.response.txid, request.headers.origin);
                 }
             }
 
@@ -84,8 +99,11 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.get('/checkSignIn/:frontendUserId/:payloadId', async (request, reply) => {
         console.log("request params: " + JSON.stringify(request.params));
+        if(!request.headers.origin)
+            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+
         try {
-            let payloadInfo:any = await getPayloadInfoForFrontendId(request.params);
+            let payloadInfo:any = await getPayloadInfoForFrontendId(request.headers.origin, request.params);
 
             if(payloadInfo && !payloadInfo.error && payloadInfo.meta && payloadInfo.meta.exists && payloadInfo.meta.submit && payloadInfo.meta.finished
                 && payloadInfo.response && payloadInfo.response.txid && payloadInfo.response.hex && payloadInfo.response.account)
@@ -101,18 +119,18 @@ export async function registerRoutes(fastify, opts, next) {
     next()
 }
 
-async function validFrontendUserIdToPayload(requestParams:any): Promise<boolean> {
+async function validFrontendUserIdToPayload(origin:string, requestParams:any): Promise<boolean> {
     let frontendUserId:string = requestParams.frontendUserId
     let payloadId:string = requestParams.payloadId;
 
     if(frontendUserId && payloadId)
-        return await xummBackend.validateFrontendIdToPayloadId(frontendUserId, payloadId);
+        return await xummBackend.validateFrontendIdToPayloadId(origin, frontendUserId, payloadId);
     else
         return false;
 }
 
-async function getPayloadInfoForFrontendId(requestParams:any): Promise<any> {
-    if(await validFrontendUserIdToPayload(requestParams)) {
+async function getPayloadInfoForFrontendId(origin: string, requestParams:any): Promise<any> {
+    if(await validFrontendUserIdToPayload(origin, requestParams)) {
         return await xummBackend.getPayloadInfo(requestParams.payloadId)
     } else {
         return null;

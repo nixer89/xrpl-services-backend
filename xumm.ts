@@ -21,18 +21,25 @@ export class Xumm {
         return pingResponse && pingResponse.pong;
     }
 
-    async submitPayload(payload:any): Promise<any> {
+    async submitPayload(payload:any, origin:string): Promise<any> {
         //trying to resolve xumm user if from given frontendId:
         let frontendId:string;
         let pushDisabled:boolean = payload.pushDisabled;
         try {
             if(frontendId = payload.frontendId) {
-                let xummId:string = await this.db.getXummId(payload.frontendId);
+                let xummId:string = await this.db.getXummId(origin, payload.frontendId);
                 if(!pushDisabled && xummId && xummId.trim().length > 0)
                     payload.user_token = xummId;
                 
                 delete payload.frontendId;
                 delete payload.pushDisabled;
+            }
+
+            //for payments -> set destination account in backend
+            if(payload.txjson && payload.txjson.TransactionType && payload.txjson.TransactionType.trim().toLowerCase() === 'payment') {
+                let originDestinationAccount:string = await this.db.getAllowedOriginDestinationAccount(origin);
+                    if(originDestinationAccount && originDestinationAccount.trim().length > 0)
+                        payload.txjson.Destination = originDestinationAccount;
             }
         } catch(err) {
             console.log(JSON.stringify(err));
@@ -43,12 +50,12 @@ export class Xumm {
 
         //saving payloadId to frontendId
         if(frontendId && payloadResponse && payloadResponse.uuid) {
-            this.db.storePayloadForFrontendId(frontendId, payloadResponse.uuid);
+            this.db.storePayloadForFrontendId(origin, frontendId, payloadResponse.uuid);
         }
 
         //saving payloadId to xummId
         if(payloadResponse && payload.user_token) {
-            this.db.storePayloadForXummId(payload.user_token, payloadResponse.uuid);
+            this.db.storePayloadForXummId(origin, payload.user_token, payloadResponse.uuid);
         }
 
         //only check for user token when frontend id was delivered
@@ -63,8 +70,8 @@ export class Xumm {
                         let payloadUUID = message['payload_uuidv4'];
                         let payloadInfo:any = await this.getPayloadInfo(payloadUUID);
                         if(payloadInfo && payloadInfo.application && payloadInfo.application.issued_user_token) {
-                            await this.db.saveUser(this.userMap.get(payloadUUID).frontendUserId, payloadInfo.application.issued_user_token);
-                            await this.db.storePayloadForXummId(payloadInfo.application.issued_user_token, payloadInfo.meta.uuid);
+                            await this.db.saveUser(origin, this.userMap.get(payloadUUID).frontendUserId, payloadInfo.application.issued_user_token);
+                            await this.db.storePayloadForXummId(origin, payloadInfo.application.issued_user_token, payloadInfo.meta.uuid);
                         }
                     } catch(err) {
                         console.log(JSON.stringify(err))
@@ -125,27 +132,60 @@ export class Xumm {
         }
     }
 
-    async validateFrontendIdToPayloadId(frontendUserId:string, payloadId): Promise<boolean> {
-        let payloadIdsForFrontendId:string[] = await this.db.getPayloadIdsByFrontendId(frontendUserId);
+    async validateFrontendIdToPayloadId(origin: string, frontendUserId:string, payloadId): Promise<boolean> {
+        let payloadIdsForFrontendId:string[] = await this.db.getPayloadIdsByFrontendId(origin, frontendUserId);
 
         return payloadIdsForFrontendId.includes(payloadId);
     }
 
-    async validateXummIdToPayloadId(xummUserId:string, payloadId): Promise<boolean> {
-        let payloadIdsForXummUserId:string[] = await this.db.getPayloadIdsByXummId(xummUserId);
+    async validateXummIdToPayloadId(origin: string, xummUserId:string, payloadId): Promise<boolean> {
+        let payloadIdsForXummUserId:string[] = await this.db.getPayloadIdsByXummId(origin, xummUserId);
 
         return payloadIdsForXummUserId.includes(payloadId);
     }
 
-    async validateOnLedgerPayment(trxHash:string): Promise<boolean> {
-        //deactivated for the moment as long as tests going on
-        return true;
+    async validatePayment(trxHash:string, origin:string): Promise<any> {
+        let destinationAccount = await this.db.getAllowedOriginDestinationAccount(origin);
+        console.log("validate Payment with dest account: " + destinationAccount + " and hash: " + trxHash)
+        if(trxHash && destinationAccount) {
+            if(await this.validatePaymentOnLedger(trxHash, destinationAccount, true)) {
+                return {
+                    success: true,
+                    testnet: false
+                }
+            } else if (await this.validatePaymentOnLedger(trxHash, destinationAccount, true)) {
+                return {
+                    success: true,
+                    testnet: true
+                }
+            }
 
+            return {
+                success: false,
+                testnet: false
+            }
+
+        } else {
+            return {
+                success: false,
+                testnet: false
+            };
+        }
+    }
+
+    async validatePaymentOnLedger(trxHash:string, destinationAccount:string, testnet: boolean): Promise<boolean> {
         try {
-            let ledgerTrx:any = await fetch.default("https://test.bithomp.com/api/v2/transaction/"+trxHash, {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN },agent: this.useProxy ? this.proxy : null});
-            return ledgerTrx && ledgerTrx.type.toLowerCase() === 'payment'
-                && ledgerTrx.specification && ledgerTrx.specification.destination && ledgerTrx.specification.destination.address === 'rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF'
-                    && ledgerTrx.outcome  && ledgerTrx.outcome.result === 'tesSUCCESS';
+            let bithompResponse:any = await fetch.default("https://"+(testnet?'test.':'')+"bithomp.com/api/v2/transaction/"+trxHash, {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN },agent: this.useProxy ? this.proxy : null});
+            if(bithompResponse && bithompResponse.ok) {
+                let ledgerTrx:any = await bithompResponse.json();
+                console.log("got ledger transaction: " + JSON.stringify(ledgerTrx));
+
+                return ledgerTrx && ledgerTrx.type.toLowerCase() === 'payment'
+                    && ledgerTrx.specification && ledgerTrx.specification.destination && ledgerTrx.specification.destination.address === destinationAccount
+                        && ledgerTrx.outcome  && ledgerTrx.outcome.result === 'tesSUCCESS';
+            } else {
+                return false;
+            }
         } catch(err) {
             console.log(JSON.stringify(err));
         }
