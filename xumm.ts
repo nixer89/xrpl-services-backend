@@ -16,7 +16,7 @@ export class Xumm {
     }
 
     async pingXummBackend(): Promise<boolean> {
-        let pingResponse = await this.callXumm("ping", "GET");
+        let pingResponse = await this.callXumm("http://localhost:4200", "ping", "GET");
         console.log("pingXummBackend response: " + JSON.stringify(pingResponse))
         return pingResponse && pingResponse.pong;
     }
@@ -43,7 +43,7 @@ export class Xumm {
         delete payload.pushDisabled;
         delete payload.frontendId;
 
-        let payloadResponse = await this.callXumm("payload", "POST", payload);
+        let payloadResponse = await this.callXumm(origin, "payload", "POST", payload);
         console.log("submitPayload response: " + JSON.stringify(payloadResponse))
 
         //saving payloadId to frontendId
@@ -66,7 +66,7 @@ export class Xumm {
                 if(message.payload_uuidv4 && message.signed && message.user_token) {
                     try {
                         let payloadUUID = message['payload_uuidv4'];
-                        let payloadInfo:any = await this.getPayloadInfo(payloadUUID);
+                        let payloadInfo:any = await this.getPayloadInfo(origin, payloadUUID);
                         if(payloadInfo && payloadInfo.application && payloadInfo.application.issued_user_token) {
                             await this.db.saveUser(origin, this.userMap.get(payloadUUID).frontendUserId, payloadInfo.application.issued_user_token);
                             await this.db.storePayloadForXummId(origin, payloadInfo.application.issued_user_token, payloadInfo.meta.uuid);
@@ -92,39 +92,46 @@ export class Xumm {
         return payloadResponse;
     }
 
-    async getPayloadInfo(payload_id:string): Promise<any> {
-        let payloadResponse = await this.callXumm("payload/"+payload_id, "GET");
+    async getPayloadInfo(origin:string, payload_id:string): Promise<any> {
+        let payloadResponse = await this.callXumm(origin, "payload/"+payload_id, "GET");
         //console.log("getPayloadInfo response: " + JSON.stringify(payloadResponse))
         return payloadResponse;
     }
 
-    async deletePayload(payload_id:string): Promise<any> {
-        let payloadResponse = await this.callXumm("payload/"+payload_id, "DELETE");
+    async deletePayload(origin: string, payload_id:string): Promise<any> {
+        let payloadResponse = await this.callXumm(origin, "payload/"+payload_id, "DELETE");
         console.log("deletePayload response: " + JSON.stringify(payloadResponse))
         return payloadResponse;
     }
 
-    async callXumm(path:string, method:string, body?:any): Promise<any> {
+    async callXumm(callerOrigin:string, path:string, method:string, body?:any): Promise<any> {
         try {
-            console.log("calling xumm: " + config.XUMM_API_URL+path);
-            console.log("with body: " + JSON.stringify(body));
-            let xummResponse = await fetch.default(config.XUMM_API_URL+path,
-                {
-                    headers: {
-                        "Content-Type": "application/json",
-                        "x-api-key": config.XUMM_APP_ID,
-                        "x-api-secret": config.XUMM_APP_SECRET
+            console.log("getting API keys for origin: " + callerOrigin);
+            let originApiKeys:any = await this.db.getOriginApiKeys(callerOrigin);
+            if(originApiKeys) {
+                console.log("calling xumm: " + config.XUMM_API_URL+path);
+                console.log("with body: " + JSON.stringify(body));
+                let xummResponse = await fetch.default(config.XUMM_API_URL+path,
+                    {
+                        headers: {
+                            "Content-Type": "application/json",
+                            "x-api-key": originApiKeys.xumm_app_id,
+                            "x-api-secret": originApiKeys.xumm_app_secret
+                        },
+                        agent: this.useProxy ? this.proxy : null,
+                        method: method,
+                        body: (body ? JSON.stringify(body) : null)
                     },
-                    agent: this.useProxy ? this.proxy : null,
-                    method: method,
-                    body: (body ? JSON.stringify(body) : null)
-                },
-            );
+                );
 
-            if(xummResponse)
-                return xummResponse.json();
-            else
+                if(xummResponse)
+                    return xummResponse.json();
+                else
+                    return null;
+            } else {
+                console.log("Could not find api keys for origin: " + callerOrigin);
                 return null;
+            }
         } catch(err) {
             console.log(JSON.stringify(err));
         }

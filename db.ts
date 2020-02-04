@@ -9,6 +9,7 @@ export class DB {
     frontendIdPayloadCollection:Collection = null;
     xummIdPayloadCollection:Collection = null;
     allowedOrigins:Collection = null;
+    originApiKeys:Collection = null;
 
 
     async initDb(): Promise<void> {
@@ -17,6 +18,7 @@ export class DB {
         this.frontendIdPayloadCollection = await this.getNewDbModel("FrontendIdPayloadCollection");
         this.xummIdPayloadCollection = await this.getNewDbModel("XummIdPayloadCollection");
         this.allowedOrigins = await this.getNewDbModel("AllowedOrigins");
+        this.originApiKeys = await this.getNewDbModel("OriginApiKeys");
 
         return Promise.resolve();
     }
@@ -188,13 +190,32 @@ export class DB {
         }
     }
 
+    async getOriginApiKeys(origin: string): Promise<any> {
+        try {
+            console.log("searching api keys for origin: " + JSON.stringify({origin: origin}));
+            console.log(this.originApiKeys == null);
+            let findResult:any = await this.originApiKeys.findOne({origin: origin});
+            console.log("getOriginApiKeys result: " + JSON.stringify(findResult));
+            if(findResult)
+                return findResult;
+            else
+                return null;
+        } catch(err) {
+            console.log("error getOriginApiKeys")
+            console.log(JSON.stringify(err));
+            return null;
+        }
+    }
+
     async getNewDbModel(collectionName: string): Promise<Collection<any>> {
         console.log("[DB]: connecting to mongo db with collection: " + collectionName +" and an schema");
         let connection:MongoClient = await MongoClient.connect('mongodb://'+this.dbIp+':27017', { useNewUrlParser: true, useUnifiedTopology: true });
         connection.on('error', ()=>{console.log("[DB]: Connection to MongoDB could NOT be established")});
     
-        if(connection && connection.isConnected())
-            return connection.db(collectionName).collection(collectionName);
+        if(connection && connection.isConnected()) {
+            await connection.db('XummBackend').createCollection(collectionName);
+            return connection.db('XummBackend').collection(collectionName);
+        }
         else
             return null;
     }

@@ -37,10 +37,11 @@ const start = async () => {
       fastify.register(require('fastify-cors'), {
         origin: allowedOrigins,
         methods: 'GET, POST, DELETE',
-        allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin']
+        allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'Referer']
       });
       
       let xummBackend:Xumm.Xumm = new Xumm.Xumm();
+      await xummBackend.init();
 
       if(await xummBackend.pingXummBackend()) {
 
