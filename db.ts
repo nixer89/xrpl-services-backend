@@ -42,7 +42,7 @@ export class DB {
         try {
             console.log("searching user: " + JSON.stringify({origin: origin, frontendUserId: userId}));
             let mongoResult:any[] = await this.userIdCollection.find({origin: origin, frontendUserId: userId}).toArray();
-            console.log("dearch result: " + JSON.stringify(mongoResult));
+            console.log("search result: " + JSON.stringify(mongoResult));
             if(mongoResult && mongoResult.length > 0)
                 return mongoResult[0].xummUserId;
             else
@@ -118,6 +118,19 @@ export class DB {
         }
     }
 
+    async getOriginProperties(origin: string): Promise<any> {
+        try {
+            let findResult:any = await this.allowedOrigins.findOne({origin: origin});
+            console.log("getOriginProperties result: " + JSON.stringify(findResult));
+
+            return findResult;
+
+        } catch(err) {
+            console.log(JSON.stringify(err));
+            return [];
+        }
+    }
+
     async getAllowedOrigins(): Promise<string[]> {
         try {
             let findResult:any[] = await this.allowedOrigins.find({}).toArray();
@@ -139,7 +152,7 @@ export class DB {
     async getAllowedOriginDestinationAccount(origin: string): Promise<string> {
         try {
             let findResult = await this.allowedOrigins.findOne({origin: origin});
-            console.log("getAllowedOrigins result: " + JSON.stringify(findResult));
+            console.log("getAllowedOriginDestinationAccount result: " + JSON.stringify(findResult));
             if(findResult && findResult.destinationAccount)
                 return findResult.destinationAccount;
             else
@@ -150,14 +163,19 @@ export class DB {
         }
     }
 
-    async getOriginReturnUrl(origin:string, referrer: string): Promise<string> {
+    async getOriginReturnUrl(origin:string, referer: string, isWeb:boolean): Promise<string> {
+        console.log("checking return url for origin: " + origin + " and referer: " + referer + " isWeb: " + isWeb);
         try {
             let findResult = await this.allowedOrigins.findOne({origin: origin});
             console.log("getOriginReturnUrl result: " + JSON.stringify(findResult));
             if(findResult && findResult.return_urls) {
                 for(let i = 0; i < findResult.return_urls.length; i++) {
-                    if(findResult.return_urls[i].from === referrer)
-                        return findResult.return_urls[i].to;
+                    if(findResult.return_urls[i].from === referer) {
+                        if(isWeb)
+                            return findResult.return_urls[i].to_web;
+                        else
+                            return findResult.return_urls[i].to_app;
+                    }
                 }
 
                 return null;

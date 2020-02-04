@@ -12,6 +12,15 @@ fastify.register(require('fastify-compress'));
 console.log("adding some security headers");
 fastify.register(require('fastify-helmet'));
 
+fastify.register(require('fastify-swagger'), {
+  mode: 'static',
+  specification: {
+    path: './doc/swagger-doc.yaml'
+  },
+  exposeRoute: true,
+  routePrefix: '/docs'
+});
+
 // Run the server!
 const start = async () => {
     console.log("starting server");
@@ -24,7 +33,7 @@ const start = async () => {
       console.log("adding cors");
       let allowedOrigins:string[] = await mongo.getAllowedOrigins();
 
-      console.log("settiing allowed origins: " + allowedOrigins);
+      console.log("setting allowed origins: " + allowedOrigins);
       fastify.register(require('fastify-cors'), {
         origin: allowedOrigins,
         methods: 'GET, POST, DELETE',
