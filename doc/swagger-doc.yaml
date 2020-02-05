@@ -146,8 +146,8 @@ paths:
             type: string
   /api/v1/check/payment/{frontendUserId}/{payloadId}:
     get:
-      summary: Returns the validation status of a payment payload
-      description: Validates a payment payload. Checks if a payment payload can be matched to a user. Checks also the payload properties AND does check the transaction on the XRP Ledger. Checks the transaction on the XRPL live net AND test net!
+      summary: Returns the validation status of a payment payload signed by a specific user
+      description: Validates a payment payload. Checks if a payment payload can be matched to a user (signed by the user). Checks also the payload properties AND does check the transaction on the XRP Ledger. Checks the transaction on the XRPL live net AND test net!
       tags:
         - Check API
       produces:
@@ -222,8 +222,8 @@ paths:
             type: string
   /api/v1/check/timed/payment/{frontendUserId}/{payloadId}:
     get:
-      summary: Returns the validation status of a payment payload for a given time
-      description: Validates a payment payload agains an expiration time (currently 24h). Checks if a payload can be matched to a user. Checks also the payload properties AND does check the transaction on the XRP Ledger. Checks the transaction on the XRPL live net AND test net!
+      summary: Returns the validation status of a payment payload signed by the specified user and for a given time
+      description: Validates a payment payload agains an expiration time (currently 24h). Checks if a payload can be matched to a user (signed by this user). Checks also the payload properties AND does check the transaction on the XRP Ledger. Checks the transaction on the XRPL live net AND test net!
       tags:
         - Check API
       produces:
@@ -294,8 +294,8 @@ paths:
             type: string
   /api/v1/check/sigin/{frontendUserId}/{payloadId}:
     get:
-      summary: Returns the validation status of a signin payload
-      description: Validates a signin payload. Checks if a signin payload can be matched to a user. Checks also the singin payload properties AND if it was signed successfully.
+      summary: Returns the validation status of a signin payload signed by the specified user
+      description: Validates a signin payload. Checks if a signin payload can be matched to a user (signed by this user). Checks also the singin payload properties AND if it was signed successfully.
       tags:
         - Check API
       produces:

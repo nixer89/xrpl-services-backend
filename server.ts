@@ -1,8 +1,14 @@
 import * as Xumm from './xumm';
 import * as DB from './db';
-const fastify = require('fastify')({ trustProxy: true })
 import * as apiRoute from './api';
+import * as scheduler from 'node-schedule';
+
+const fastify = require('fastify')({ trustProxy: true })
+
 import consoleStamp = require("console-stamp");
+import { Db } from 'mongodb';
+import { strict } from 'assert';
+import { stringify } from 'querystring';
 
 consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
 
@@ -21,17 +27,20 @@ fastify.register(require('fastify-swagger'), {
   routePrefix: '/docs'
 });
 
+let mongo = new DB.DB();
+let xummBackend:Xumm.Xumm = new Xumm.Xumm();
+
 // Run the server!
 const start = async () => {
     console.log("starting server");
     try {
       //init routes
-      let mongo = new DB.DB();
+      
       await mongo.initDb();
       await mongo.ensureIndexes()
 
       console.log("adding cors");
-      let allowedOrigins:string[] = await mongo.getAllowedOrigins();
+      let allowedOrigins:string[] = await mongo.getAllowedOriginsAsArray();
 
       console.log("setting allowed origins: " + allowedOrigins);
       fastify.register(require('fastify-cors'), {
@@ -40,7 +49,7 @@ const start = async () => {
         allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'Referer']
       });
       
-      let xummBackend:Xumm.Xumm = new Xumm.Xumm();
+      
       await xummBackend.init();
 
       if(await xummBackend.pingXummBackend()) {
@@ -57,17 +66,36 @@ const start = async () => {
         console.log(`server listening on ${fastify.server.address().port}`);
         console.log("http://localhost:4001/");
 
+        scheduler.scheduleJob("tmpInfoTableCleanup", {minute: 28}, () => cleanupTmpInfoTable());
+
         fastify.ready(err => {
             if (err) throw err
         });
-    } else {
-        throw "Xumm backend not available";
-    }
-
+      } else {
+          throw "Xumm backend not available";
+      }
     } catch (err) {
       fastify.log.error(err);
       process.exit(1);
     }
+}
+
+async function cleanupTmpInfoTable() {
+  console.log("cleaning up cleanupTmpInfoTable")
+  //get all temp info documents
+  let tmpInfoEntries:any[] = await mongo.getAllTempInfo();
+  console.log("having entries: " + tmpInfoEntries.length);
+  for(let i = 0; i < tmpInfoEntries.length; i++) {
+    let expirationDate:Date = new Date(tmpInfoEntries[i].expires);
+    console.log("expirationDate: " + expirationDate);
+    //payload is expired. Check if user has opened it
+    if(Date.now() > expirationDate.getTime()) {
+      console.log("checking entry: " + JSON.stringify(tmpInfoEntries[i]));
+      let payloadInfo:any = await xummBackend.getPayloadInfoByAppId(tmpInfoEntries[i].applicationId, tmpInfoEntries[i].payloadId);
+      if(payloadInfo && payloadInfo.meta.expired && !payloadInfo.response.hex)
+        await mongo.deleteTempInfo(tmpInfoEntries[i]);
+    }
+  }
 }
 
 console.log("running server");

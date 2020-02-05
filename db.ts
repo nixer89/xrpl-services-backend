@@ -5,60 +5,62 @@ consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
 
 export class DB {
     dbIp = process.env.DB_IP || "127.0.0.1"
+
+    allowedOriginsCollection:Collection = null;
+    applicationApiKeysCollection:Collection = null;
     userIdCollection:Collection = null;
     frontendIdPayloadCollection:Collection = null;
     xummIdPayloadCollection:Collection = null;
-    allowedOrigins:Collection = null;
-    originApiKeys:Collection = null;
+    xrplAccountPayloadCollection:Collection = null;
+    tmpInfoTable:Collection = null;
 
 
     async initDb(): Promise<void> {
         console.log("init mongodb");
+        this.allowedOriginsCollection = await this.getNewDbModel("AllowedOrigins");
+        this.applicationApiKeysCollection = await this.getNewDbModel("ApplicationApiKeys");
         this.userIdCollection = await this.getNewDbModel("UserIdCollection");
         this.frontendIdPayloadCollection = await this.getNewDbModel("FrontendIdPayloadCollection");
         this.xummIdPayloadCollection = await this.getNewDbModel("XummIdPayloadCollection");
-        this.allowedOrigins = await this.getNewDbModel("AllowedOrigins");
-        this.originApiKeys = await this.getNewDbModel("OriginApiKeys");
-
+        this.xrplAccountPayloadCollection = await this.getNewDbModel("XrplAccountPayloadCollection");
+        this.tmpInfoTable = await this.getNewDbModel("TmpInfoTable");
+        
         return Promise.resolve();
     }
 
-    async saveUser(origin: string, userId:string, xummId: string) {
-        console.log("saving user: " + JSON.stringify({origin:origin, frontendUserId: userId, xummUserId: xummId}))
+    async saveUser(origin:string, applicationId: string, userId:string, xummId: string) {
+        console.log("DB: saveUser:" + " origin: " + origin + " userId: " + userId + " xummId: " + xummId);
         try {
-            if((await this.userIdCollection.find({origin: origin, frontendUserId: userId, xummUserId: xummId}).toArray()).length == 0) {
-                console.log("inserting new user");
-                let saveResult = await this.userIdCollection.insertOne({origin: origin, frontendUserId: userId, xummUserId: xummId, created: new Date()});
-                console.log("saving user result: " + JSON.stringify(saveResult.result));
+            if((await this.userIdCollection.find({origin: origin, applicationId: applicationId, frontendUserId: userId, xummUserId: xummId}).toArray()).length == 0) {
+                await this.userIdCollection.insertOne({origin: origin, applicationId: applicationId, frontendUserId: userId, xummUserId: xummId, created: new Date()});
             } else {
-                console.log("updating user");
-                let updateResult = await this.userIdCollection.updateOne({origin: origin, frontendUserId: userId}, {$set: {xummUserId: xummId, updated: new Date()}}, {upsert: true});
-                console.log("updating user result: " + JSON.stringify(updateResult.result));
+                await this.userIdCollection.updateOne({origin: origin, applicationId: applicationId, frontendUserId: userId}, {$set: {xummUserId: xummId, updated: new Date()}}, {upsert: true});
             }
         } catch(err) {
+            console.log("DB: error saveUser");
             console.log(JSON.stringify(err));
         }
     }
 
-    async getXummId(origin:string, userId:string): Promise<string> {
+    async getXummId(origin:string, applicationId:string, frontendUserId:string): Promise<string> {
         try {
-            console.log("searching user: " + JSON.stringify({origin: origin, frontendUserId: userId}));
-            let mongoResult:any[] = await this.userIdCollection.find({origin: origin, frontendUserId: userId}).toArray();
-            console.log("search result: " + JSON.stringify(mongoResult));
+            console.log("DB: getXummId:" + " origin: " + origin + " applicationId: " + applicationId +" frontendUserId: " + frontendUserId);
+            let mongoResult:any[] = await this.userIdCollection.find({origin: origin, applicationId: applicationId, frontendUserId: frontendUserId}).toArray();
+
             if(mongoResult && mongoResult.length > 0)
                 return mongoResult[0].xummUserId;
             else
                 return null;
         } catch(err) {
+            console.log("DB: error getXummId");
             console.log(JSON.stringify(err));
         }
     }
 
-    async storePayloadForFrontendId(origin: string, frontendUserId:string, payloadId: string) {
-        console.log("storePayloadForFrontendId " + JSON.stringify({origin: origin, frontendUserId: frontendUserId, payloadId: payloadId}))
+    async storePayloadForFrontendId(origin:string, applicationId: string, frontendUserId:string, payloadId: string): Promise<void> {
+        console.log("DB: storePayloadForFrontendId:" + " origin: " + origin + " frontendUserId: " + frontendUserId + " payloadId: " + payloadId);
         try {
-            console.log("inserting/updating user in storePayloadForFrontendId");
-            let updateResult = await this.frontendIdPayloadCollection.updateOne({origin: origin, frontendUserId: frontendUserId}, {
+            await this.frontendIdPayloadCollection.updateOne({origin: origin, applicationId: applicationId, frontendUserId: frontendUserId}, {
                 $push: {
                     payloadIds: payloadId 
                 },
@@ -66,32 +68,34 @@ export class DB {
                    "updated": { $type: "timestamp" }
                 }                
               }, {upsert: true});
-            console.log("inserting/updating user result from storePayloadForFrontendId: " + JSON.stringify(updateResult.result));
+
+            return Promise.resolve();
         } catch(err) {
+            console.log("DB: error storePayloadForFrontendId");
             console.log(JSON.stringify(err));
         }
     }
 
-    async getPayloadIdsByFrontendId(origin: string, frontendUserId:string): Promise<string[]> {
-        console.log("getPayloadIdsByFrontendId " + JSON.stringify({origin: origin, frontendUserId: frontendUserId}))
+    async getPayloadIdsByFrontendId(origin: string, applicationId: string, frontendUserId:string): Promise<string[]> {
+        console.log("DB: getPayloadIdsByFrontendId:" + " origin: " + origin + " frontendUserId: " + frontendUserId);
         try {
-            let findResult = await this.frontendIdPayloadCollection.findOne({origin: origin, frontendUserId: frontendUserId})
-            console.log("getPayloadIdsByFrontendId result: " + JSON.stringify(findResult));
+            let findResult = await this.frontendIdPayloadCollection.findOne({origin: origin, applicationId: applicationId, frontendUserId: frontendUserId});
+
             if(findResult && findResult.payloadIds)
                 return findResult.payloadIds;
             else
                 return [];
         } catch(err) {
+            console.log("DB: error getPayloadIdsByFrontendId");
             console.log(JSON.stringify(err));
             return [];
         }
     }
 
-    async storePayloadForXummId(origin: string, xummUserId:string, payloadId: string) {
-        console.log("storePayloadForXummId " + JSON.stringify({origin: origin,xummUserId: xummUserId, payloadId: payloadId}))
+    async storePayloadForXummId(origin:string, applicationId: string, xummUserId:string, payloadId: string): Promise<void> {
+        console.log("DB: storePayloadForXummId:" + " origin: " + origin + " xummUserId: " + xummUserId + " payloadId: " + payloadId);
         try {
-            console.log("inserting/updating user in storePayloadForXummId");
-            let updateResult = await this.xummIdPayloadCollection.updateOne({origin: origin, xummUserId: xummUserId}, {
+            await this.xummIdPayloadCollection.updateOne({origin: origin, applicationId: applicationId, xummUserId: xummUserId}, {
                 $push: {
                     payloadIds: payloadId 
                 },
@@ -99,44 +103,107 @@ export class DB {
                    "updated": { $type: "timestamp" }
                 }   
             }, {upsert: true});
-            console.log("inserting/updating user result from storePayloadForXummId: " + JSON.stringify(updateResult.result));
+
+            return Promise.resolve();
         } catch(err) {
+            console.log("DB: error storePayloadForXummId");
             console.log(JSON.stringify(err));
         }
     }
 
-    async getPayloadIdsByXummId(origin: string, xummUserId:string): Promise<string[]> {
-        console.log("getPayloadIdsByXummId " + JSON.stringify({origin: origin, xummUserId: xummUserId}))
+    async getPayloadIdsByXummId(origin: string, applicationId: string, xummUserId:string): Promise<string[]> {
+        console.log("DB: getPayloadIdsByXummId:" + " origin: " + origin + " xummUserId: " + xummUserId);
         try {
-            let findResult = await this.xummIdPayloadCollection.findOne({origin: origin, xummUserId: xummUserId})
-            console.log("getPayloadIdsByXummId result: " + JSON.stringify(findResult));
+            let findResult = await this.xummIdPayloadCollection.findOne({origin: origin, applicationId: applicationId, xummUserId: xummUserId})
             if(findResult && findResult.payloadIds)
                 return findResult.payloadIds;
             else
                 return [];
         } catch(err) {
+            console.log("DB: error getPayloadIdsByXummId");
+            console.log(JSON.stringify(err));
+            return [];
+        }
+    }
+
+    async storePayloadForXRPLAccount(origin:string, applicationId: string, xrplAccount:string, payloadId: string): Promise<void> {
+        console.log("DB: storePayloadForXRPLAccount:" + " origin: " + origin + " xrplAccount: " + xrplAccount + " payloadId: " + payloadId);
+        try {
+            await this.xrplAccountPayloadCollection.updateOne({origin: origin, applicationId: applicationId, xrplAccount: xrplAccount}, {
+                $push: {
+                    payloadIds: payloadId 
+                },
+                $currentDate: {
+                   "updated": { $type: "timestamp" }
+                }                
+              }, {upsert: true});
+
+            return Promise.resolve();
+        } catch(err) {
+            console.log("DB: error storePayloadForXRPLAccount");
+            console.log(JSON.stringify(err));
+        }
+    }
+
+    async getPayloadIdsByXrplAccount(origin: string, applicationId: string, xrplAccount:string): Promise<string[]> {
+        console.log("DB: getPayloadIdsByXrplAccount:" + " origin: " + origin + " xrplAccount: " + xrplAccount);
+        try {
+            let findResult = await this.xrplAccountPayloadCollection.findOne({origin: origin, applicationId: applicationId, xrplAccount: xrplAccount});
+
+            if(findResult && findResult.payloadIds)
+                return findResult.payloadIds;
+            else
+                return [];
+        } catch(err) {
+            console.log("DB: error getPayloadIdsByXrplAccount");
+            console.log(JSON.stringify(err));
+            return [];
+        }
+    }
+
+    async getAllOrigins(): Promise<any[]> {
+        console.log("DB: getOrigins");
+        try {
+            return this.allowedOriginsCollection.find({}).toArray();
+        } catch(err) {
+            console.log("DB: error getOrigins");
             console.log(JSON.stringify(err));
             return [];
         }
     }
 
     async getOriginProperties(origin: string): Promise<any> {
+        console.log("DB: getOriginProperties:" + " origin: " + origin);
         try {
-            let findResult:any = await this.allowedOrigins.findOne({origin: origin});
-            console.log("getOriginProperties result: " + JSON.stringify(findResult));
-
-            return findResult;
-
+            return this.allowedOriginsCollection.findOne({origin: origin});
         } catch(err) {
+            console.log("DB: error getOriginProperties");
             console.log(JSON.stringify(err));
             return [];
         }
     }
 
-    async getAllowedOrigins(): Promise<string[]> {
+    async getAppIdForOrigin(origin: string): Promise<string> {
         try {
-            let findResult:any[] = await this.allowedOrigins.find({}).toArray();
-            console.log("getAllowedOrigins result: " + JSON.stringify(findResult));
+            console.log("DB: getAppIdForOrigin:" + " origin: " + origin);
+            let findResult:any = await this.allowedOriginsCollection.findOne({origin: origin});
+
+            if(findResult)
+                return findResult.applicationId;
+            return null;
+
+        } catch(err) {
+            console.log("DB: error getAppIdForOrigin");
+            console.log(JSON.stringify(err));
+            return null;
+        }
+    }
+
+    async getAllowedOriginsAsArray(): Promise<string[]> {
+        console.log("DB: getAllowedOriginsAsArray");
+        try {
+            let findResult:any[] = await this.allowedOriginsCollection.find().toArray();
+
             let allowedOrigins:string[] = [];
             for(let i = 0; i < findResult.length; i++) {
                 if(findResult[i].origin && findResult[i].origin.trim().length > 0)
@@ -146,30 +213,33 @@ export class DB {
             return allowedOrigins;
 
         } catch(err) {
+            console.log("DB: error getAllowedOriginsAsArray");
             console.log(JSON.stringify(err));
             return [];
         }
     }
 
     async getAllowedOriginDestinationAccount(origin: string): Promise<string> {
+        console.log("DB: getAllowedOriginDestinationAccount:" + " origin: " + origin);
         try {
-            let findResult = await this.allowedOrigins.findOne({origin: origin});
-            console.log("getAllowedOriginDestinationAccount result: " + JSON.stringify(findResult));
+            let findResult:any = await this.allowedOriginsCollection.findOne({origin: origin});
+
             if(findResult && findResult.destinationAccount)
                 return findResult.destinationAccount;
             else
                 return null;
         } catch(err) {
+            console.log("DB: error getAllowedOriginDestinationAccount");
             console.log(JSON.stringify(err));
             return null;
         }
     }
 
-    async getOriginReturnUrl(origin:string, referer: string, isWeb:boolean): Promise<string> {
-        console.log("checking return url for origin: " + origin + " and referer: " + referer + " isWeb: " + isWeb);
+    async getOriginReturnUrl(origin:string, applicationId:string, referer: string, isWeb:boolean): Promise<string> {
+        console.log("DB: getOriginReturnUrl:" + " origin: " + origin + " referer: " + referer + " isWeb: " + isWeb);
         try {
-            let findResult = await this.allowedOrigins.findOne({origin: origin});
-            console.log("getOriginReturnUrl result: " + JSON.stringify(findResult));
+            let findResult = await this.allowedOriginsCollection.findOne({origin: origin, applicationId: applicationId});
+            
             if(findResult && findResult.return_urls) {
                 for(let i = 0; i < findResult.return_urls.length; i++) {
                     if(findResult.return_urls[i].from === referer) {
@@ -185,25 +255,70 @@ export class DB {
             else
                 return null;
         } catch(err) {
+            console.log("DB: error getOriginReturnUrl");
             console.log(JSON.stringify(err));
             return null;
         }
     }
 
-    async getOriginApiKeys(origin: string): Promise<any> {
+    async getApiSecretForAppId(appId: string): Promise<string> {
+        console.log("DB: getApiSecretForAppId:" + " appId: " + appId);
         try {
-            console.log("searching api keys for origin: " + JSON.stringify({origin: origin}));
-            console.log(this.originApiKeys == null);
-            let findResult:any = await this.originApiKeys.findOne({origin: origin});
-            console.log("getOriginApiKeys result: " + JSON.stringify(findResult));
-            if(findResult)
-                return findResult;
+            let findResult:any = await this.applicationApiKeysCollection.findOne({xumm_app_id: appId});
+
+            if(findResult && findResult.xumm_app_secret)
+                return findResult.xumm_app_secret;
             else
                 return null;
         } catch(err) {
-            console.log("error getOriginApiKeys")
+            console.log("DB: error getApiSecretForAppId");
             console.log(JSON.stringify(err));
             return null;
+        }
+    }
+
+    async saveTempInfo(anyInfo: any): Promise<void> {
+        console.log("DB: saveTempInfo: " + JSON.stringify(anyInfo));
+        try {
+            anyInfo.created = new Date()
+            await this.tmpInfoTable.insertOne(anyInfo);
+
+            return Promise.resolve();
+        } catch(err) {
+            console.log("DB: error saveTempInfo");
+            console.log(JSON.stringify(err));
+        }
+    }
+
+    async getTempInfo(anyFilter: any): Promise<any> {
+        console.log("DB: getTempInfo: " + JSON.stringify(anyFilter));
+        try {
+            return this.tmpInfoTable.findOne(anyFilter);
+        } catch(err) {
+            console.log("DB: error getTempInfo");
+            console.log(JSON.stringify(err));
+        }
+    }
+
+    async getAllTempInfo(): Promise<any[]> {
+        console.log("DB: getAllTempInfo");
+        try {
+            return this.tmpInfoTable.find({}).toArray();
+        } catch(err) {
+            console.log("DB: error getAllTempInfo");
+            console.log(JSON.stringify(err));
+        }
+    }
+
+    async deleteTempInfo(anyFilter: any): Promise<void> {
+        console.log("DB: deleteTempInfo: " + JSON.stringify(anyFilter));
+        try {
+            await this.tmpInfoTable.deleteOne(anyFilter);
+
+            return Promise.resolve();
+        } catch(err) {
+            console.log("DB: error deleteTempInfo");
+            console.log(JSON.stringify(err));
         }
     }
 
@@ -223,22 +338,47 @@ export class DB {
     async ensureIndexes(): Promise<void> {
         try {
             console.log("ensureIndexes");
+            //AllowedOrigins
+            if((await this.allowedOriginsCollection.indexes).length>0)
+                await this.allowedOriginsCollection.dropIndexes();
+
+            await this.allowedOriginsCollection.createIndex({origin: -1});
+            await this.allowedOriginsCollection.createIndex({applicationId: -1});
+            await this.allowedOriginsCollection.createIndex({origin:-1, applicationId: -1}, {unique: true});
+
+            //ApplicationApiKeys
+            if((await this.applicationApiKeysCollection.indexes).length>0)
+                await this.applicationApiKeysCollection.dropIndexes();
+
+            await this.applicationApiKeysCollection.createIndex({xumm_app_id: -1}, {unique: true});
+
+            //UserIdCollection
             if((await this.userIdCollection.indexes).length>0)
                 await this.userIdCollection.dropIndexes();
+            
+            await this.userIdCollection.createIndex({origin: -1});
+            await this.userIdCollection.createIndex({applicationId: -1});
+            await this.userIdCollection.createIndex({frontendUserId: -1});
+            await this.userIdCollection.createIndex({xummUserId: -1});
+            await this.userIdCollection.createIndex({origin: -1, applicationId: -1, frontendUserId: -1 , xummUserId: -1}, {unique: true});
 
+            //FrontendIdPayloadCollection
             if((await this.frontendIdPayloadCollection.indexes).length>0)
                 await this.frontendIdPayloadCollection.dropIndexes();
 
+            await this.frontendIdPayloadCollection.createIndex({frontendUserId: -1});
+            await this.frontendIdPayloadCollection.createIndex({origin: -1});
+            await this.frontendIdPayloadCollection.createIndex({applicationId: -1});
+            await this.frontendIdPayloadCollection.createIndex({frontendUserId: -1, applicationId: -1, origin:-1}, {unique: true});
+
+            //XummIdPayloadCollection
             if((await this.xummIdPayloadCollection.indexes).length>0)
                 await this.xummIdPayloadCollection.dropIndexes();
                 
-            await this.userIdCollection.createIndex({frontendUserId: -1});
-            await this.userIdCollection.createIndex({xummUserId: -1});
-            await this.userIdCollection.createIndex({frontendUserId: -1 , xummUserId: -1}, {unique: true});
-
-            await this.frontendIdPayloadCollection.createIndex({frontendUserId: -1});
-
             await this.xummIdPayloadCollection.createIndex({xummUserId: -1});
+            await this.xummIdPayloadCollection.createIndex({origin: -1});
+            await this.xummIdPayloadCollection.createIndex({applicationId: -1});
+            await this.xummIdPayloadCollection.createIndex({xummUserId: -1, applicationId: -1, origin:-1}, {unique: true});
 
         } catch(err) {
             console.log(JSON.stringify(err));
