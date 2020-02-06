@@ -76,9 +76,8 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:any = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
 
-                if(special.successfullPaymentPayloadValidation(payloadInfo)) {
+                if(special.successfullPaymentPayloadValidation(payloadInfo))
                     return special.validatePaymentOnLedger(payloadInfo.response.txid, request.headers.origin, payloadInfo);
-                }
 
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}

@@ -167,7 +167,7 @@ export class Special {
             let bithompResponse:any = await fetch.default("https://"+(testnet?'test.':'')+"bithomp.com/api/v2/transaction/"+trxHash, {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN },agent: this.useProxy ? this.proxy : null});
             if(bithompResponse && bithompResponse.ok) {
                 let ledgerTrx:any = await bithompResponse.json();
-                console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(ledgerTrx));
+                //console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(ledgerTrx));
 
                 //standard validation of successfull transaction
                 if(ledgerTrx && ledgerTrx.type.toLowerCase() === 'payment'
