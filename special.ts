@@ -136,7 +136,7 @@ export class Special {
 
     async validatePaymentOnLedger(trxHash:string, origin:string, payloadInfo: any): Promise<any> {
         let destinationAccount = await this.db.getAllowedOriginDestinationAccount(origin);
-        //console.log("validate Payment with dest account: " + destinationAccount + " and hash: " + trxHash)
+        console.log("validate Payment with dest account: " + destinationAccount + " and hash: " + trxHash)
         if(trxHash && destinationAccount) {
             if(await this.callBithompAndValidate(trxHash, destinationAccount, payloadInfo.payload.request_json.Amount, false)) {
                 return {
@@ -168,7 +168,7 @@ export class Special {
             let bithompResponse:any = await fetch.default("https://"+(testnet?'test.':'')+"bithomp.com/api/v2/transaction/"+trxHash, {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN },agent: this.useProxy ? this.proxy : null});
             if(bithompResponse && bithompResponse.ok) {
                 let ledgerTrx:any = await bithompResponse.json();
-                //console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(ledgerTrx));
+                console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(ledgerTrx));
 
                 //standard validation of successfull transaction
                 if(ledgerTrx && ledgerTrx.type.toLowerCase() === 'payment'
