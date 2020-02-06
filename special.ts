@@ -5,7 +5,6 @@ import * as WS from 'ws';
 import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as fetch from 'node-fetch';
 
-
 export class Special {
     proxy = new HttpsProxyAgent(config.PROXY_URL);
     useProxy = config.USE_PROXY;
@@ -175,8 +174,13 @@ export class Special {
                     && ledgerTrx.specification && ledgerTrx.specification.destination && ledgerTrx.specification.destination.address === destinationAccount
                         && ledgerTrx.outcome  && ledgerTrx.outcome.result === 'tesSUCCESS') {
 
+                            
+                            if(!amount) {
+                                //no amount in request. Accept any amount then
+                                return true;
+                            }
                             //validate delivered amount
-                            if(Number.isInteger(parseInt(amount))) {
+                            else if(Number.isInteger(parseInt(amount))) {
                                 //handle XRP amount
                                 return ledgerTrx.outcome.deliveredAmount.currency === 'XRP' && (parseFloat(ledgerTrx.outcome.deliveredAmount.value)*1000000 == parseInt(amount));
                             } else {
