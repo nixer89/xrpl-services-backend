@@ -28,8 +28,6 @@ export class Xumm {
 
         if(!appId)
             return "not allowed";
-
-        console.log("[XUMM]: payload to send:" + JSON.stringify(payload));
         
         try {
             if(frontendId = payload.frontendId) {
@@ -48,8 +46,10 @@ export class Xumm {
         delete payload.pushDisabled;
         delete payload.frontendId;
 
+        console.log("[XUMM]: payload to send:" + JSON.stringify(payload));
         let payloadResponse = await this.callXumm(appId, "payload", "POST", payload);
-        //console.log("[XUMM]: submitPayload response: " + JSON.stringify(payloadResponse))
+        console.log("");
+        console.log("[XUMM]: submitPayload response: " + JSON.stringify(payloadResponse))
 
         //saving payloadId to frontendId
         if(frontendId && payloadResponse && payloadResponse.uuid) {
@@ -155,18 +155,19 @@ export class Xumm {
                     foundReturnUrls = true;
 
                     if(payload.web)
-                        payload.options.return_url.web = originProperties.return_urls[i].to_web;
+                        payload.options.return_url.web = originProperties.return_urls[i].to_web+(payload.signinToValidate?"&signinToValidate=true":"");
                     else
-                        payload.options.return_url.app = originProperties.return_urls[i].to_app;
+                        payload.options.return_url.app = originProperties.return_urls[i].to_app+(payload.signinToValidate?"&signinToValidate=true":"");
                 }
             }
 
-            delete payload.web
+            delete payload.signinToValidate;
+            delete payload.web;
         }
 
         //security measure: delete return URLs for unknown referer
         if(!foundReturnUrls && payload.options)
-            delete payload.options.return_url
+            delete payload.options.return_url;
 
         return payload;
     }
