@@ -1,6 +1,7 @@
 import * as Xumm from './xumm';
 import * as DB from './db';
 import * as apiRoute from './api';
+import * as config from './config';
 import * as scheduler from 'node-schedule';
 
 const fastify = require('fastify')({ trustProxy: true })
@@ -28,6 +29,11 @@ let xummBackend:Xumm.Xumm = new Xumm.Xumm();
 
 // Run the server!
 const start = async () => {
+    if(!config.BITHOMP_API_TOKEN) {
+      console.log("No BITHOMP_API_TOKEN set");
+      process.exit(1);
+    }
+
     console.log("starting server");
     try {
       //init routes
@@ -68,7 +74,8 @@ const start = async () => {
             if (err) throw err
         });
       } else {
-          throw "Xumm backend not available";
+          console.log("Xumm backend not available");
+          process.exit(1);
       }
     } catch (err) {
       fastify.log.error(err);
