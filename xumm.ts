@@ -2,12 +2,11 @@ import * as fetch from 'node-fetch';
 import * as config from './config';
 import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as DB from './db';
-import * as WS from 'ws';
 
 export class Xumm {
 
-    proxy = new HttpsProxyAgent("http://proxy:81");
-    useProxy = true;
+    proxy = new HttpsProxyAgent(config.PROXY_URL);
+    useProxy = config.USE_PROXY;
     websocketMap:Map<string, any> = new Map();
     db = new DB.DB();
 
@@ -17,7 +16,7 @@ export class Xumm {
 
     async pingXummBackend(): Promise<boolean> {
         let pingResponse = await this.callXumm(await this.db.getAppIdForOrigin("http://localhost:4200"), "ping", "GET");
-        console.log("pingXummBackend response: " + JSON.stringify(pingResponse))
+        console.log("[XUMM]: pingXummBackend response: " + JSON.stringify(pingResponse))
         return pingResponse && pingResponse.pong;
     }
 
@@ -27,7 +26,10 @@ export class Xumm {
         let pushDisabled:boolean = payload.pushDisabled;
         let appId = await this.db.getAppIdForOrigin(origin);
 
-        console.log(JSON.stringify(payload));
+        if(!appId)
+            return "not allowed";
+
+        console.log("[XUMM]: payload to send:" + JSON.stringify(payload));
         
         try {
             if(frontendId = payload.frontendId) {
@@ -47,27 +49,30 @@ export class Xumm {
         delete payload.frontendId;
 
         let payloadResponse = await this.callXumm(appId, "payload", "POST", payload);
-        console.log("submitPayload response: " + JSON.stringify(payloadResponse))
+        //console.log("[XUMM]: submitPayload response: " + JSON.stringify(payloadResponse))
 
         //saving payloadId to frontendId
         if(frontendId && payloadResponse && payloadResponse.uuid) {
-            this.db.storePayloadForFrontendId(origin, appId, frontendId, payloadResponse.uuid);
+            this.db.storePayloadForFrontendId(origin, appId, frontendId, payloadResponse.uuid, payload.txjson.TransactionType);
         }
 
-        //saving payloadId to xummId
-        if(payloadResponse && payload.user_token) {
-            this.db.storePayloadForXummId(origin, appId, payload.user_token, payloadResponse.uuid);
-        } else if(payloadResponse && payloadResponse.uuid && frontendId && !payload.user_token) {
-            //saving temp info for later storing of user (user unknown yet)
+        try {
             let payloadInfo:any = await this.getPayloadInfoByAppId(appId, payloadResponse.uuid);
-            this.db.saveTempInfo({origin: origin, frontendId: frontendId, applicationId: appId, xummUserId: payload.user_token, payloadId: payloadResponse.uuid, expires: payloadInfo.payload.expires_at});
+            this.db.saveTempInfo({origin: origin, referer: referer, frontendId: frontendId, applicationId: appId, xummUserId: payload.user_token, payloadId: payloadResponse.uuid, expires: payloadInfo.payload.expires_at});
+        } catch(err) {
+            console.log("Error saving TempInfo");
+            console.log(JSON.stringify(err));
         }
         
         return payloadResponse;
     }
 
     async getPayloadInfoByOrigin(origin:string, payload_id:string): Promise<any> {
-        return this.getPayloadInfoByAppId(await this.db.getAppIdForOrigin(origin), payload_id);
+        let appId:string = await this.db.getAppIdForOrigin(origin);
+        if(!appId)
+            return "not allowed";
+
+        return this.getPayloadInfoByAppId(appId, payload_id);
     }
 
     async getPayloadInfoByAppId(applicationId:string, payload_id:string): Promise<any> {
@@ -77,7 +82,11 @@ export class Xumm {
     }
 
     async deletePayload(origin: string, payload_id:string): Promise<any> {
-        let payloadResponse = await this.callXumm(await this.db.getAppIdForOrigin(origin), "payload/"+payload_id, "DELETE");
+        let appId:string = await this.db.getAppIdForOrigin(origin);
+        if(!appId)
+            return "not allowed";
+
+        let payloadResponse = await this.callXumm(appId, "payload/"+payload_id, "DELETE");
         //console.log("deletePayload response: " + JSON.stringify(payloadResponse))
         return payloadResponse;
     }
@@ -86,8 +95,8 @@ export class Xumm {
         try {
             let appSecret:any = await this.db.getApiSecretForAppId(applicationId);
             if(appSecret) {
-                console.log("calling xumm: " + config.XUMM_API_URL+path);
-                console.log("with body: " + JSON.stringify(body));
+                console.log("[XUMM]: calling xumm: " + method + " - " + config.XUMM_API_URL+path);
+                //console.log("[XUMM]: with body: " + JSON.stringify(body));
                 let xummResponse = await fetch.default(config.XUMM_API_URL+path,
                     {
                         headers: {
@@ -116,20 +125,16 @@ export class Xumm {
 
     async adaptOriginProperties(origin: string, payload: any, referer: string): Promise<any> {
         let originProperties:any = await this.db.getOriginProperties(origin);
-        console.log("originProperties: " + JSON.stringify(originProperties));
+        //console.log("[XUMM]: originProperties: " + JSON.stringify(originProperties));
 
         //for payments -> set destination account in backend
         if(payload.txjson && payload.txjson.TransactionType && payload.txjson.TransactionType.trim().toLowerCase() === 'payment') {
-            console.log("handling payment details");
-            console.log("destinationAccount");
             if(originProperties.destinationAccount && originProperties.destinationAccount.trim().length > 0)
                 payload.txjson.Destination = originProperties.destinationAccount;
 
-            console.log("DestinationTag");
             if(originProperties.destinationTag && Number.isInteger(originProperties.destinationTag))
                 payload.txjson.DestinationTag = originProperties.destinationTag;
 
-            console.log("fixAmount");
             if(originProperties.fixAmount && JSON.stringify(originProperties.fixAmount).trim().length > 0)
                 payload.txjson.Amount = originProperties.fixAmount;
         }
@@ -137,7 +142,6 @@ export class Xumm {
         //handle return URLs
         let foundReturnUrls:boolean = false;
 
-        console.log("handling return urls")
         if(payload.web != undefined && originProperties.return_urls) {
 
             if(!payload.options)
@@ -165,81 +169,5 @@ export class Xumm {
             delete payload.options.return_url
 
         return payload;
-    }
-
-    async validateFrontendIdToPayloadId(origin: string, applicationId: string, frontendUserId:string, payloadId): Promise<boolean> {
-        let payloadIdsForFrontendId:string[] = await this.db.getPayloadIdsByFrontendId(origin, applicationId, frontendUserId);
-
-        return payloadIdsForFrontendId.includes(payloadId);
-    }
-
-    async validateXummIdToPayloadId(origin: string, applicationId: string, xummUserId:string, payloadId): Promise<boolean> {
-        let payloadIdsForXummUserId:string[] = await this.db.getPayloadIdsByXummId(origin, applicationId, xummUserId);
-
-        return payloadIdsForXummUserId.includes(payloadId);
-    }
-
-    async validatePaymentOnLedger(trxHash:string, origin:string, payloadInfo: any): Promise<any> {
-        let destinationAccount = await this.db.getAllowedOriginDestinationAccount(origin);
-        //console.log("validate Payment with dest account: " + destinationAccount + " and hash: " + trxHash)
-        if(trxHash && destinationAccount) {
-            if(await this.callBithompAndValidate(trxHash, destinationAccount, payloadInfo.payload.request_json.Amount, false)) {
-                return {
-                    success: true,
-                    testnet: false
-                }
-            } else if (await this.callBithompAndValidate(trxHash, destinationAccount, payloadInfo.payload.request_json.Amount, true)) {
-                return {
-                    success: true,
-                    testnet: true
-                }
-            }
-
-            return {
-                success: false,
-                testnet: false
-            }
-
-        } else {
-            return {
-                success: false,
-                testnet: false
-            };
-        }
-    }
-
-    async callBithompAndValidate(trxHash:string, destinationAccount:string, amount:any, testnet: boolean): Promise<boolean> {
-        try {
-            let bithompResponse:any = await fetch.default("https://"+(testnet?'test.':'')+"bithomp.com/api/v2/transaction/"+trxHash, {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN },agent: this.useProxy ? this.proxy : null});
-            if(bithompResponse && bithompResponse.ok) {
-                let ledgerTrx:any = await bithompResponse.json();
-                //console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(ledgerTrx));
-
-                //standard validation of successfull transaction
-                if(ledgerTrx && ledgerTrx.type.toLowerCase() === 'payment'
-                    && ledgerTrx.specification && ledgerTrx.specification.destination && ledgerTrx.specification.destination.address === destinationAccount
-                        && ledgerTrx.outcome  && ledgerTrx.outcome.result === 'tesSUCCESS') {
-
-                            //validate delivered amount
-                            if(Number.isInteger(parseInt(amount))) {
-                                //handle XRP amount
-                                return ledgerTrx.outcome.deliveredAmount.currency === 'XRP' && (parseFloat(ledgerTrx.outcome.deliveredAmount.value)*1000000 == parseInt(amount));
-                            } else {
-                                //amount not a number so it must be a IOU
-                                return ledgerTrx.outcome.deliveredAmount.currency === amount.currency //check currency
-                                    && ledgerTrx.outcome.deliveredAmount.issuer === amount.issuer //check issuer
-                                        &&(parseFloat(ledgerTrx.outcome.deliveredAmount.value)*1000000 == parseInt(amount.value)); //check value
-                            }
-
-                } else {
-                    //transaction not valid
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        } catch(err) {
-            console.log(JSON.stringify(err));
-        }
     }
 }

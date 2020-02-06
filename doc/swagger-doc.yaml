@@ -2,6 +2,7 @@ openapi: 3.0.0
 info:
   title: Generic Xumm API
   description: |
+   This API is dedicated to interact with Xumm and will be improved over time.
    This API is a full mirror of the [Xumm API](https://xumm.readme.io/reference/about) by [@XRPLLabs](https://twitter.com/XRPLLabs).<br>
    The prupose of this mirror API is to provide easy access to Xumm for, as example, Website developers, Alexa Skill developers, ShopPlugin developers
    and others, without the need for them to implement their own backend.
@@ -15,9 +16,6 @@ info:
 
    <b>To use this API you have to be whitlisted.</b> Please contact [@nixerFFM](https://twitter.com/nixerFFM) if you are interested to use this backend API.
   version: 1.4.0
-tags:
-  - name: Generic Xumm API
-    description: This API is dedicated to interact with Xumm and will be improved over time.
 paths:
   /api/v1/platform/payload:
     post:
@@ -58,7 +56,7 @@ paths:
           description: Error. Is returned when no origin is set in the request or an exceptions occurs when handling your request. Please check your request parameters.
           schema:
             type: string
-  /api/v1/platform/payload/{id}:
+  /api/v1/platform/payload/:payload_uuid:
     get:
       summary: Get the payload info
       description: Returns the payload information of a specific payloadId. Specification about the return fields can be found here [Xumm API Reference](https://xumm.readme.io/reference/get-payload)
@@ -67,7 +65,7 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: id
+        - name: payload_uuid
           description: id of a specific payload
           in: path
           required: true
@@ -85,7 +83,7 @@ paths:
           schema:
             type: string
     delete:
-      summary: Delete a payload
+      summary: Cancel a payload
       description: Cancel a payload, so a user cannot open it anymore. Specification about the return fields can be found here [Xumm API Reference](https://xumm.readme.io/reference/cancel-payload)
       tags:
         - Xumm API
@@ -109,7 +107,7 @@ paths:
           description: Error. Is returned when no origin is set in the request or an exceptions occurs when handling your request. Please check your request parameters.
           schema:
             type: string
-  /api/v1/check/payment/{payloadId}:
+  /api/v1/check/payment/:payload_uuid:
     get:
       summary: Returns the validation status of a payment payload
       description: Validates a payment payload. Does check the payment payload properties AND does check the transaction on the XRP Ledger. Checks the transaction on the XRPL live net AND test net!
@@ -118,7 +116,7 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: payloadId
+        - name: payload_uuid
           description: id of the payment payload to check
           in: path
           required: true
@@ -144,7 +142,7 @@ paths:
           description: Error. Is returned when no origin is set in the request or an exceptions occurs when handling your request. Please check your request parameters.
           schema:
             type: string
-  /api/v1/check/payment/{frontendUserId}/{payloadId}:
+  /api/v1/check/payment/:frontendUserId/:payload_uuid:
     get:
       summary: Returns the validation status of a payment payload signed by a specific user
       description: Validates a payment payload. Checks if a payment payload can be matched to a user (signed by the user). Checks also the payload properties AND does check the transaction on the XRP Ledger. Checks the transaction on the XRPL live net AND test net!
@@ -159,7 +157,7 @@ paths:
           required: true
           schema:
             type: string
-        - name: payloadId
+        - name: payload_uuid
           description: id of the payment payload to check
           in: path
           required: true
@@ -185,16 +183,16 @@ paths:
           description: Error. Is returned when no origin is set in the request or an exceptions occurs when handling your request. Please check your request parameters.
           schema:
             type: string
-  /api/v1/check/timed/payment/{payloadId}:
+  /api/v1/check/timed/payment/:payload_uuid:
     get:
-      summary: Returns the validation status of a payment payload for a given time
+      summary: Returns the validation status of a payment payload for a given time (currently 24h)
       description: Validates a payment payload agains an expiration time (currently 24h). Does check the payload properties AND does check the transaction on the XRP Ledger. Checks the transaction on the XRPL live net AND test net!
       tags:
         - Check API
       produces:
         - application/json
       parameters:
-        - name: payloadId
+        - name: payload_uuid
           description: id of the payment payload to check
           in: path
           required: true
@@ -220,7 +218,7 @@ paths:
           description: Error. Is returned when no origin is set in the request or an exceptions occurs when handling your request. Please check your request parameters.
           schema:
             type: string
-  /api/v1/check/timed/payment/{frontendUserId}/{payloadId}:
+  /api/v1/check/timed/payment/:frontendUserId/:payload_uuid:
     get:
       summary: Returns the validation status of a payment payload signed by the specified user and for a given time
       description: Validates a payment payload agains an expiration time (currently 24h). Checks if a payload can be matched to a user (signed by this user). Checks also the payload properties AND does check the transaction on the XRP Ledger. Checks the transaction on the XRPL live net AND test net!
@@ -235,7 +233,7 @@ paths:
           required: true
           schema:
             type: string
-        - name: payloadId
+        - name: payload_uuid
           description: id of the payment payload to check
           in: path
           required: true
@@ -261,7 +259,7 @@ paths:
           description: Error. Is returned when no origin is set in the request or an exceptions occurs when handling your request. Please check your request parameters.
           schema:
             type: string
-  /api/v1/check/sigin/{payloadId}:
+  /api/v1/check/sigin/:payload_uuid:
     get:
       summary: Returns the validation status of a sigin request
       description: Validates a sigin payload. Does check the signin payload properties. No On Ledger validation for SignIn requests.
@@ -270,7 +268,7 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: payloadId
+        - name: payload_uuid
           description: id of the sigin payload to check
           in: path
           required: true
@@ -292,7 +290,7 @@ paths:
           description: Error. Is returned when no origin is set in the request or an exceptions occurs when handling your request. Please check your request parameters.
           schema:
             type: string
-  /api/v1/check/sigin/{frontendUserId}/{payloadId}:
+  /api/v1/check/sigin/:frontendUserId/:payload_uuid:
     get:
       summary: Returns the validation status of a signin payload signed by the specified user
       description: Validates a signin payload. Checks if a signin payload can be matched to a user (signed by this user). Checks also the singin payload properties AND if it was signed successfully.
@@ -307,7 +305,7 @@ paths:
           required: true
           schema:
             type: string
-        - name: payloadId
+        - name: payload_uuid
           description: id of the signin payload to check
           in: path
           required: true
@@ -325,6 +323,44 @@ paths:
                       description: true, if signin payload was validated and signed
                       type: boolean
                       example: false
+        500:
+          description: Error. Is returned when no origin is set in the request or an exceptions occurs when handling your request. Please check your request parameters.
+          schema:
+            type: string
+  /api/v1/special/signinToValidate/:signinPayload_uuid:
+    get:
+      summary: Returns the validation status of a payment found for the XRPL account which signed the SignIn payload
+      description: | 
+        This method matched the XRPL account used to sign the SignIn payload to a payment payload the same XRPL account has signed.<br>
+        If the valid payment payload is not older than 24h, this method returns 'success'. (same as '/api/v1/check/timed/payment/{payloadId}' but with matching of the XRPL account from the SignIn request).<br>
+        Can be used to allow users accessing their purchased goods (statistics, charts, ...) on different environments/machines.
+      tags:
+        - Special API
+      produces:
+        - application/json
+      parameters:
+        - name: signinPayload_uuid
+          description: id of a users signin request
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Returns the result of the signin payload validation. 
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                    success:
+                      description: true, if payload is within timeframe (currently 24h) and if transactions was found and validated on XRPL live net OR test net
+                      type: boolean
+                      example: false
+                    testnet:
+                      description: true, if transaction was found on test net. false, if transaction was found on live net
+                      type: boolean
+                      example: true
         500:
           description: Error. Is returned when no origin is set in the request or an exceptions occurs when handling your request. Please check your request parameters.
           schema:

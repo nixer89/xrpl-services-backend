@@ -6,10 +6,6 @@ import * as scheduler from 'node-schedule';
 const fastify = require('fastify')({ trustProxy: true })
 
 import consoleStamp = require("console-stamp");
-import { Db } from 'mongodb';
-import { strict } from 'assert';
-import { stringify } from 'querystring';
-
 consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
 
 console.log("adding response compression");
@@ -66,7 +62,7 @@ const start = async () => {
         console.log(`server listening on ${fastify.server.address().port}`);
         console.log("http://localhost:4001/");
 
-        scheduler.scheduleJob("tmpInfoTableCleanup", {minute: 28}, () => cleanupTmpInfoTable());
+        scheduler.scheduleJob("tmpInfoTableCleanup", {minute: 5}, () => cleanupTmpInfoTable());
 
         fastify.ready(err => {
             if (err) throw err
@@ -81,16 +77,16 @@ const start = async () => {
 }
 
 async function cleanupTmpInfoTable() {
-  console.log("cleaning up cleanupTmpInfoTable")
+  //console.log("cleaning up cleanupTmpInfoTable")
   //get all temp info documents
   let tmpInfoEntries:any[] = await mongo.getAllTempInfo();
-  console.log("having entries: " + tmpInfoEntries.length);
+  console.log("cleanup having entries: " + tmpInfoEntries.length);
   for(let i = 0; i < tmpInfoEntries.length; i++) {
     let expirationDate:Date = new Date(tmpInfoEntries[i].expires);
     console.log("expirationDate: " + expirationDate);
     //payload is expired. Check if user has opened it
     if(Date.now() > expirationDate.getTime()) {
-      console.log("checking entry: " + JSON.stringify(tmpInfoEntries[i]));
+      //console.log("checking entry: " + JSON.stringify(tmpInfoEntries[i]));
       let payloadInfo:any = await xummBackend.getPayloadInfoByAppId(tmpInfoEntries[i].applicationId, tmpInfoEntries[i].payloadId);
       if(payloadInfo && payloadInfo.meta.expired && !payloadInfo.response.hex)
         await mongo.deleteTempInfo(tmpInfoEntries[i]);

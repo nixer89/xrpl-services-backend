@@ -1,26 +1,30 @@
 import * as Xumm from './xumm';
 import * as Db from './db';
+import * as Special from './special';
 import consoleStamp = require("console-stamp");
 
 consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
 
 let xummBackend = new Xumm.Xumm();
 let db = new Db.DB();
+let special = new Special.Special();
 
 export async function registerRoutes(fastify, opts, next) {
     await xummBackend.init();
     await db.initDb();
+    await special.init();
     fastify.post('/api/v1/platform/payload', async (request, reply) => {
         //console.log("headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
 
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-
-        try {
-            return xummBackend.submitPayload(request.body, request.headers.origin, request.headers.referer);
-        } catch {
-            reply.code(500).send('Something went wrong. Please check your query params');
+        else {
+            try {
+                return xummBackend.submitPayload(request.body, request.headers.origin, request.headers.referer);
+            } catch {
+                reply.code(500).send('Something went wrong. Please check your query params');
+            }
         }
     });
 
@@ -28,11 +32,12 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-
-        try {
-            return xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.id);
-        } catch {
-            reply.code(500).send('Something went wrong. Please check your query params');
+        else {
+            try {
+                return xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.id);
+            } catch {
+                reply.code(500).send('Something went wrong. Please check your query params');
+            }
         }
     });
 
@@ -40,11 +45,26 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+        else {
+            try {
+                return xummBackend.deletePayload(request.headers.origin, request.params.id);
+            } catch {
+                reply.code(500).send('Something went wrong. Please check your query params');
+            }
+        }
+    });
 
-        try {
-            return xummBackend.deletePayload(request.headers.origin, request.params.id);
-        } catch {
-            reply.code(500).send('Something went wrong. Please check your query params');
+    fastify.get('/api/v1/special/signinToValidate/:signinPayloadId', async (request, reply) => {
+        //console.log("headers: " + JSON.stringify(request.headers));
+
+        if(!request.headers.origin || !request.headers.referer)
+            reply.code(500).send('Please provide an origin and referer header. Calls without origin are not allowed');
+        else {
+            try {
+                return special.signInToValidate(request.params.signinPayloadId, request.headers.origin, request.headers.referer);
+            } catch {
+                reply.code(500).send('Something went wrong. Please check your query params');
+            }
         }
     });
 
@@ -52,18 +72,19 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+        else {
+            try {
+                let payloadInfo:any = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
 
-        try {
-            let payloadInfo:any = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
+                if(special.successfullPaymentPayloadValidation(payloadInfo))
+                    return special.validatePaymentOnLedger(payloadInfo.response.txid, request.headers.origin, payloadInfo);
 
-            if(successfullPaymentPayloadValidation(payloadInfo))
-                return xummBackend.validatePaymentOnLedger(payloadInfo.response.txid, request.headers.origin, payloadInfo);
-
-            //we didn't go into the success:true -> so return false :)
-            return {success : false}
-            
-        } catch {
-            reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+                //we didn't go into the success:true -> so return false :)
+                return {success : false}
+                
+            } catch {
+                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+            }
         }
     });
 
@@ -71,19 +92,20 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+        else {
+            try {
+                let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment');
 
-        try {
-            let payloadInfo:any = await getPayloadInfoForFrontendId(request.headers.origin, request.params);
+                if(special.successfullPaymentPayloadValidation(payloadInfo)) {
+                    return special.validatePaymentOnLedger(payloadInfo.response.txid, request.headers.origin, payloadInfo);
+                }
 
-            if(successfullPaymentPayloadValidation(payloadInfo)) {
-                return xummBackend.validatePaymentOnLedger(payloadInfo.response.txid, request.headers.origin, payloadInfo);
+                //we didn't go into the success:true -> so return false :)
+                return {success : false}
+                
+            } catch {
+                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
             }
-
-            //we didn't go into the success:true -> so return false :)
-            return {success : false}
-            
-        } catch {
-            reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
         }
     });
 
@@ -91,22 +113,14 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+        else {
+            try {
+                let payloadInfo:any = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
 
-        try {
-            let payloadInfo:any = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
-
-            let transactionDate:Date;
-            if(successfullPaymentPayloadValidation(payloadInfo)) {
-                transactionDate = new Date(payloadInfo.response.resolved_at)
-
-                if(transactionDate && transactionDate.setTime(transactionDate.getTime()+86400000) > Date.now()) {
-                    return xummBackend.validatePaymentOnLedger(payloadInfo.response.txid, request.headers.origin, payloadInfo);
-                }
+                return special.validateTimedPaymentPayload(request.headers.origin, payloadInfo);
+            } catch {
+                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
             }
-
-            return { success: false };
-        } catch {
-            reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
         }
     });
 
@@ -114,22 +128,15 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+        else {
+            try {
+                let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment');
 
-        try {
-            let payloadInfo:any = await getPayloadInfoForFrontendId(request.headers.origin, request.params);
+                return special.validateTimedPaymentPayload(request.headers.origin, payloadInfo);
 
-            let transactionDate:Date;
-            if(successfullPaymentPayloadValidation(payloadInfo)) {
-                transactionDate = new Date(payloadInfo.response.resolved_at)
-
-                if(transactionDate && transactionDate.setTime(transactionDate.getTime()+86400000) > Date.now()) {
-                    return xummBackend.validatePaymentOnLedger(payloadInfo.response.txid, request.headers.origin, payloadInfo);
-                }
+            } catch {
+                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
             }
-
-            return { success: false };
-        } catch {
-            reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
         }
     });
 
@@ -137,17 +144,18 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+        else {
+            try {
+                let payloadInfo:any = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId);
 
-        try {
-            let payloadInfo:any = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId);
+                if(special.successfullSignInPayloadValidation(payloadInfo))
+                    return {success: true }
+                else
+                    return {success: false }
 
-            if(successfullSignInPayloadValidation(payloadInfo))
-                return {success: true }
-            else
-                return {success: false }
-
-        } catch {
-            reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+            } catch {
+                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+            }
         }
     });
 
@@ -155,17 +163,18 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+        else {
+            try {
+                let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin');
 
-        try {
-            let payloadInfo:any = await getPayloadInfoForFrontendId(request.headers.origin, request.params);
+                if(special.successfullSignInPayloadValidation(payloadInfo))
+                    return {success: true }
+                else
+                    return {success: false }
 
-            if(successfullSignInPayloadValidation(payloadInfo))
-                return {success: true }
-            else
-                return {success: false }
-
-        } catch {
-            reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+            } catch {
+                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+            }
         }
     });
 
@@ -175,7 +184,7 @@ export async function registerRoutes(fastify, opts, next) {
         if(origins[i].applicationId) {
             fastify.post('/api/v1/webhook/'+origins[i].applicationId, async (request, reply) => {
                 console.log("webhook headers: " + JSON.stringify(request.headers));
-                console.log("webhook body: " + JSON.stringify(request.body));
+                //console.log("webhook body: " + JSON.stringify(request.body));
                
                 try {
                     let payloadInfo:any = await xummBackend.getPayloadInfoByAppId(request.body.meta.application_uuidv4, request.body.meta.payload_uuidv4);
@@ -184,15 +193,18 @@ export async function registerRoutes(fastify, opts, next) {
                     try {
                         let tmpInfo:any = await db.getTempInfo({payloadId: payloadInfo.meta.uuid, applicationId: payloadInfo.application.uuidv4});
 
-                        if(tmpInfo && payloadInfo && payloadInfo.application && payloadInfo.application.issued_user_token) {    
+                        if(tmpInfo) {
+                            if(payloadInfo && payloadInfo.application && payloadInfo.application.issued_user_token) {
                                 db.saveUser(tmpInfo.origin, payloadInfo.application.uuidv4, tmpInfo.frontendId, payloadInfo.application.issued_user_token);
-                                db.storePayloadForXummId(tmpInfo.origin, payloadInfo.application.uuidv4, payloadInfo.application.issued_user_token, payloadInfo.meta.uuid);
-                                db.deleteTempInfo(tmpInfo);
-                        }
+                                db.storePayloadForXummId(tmpInfo.origin, payloadInfo.application.uuidv4, payloadInfo.application.issued_user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
+                            }
 
-                        //store payload to XRPL account
-                        if(payloadInfo && payloadInfo.response && payloadInfo.response.account) {
-                            db.storePayloadForXRPLAccount(tmpInfo ? tmpInfo.origin:"", payloadInfo.application.uuidv4, payloadInfo.response.account, payloadInfo.meta.uuid);
+                            //store payload to XRPL account
+                            if(payloadInfo && payloadInfo.response && payloadInfo.response.account) {
+                                db.storePayloadForXRPLAccount(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
+                            }
+
+                            db.deleteTempInfo(tmpInfo);
                         }
                     } catch(err) {
                         console.log("error in webhook handling tmpInfo");
@@ -207,35 +219,4 @@ export async function registerRoutes(fastify, opts, next) {
     }
 
     next()
-}
-
-async function validFrontendUserIdToPayload(origin:string, requestParams:any): Promise<boolean> {
-    let frontendUserId:string = requestParams.frontendUserId
-    let payloadId:string = requestParams.payloadId;
-
-    if(frontendUserId && payloadId)
-        return await xummBackend.validateFrontendIdToPayloadId(origin, await db.getAppIdForOrigin(origin), frontendUserId, payloadId);
-    else
-        return false;
-}
-
-async function getPayloadInfoForFrontendId(origin: string, requestParams:any): Promise<any> {
-    if(await validFrontendUserIdToPayload(origin, requestParams)) {
-        return await xummBackend.getPayloadInfoByOrigin(origin, requestParams.payloadId)
-    } else {
-        return null;
-    }
-}
-
-function basicPayloadInfoValidation(payloadInfo: any): boolean {
-    return payloadInfo && !payloadInfo.error && payloadInfo.meta && payloadInfo.payload && payloadInfo.response
-        && payloadInfo.meta.exists && payloadInfo.meta.resolved && payloadInfo.meta.signed && payloadInfo.meta.submit;
-}
-
-function successfullPaymentPayloadValidation(payloadInfo: any): boolean {
-    return basicPayloadInfoValidation(payloadInfo) && payloadInfo.response.dispatched_result === 'tesSUCCESS'
-}
-
-function successfullSignInPayloadValidation(payloadInfo: any): boolean {
-    return basicPayloadInfoValidation(payloadInfo) && payloadInfo.response.txid && payloadInfo.response.hex && payloadInfo.response.account;
 }

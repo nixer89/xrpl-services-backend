@@ -29,22 +29,20 @@ export class DB {
     }
 
     async saveUser(origin:string, applicationId: string, userId:string, xummId: string) {
-        console.log("DB: saveUser:" + " origin: " + origin + " userId: " + userId + " xummId: " + xummId);
+        console.log("[DB]: saveUser:" + " origin: " + origin + " userId: " + userId + " xummId: " + xummId);
         try {
             if((await this.userIdCollection.find({origin: origin, applicationId: applicationId, frontendUserId: userId, xummUserId: xummId}).toArray()).length == 0) {
                 await this.userIdCollection.insertOne({origin: origin, applicationId: applicationId, frontendUserId: userId, xummUserId: xummId, created: new Date()});
-            } else {
-                await this.userIdCollection.updateOne({origin: origin, applicationId: applicationId, frontendUserId: userId}, {$set: {xummUserId: xummId, updated: new Date()}}, {upsert: true});
             }
         } catch(err) {
-            console.log("DB: error saveUser");
+            console.log("[DB]: error saveUser");
             console.log(JSON.stringify(err));
         }
     }
 
     async getXummId(origin:string, applicationId:string, frontendUserId:string): Promise<string> {
         try {
-            console.log("DB: getXummId:" + " origin: " + origin + " applicationId: " + applicationId +" frontendUserId: " + frontendUserId);
+            console.log("[DB]: getXummId:" + " origin: " + origin + " applicationId: " + applicationId +" frontendUserId: " + frontendUserId);
             let mongoResult:any[] = await this.userIdCollection.find({origin: origin, applicationId: applicationId, frontendUserId: frontendUserId}).toArray();
 
             if(mongoResult && mongoResult.length > 0)
@@ -52,18 +50,16 @@ export class DB {
             else
                 return null;
         } catch(err) {
-            console.log("DB: error getXummId");
+            console.log("[DB]: error getXummId");
             console.log(JSON.stringify(err));
         }
     }
 
-    async storePayloadForFrontendId(origin:string, applicationId: string, frontendUserId:string, payloadId: string): Promise<void> {
-        console.log("DB: storePayloadForFrontendId:" + " origin: " + origin + " frontendUserId: " + frontendUserId + " payloadId: " + payloadId);
+    async storePayloadForFrontendId(origin:string, applicationId: string, frontendUserId:string, payloadId: string, payloadType: string): Promise<void> {
+        console.log("[DB]: storePayloadForFrontendId:" + " origin: " + origin + " frontendUserId: " + frontendUserId + " payloadId: " + payloadId + " payloadType: " + payloadType);
         try {
             await this.frontendIdPayloadCollection.updateOne({origin: origin, applicationId: applicationId, frontendUserId: frontendUserId}, {
-                $push: {
-                    payloadIds: payloadId 
-                },
+                $addToSet: this.getPayloadTypeDefinitionToUpdate(payloadId, payloadType.toLowerCase()),
                 $currentDate: {
                    "updated": { $type: "timestamp" }
                 }                
@@ -71,34 +67,32 @@ export class DB {
 
             return Promise.resolve();
         } catch(err) {
-            console.log("DB: error storePayloadForFrontendId");
+            console.log("[DB]: error storePayloadForFrontendId");
             console.log(JSON.stringify(err));
         }
     }
 
-    async getPayloadIdsByFrontendId(origin: string, applicationId: string, frontendUserId:string): Promise<string[]> {
-        console.log("DB: getPayloadIdsByFrontendId:" + " origin: " + origin + " frontendUserId: " + frontendUserId);
+    async getPayloadIdsByFrontendId(origin: string, applicationId: string, frontendUserId:string, payloadType: string): Promise<string[]> {
+        console.log("[DB]: getPayloadIdsByFrontendId:" + " origin: " + origin + " frontendUserId: " + frontendUserId);
         try {
             let findResult = await this.frontendIdPayloadCollection.findOne({origin: origin, applicationId: applicationId, frontendUserId: frontendUserId});
 
-            if(findResult && findResult.payloadIds)
-                return findResult.payloadIds;
+            if(findResult)
+                return this.getPayloadArrayForType(findResult, payloadType);
             else
                 return [];
         } catch(err) {
-            console.log("DB: error getPayloadIdsByFrontendId");
+            console.log("[DB]: error getPayloadIdsByFrontendId");
             console.log(JSON.stringify(err));
             return [];
         }
     }
 
-    async storePayloadForXummId(origin:string, applicationId: string, xummUserId:string, payloadId: string): Promise<void> {
-        console.log("DB: storePayloadForXummId:" + " origin: " + origin + " xummUserId: " + xummUserId + " payloadId: " + payloadId);
+    async storePayloadForXummId(origin:string, applicationId: string, xummUserId:string, payloadId: string, payloadType: string): Promise<void> {
+        console.log("[DB]: storePayloadForXummId:" + " origin: " + origin + " xummUserId: " + xummUserId + " payloadId: " + payloadId + " payloadType: " + payloadType);
         try {
             await this.xummIdPayloadCollection.updateOne({origin: origin, applicationId: applicationId, xummUserId: xummUserId}, {
-                $push: {
-                    payloadIds: payloadId 
-                },
+                $addToSet: this.getPayloadTypeDefinitionToUpdate(payloadId, payloadType.toLowerCase()),
                 $currentDate: {
                    "updated": { $type: "timestamp" }
                 }   
@@ -106,33 +100,31 @@ export class DB {
 
             return Promise.resolve();
         } catch(err) {
-            console.log("DB: error storePayloadForXummId");
+            console.log("[DB]: error storePayloadForXummId");
             console.log(JSON.stringify(err));
         }
     }
 
-    async getPayloadIdsByXummId(origin: string, applicationId: string, xummUserId:string): Promise<string[]> {
-        console.log("DB: getPayloadIdsByXummId:" + " origin: " + origin + " xummUserId: " + xummUserId);
+    async getPayloadIdsByXummId(origin: string, applicationId: string, xummUserId:string, payloadType: string): Promise<string[]> {
+        console.log("[DB]: getPayloadIdsByXummId:" + " origin: " + origin + " xummUserId: " + xummUserId);
         try {
             let findResult = await this.xummIdPayloadCollection.findOne({origin: origin, applicationId: applicationId, xummUserId: xummUserId})
-            if(findResult && findResult.payloadIds)
-                return findResult.payloadIds;
+            if(findResult)
+                return this.getPayloadArrayForType(findResult, payloadType);
             else
                 return [];
         } catch(err) {
-            console.log("DB: error getPayloadIdsByXummId");
+            console.log("[DB]: error getPayloadIdsByXummId");
             console.log(JSON.stringify(err));
             return [];
         }
     }
 
-    async storePayloadForXRPLAccount(origin:string, applicationId: string, xrplAccount:string, payloadId: string): Promise<void> {
-        console.log("DB: storePayloadForXRPLAccount:" + " origin: " + origin + " xrplAccount: " + xrplAccount + " payloadId: " + payloadId);
+    async storePayloadForXRPLAccount(origin:string, referer:string, applicationId: string, xrplAccount:string, payloadId: string, payloadType: string): Promise<void> {
+        console.log("[DB]: storePayloadForXRPLAccount:" + " origin: " + origin + " xrplAccount: " + xrplAccount + " payloadId: " + payloadId + " payloadType: " + payloadType);
         try {
-            await this.xrplAccountPayloadCollection.updateOne({origin: origin, applicationId: applicationId, xrplAccount: xrplAccount}, {
-                $push: {
-                    payloadIds: payloadId 
-                },
+            await this.xrplAccountPayloadCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, xrplAccount: xrplAccount}, {
+                $addToSet: this.getPayloadTypeDefinitionToUpdate(payloadId, payloadType.toLowerCase()),
                 $currentDate: {
                    "updated": { $type: "timestamp" }
                 }                
@@ -140,44 +132,44 @@ export class DB {
 
             return Promise.resolve();
         } catch(err) {
-            console.log("DB: error storePayloadForXRPLAccount");
+            console.log("[DB]: error storePayloadForXRPLAccount");
             console.log(JSON.stringify(err));
         }
     }
 
-    async getPayloadIdsByXrplAccount(origin: string, applicationId: string, xrplAccount:string): Promise<string[]> {
-        console.log("DB: getPayloadIdsByXrplAccount:" + " origin: " + origin + " xrplAccount: " + xrplAccount);
+    async getPayloadIdsByXrplAccount(origin: string, referer:string, applicationId: string, xrplAccount:string, payloadType: string): Promise<string[]> {
+        console.log("[DB]: getPayloadIdsByXrplAccount:" + " origin: " + origin + " xrplAccount: " + xrplAccount);
         try {
-            let findResult = await this.xrplAccountPayloadCollection.findOne({origin: origin, applicationId: applicationId, xrplAccount: xrplAccount});
+            let findResult = await this.xrplAccountPayloadCollection.findOne({origin: origin, referer:referer, applicationId: applicationId, xrplAccount: xrplAccount});
 
-            if(findResult && findResult.payloadIds)
-                return findResult.payloadIds;
+            if(findResult)
+                return this.getPayloadArrayForType(findResult, payloadType);
             else
                 return [];
         } catch(err) {
-            console.log("DB: error getPayloadIdsByXrplAccount");
+            console.log("[DB]: error getPayloadIdsByXrplAccount");
             console.log(JSON.stringify(err));
             return [];
         }
     }
 
     async getAllOrigins(): Promise<any[]> {
-        console.log("DB: getOrigins");
+        console.log("[DB]: getOrigins");
         try {
             return this.allowedOriginsCollection.find({}).toArray();
         } catch(err) {
-            console.log("DB: error getOrigins");
+            console.log("[DB]: error getOrigins");
             console.log(JSON.stringify(err));
             return [];
         }
     }
 
     async getOriginProperties(origin: string): Promise<any> {
-        console.log("DB: getOriginProperties:" + " origin: " + origin);
+        console.log("[DB]: getOriginProperties:" + " origin: " + origin);
         try {
             return this.allowedOriginsCollection.findOne({origin: origin});
         } catch(err) {
-            console.log("DB: error getOriginProperties");
+            console.log("[DB]: error getOriginProperties");
             console.log(JSON.stringify(err));
             return [];
         }
@@ -185,7 +177,7 @@ export class DB {
 
     async getAppIdForOrigin(origin: string): Promise<string> {
         try {
-            console.log("DB: getAppIdForOrigin:" + " origin: " + origin);
+            console.log("[DB]: getAppIdForOrigin:" + " origin: " + origin);
             let findResult:any = await this.allowedOriginsCollection.findOne({origin: origin});
 
             if(findResult)
@@ -193,14 +185,14 @@ export class DB {
             return null;
 
         } catch(err) {
-            console.log("DB: error getAppIdForOrigin");
+            console.log("[DB]: error getAppIdForOrigin");
             console.log(JSON.stringify(err));
             return null;
         }
     }
 
     async getAllowedOriginsAsArray(): Promise<string[]> {
-        console.log("DB: getAllowedOriginsAsArray");
+        console.log("[DB]: getAllowedOriginsAsArray");
         try {
             let findResult:any[] = await this.allowedOriginsCollection.find().toArray();
 
@@ -213,14 +205,14 @@ export class DB {
             return allowedOrigins;
 
         } catch(err) {
-            console.log("DB: error getAllowedOriginsAsArray");
+            console.log("[DB]: error getAllowedOriginsAsArray");
             console.log(JSON.stringify(err));
             return [];
         }
     }
 
     async getAllowedOriginDestinationAccount(origin: string): Promise<string> {
-        console.log("DB: getAllowedOriginDestinationAccount:" + " origin: " + origin);
+        console.log("[DB]: getAllowedOriginDestinationAccount:" + " origin: " + origin);
         try {
             let findResult:any = await this.allowedOriginsCollection.findOne({origin: origin});
 
@@ -229,14 +221,14 @@ export class DB {
             else
                 return null;
         } catch(err) {
-            console.log("DB: error getAllowedOriginDestinationAccount");
+            console.log("[DB]: error getAllowedOriginDestinationAccount");
             console.log(JSON.stringify(err));
             return null;
         }
     }
 
     async getOriginReturnUrl(origin:string, applicationId:string, referer: string, isWeb:boolean): Promise<string> {
-        console.log("DB: getOriginReturnUrl:" + " origin: " + origin + " referer: " + referer + " isWeb: " + isWeb);
+        console.log("[DB]: getOriginReturnUrl:" + " origin: " + origin + " referer: " + referer + " isWeb: " + isWeb);
         try {
             let findResult = await this.allowedOriginsCollection.findOne({origin: origin, applicationId: applicationId});
             
@@ -255,14 +247,14 @@ export class DB {
             else
                 return null;
         } catch(err) {
-            console.log("DB: error getOriginReturnUrl");
+            console.log("[DB]: error getOriginReturnUrl");
             console.log(JSON.stringify(err));
             return null;
         }
     }
 
     async getApiSecretForAppId(appId: string): Promise<string> {
-        console.log("DB: getApiSecretForAppId:" + " appId: " + appId);
+        console.log("[DB]: getApiSecretForAppId:" + " appId: " + appId);
         try {
             let findResult:any = await this.applicationApiKeysCollection.findOne({xumm_app_id: appId});
 
@@ -271,55 +263,76 @@ export class DB {
             else
                 return null;
         } catch(err) {
-            console.log("DB: error getApiSecretForAppId");
+            console.log("[DB]: error getApiSecretForAppId");
             console.log(JSON.stringify(err));
             return null;
         }
     }
 
     async saveTempInfo(anyInfo: any): Promise<void> {
-        console.log("DB: saveTempInfo: " + JSON.stringify(anyInfo));
+        console.log("[DB]: saveTempInfo");
         try {
-            anyInfo.created = new Date()
+            anyInfo.created = new Date().toUTCString();
             await this.tmpInfoTable.insertOne(anyInfo);
 
             return Promise.resolve();
         } catch(err) {
-            console.log("DB: error saveTempInfo");
+            console.log("[DB]: error saveTempInfo");
             console.log(JSON.stringify(err));
         }
     }
 
     async getTempInfo(anyFilter: any): Promise<any> {
-        console.log("DB: getTempInfo: " + JSON.stringify(anyFilter));
+        console.log("[DB]: getTempInfo: " + JSON.stringify(anyFilter));
         try {
             return this.tmpInfoTable.findOne(anyFilter);
         } catch(err) {
-            console.log("DB: error getTempInfo");
+            console.log("[DB]: error getTempInfo");
             console.log(JSON.stringify(err));
         }
     }
 
     async getAllTempInfo(): Promise<any[]> {
-        console.log("DB: getAllTempInfo");
+        console.log("[DB]: getAllTempInfo");
         try {
             return this.tmpInfoTable.find({}).toArray();
         } catch(err) {
-            console.log("DB: error getAllTempInfo");
+            console.log("[DB]: error getAllTempInfo");
             console.log(JSON.stringify(err));
         }
     }
 
     async deleteTempInfo(anyFilter: any): Promise<void> {
-        console.log("DB: deleteTempInfo: " + JSON.stringify(anyFilter));
+        console.log("[DB]: deleteTempInfo: " + JSON.stringify(anyFilter));
         try {
             await this.tmpInfoTable.deleteOne(anyFilter);
 
             return Promise.resolve();
         } catch(err) {
-            console.log("DB: error deleteTempInfo");
+            console.log("[DB]: error deleteTempInfo");
             console.log(JSON.stringify(err));
         }
+    }
+
+    getPayloadTypeDefinitionToUpdate(payloadId: string, payloadType: string): any {
+        let arrayType:any = {}
+        if('payment'===payloadType)
+            arrayType.paymentPayloadIds = payloadId;
+        else if('signin'===payloadType)
+            arrayType.signinPayloadIds = payloadId;
+        else
+            arrayType.otherPayloadIds = payloadId;
+
+        return arrayType;
+    }
+
+    getPayloadArrayForType(dbEntry:any, payloadType: string): string[] {
+        if("payment"===payloadType)
+            return dbEntry.paymentPayloadIds;
+        else if("signin"===payloadType)
+            return dbEntry.signinPayloadIds;
+        else
+            return dbEntry.otherPayloadIds;
     }
 
     async getNewDbModel(collectionName: string): Promise<Collection<any>> {
