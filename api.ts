@@ -15,7 +15,7 @@ export async function registerRoutes(fastify, opts, next) {
     await db.initDb();
     await special.init();
     fastify.post('/api/v1/platform/payload', async (request, reply) => {
-        //console.log("headers: " + JSON.stringify(request.headers));
+        console.log("post payload headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
 
         if(!request.headers.origin)
