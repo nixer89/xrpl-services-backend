@@ -33,6 +33,9 @@ export class Xumm {
         if(!appId)
             return "not allowed";
         
+        if(payload.referer)
+            referer = payload.referer;
+
         try {
             if(frontendId = payload.frontendId) {
                 let xummId:string = await this.db.getXummId(origin, appId, payload.frontendId);
@@ -52,7 +55,6 @@ export class Xumm {
 
         console.log("[XUMM]: payload to send:" + JSON.stringify(payload));
         let payloadResponse = await this.callXumm(appId, "payload", "POST", payload);
-        console.log("");
         console.log("[XUMM]: submitPayload response: " + JSON.stringify(payloadResponse))
 
         //saving payloadId to frontendId
@@ -146,9 +148,6 @@ export class Xumm {
         //handle return URLs
         let foundReturnUrls:boolean = false;
 
-        console.log("payload.web != undefined: " + payload.web != undefined)
-        console.log("originProperties.return_urls: " + JSON.stringify(originProperties.return_urls));
-
         if(payload.web != undefined && originProperties.return_urls) {
 
             if(!payload.options)
@@ -158,7 +157,6 @@ export class Xumm {
                 payload.options.return_url = {};
 
             for(let i = 0; i < originProperties.return_urls.length; i++) {
-                console.log("checking referer: " + referer + " against db value: " + originProperties.return_urls[i].from);
                 if(originProperties.return_urls[i].from === referer) {
                     foundReturnUrls = true;
 
@@ -171,8 +169,6 @@ export class Xumm {
 
             delete payload.signinToValidate;
             delete payload.web;
-
-            console.log("payload after return_url handling: " + JSON.stringify(payload));
         }
 
         //security measure: delete return URLs for unknown referer

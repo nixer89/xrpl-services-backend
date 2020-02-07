@@ -58,11 +58,11 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/special/signinToValidate/:signinPayloadId', async (request, reply) => {
         //console.log("headers: " + JSON.stringify(request.headers));
 
-        if(!request.headers.origin || !request.headers.referer)
-            reply.code(500).send('Please provide an origin and referer header. Calls without origin are not allowed');
+        if(!request.headers.origin)
+            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
         else {
             try {
-                return special.signInToValidate(request.params.signinPayloadId, request.headers.origin, request.headers.referer);
+                return special.signInToValidate(request.params.signinPayloadId, request.headers.origin, request.query.referer ? request.query.referer : request.headers.referer);
             } catch {
                 reply.code(500).send('Something went wrong. Please check your query params');
             }
@@ -186,7 +186,7 @@ export async function registerRoutes(fastify, opts, next) {
                 db.resetCache();
                 xummBackend.resetDBCache();
                 special.resetDBCache();
-                
+
                 return {success: true }
             } else
                 return {success: false }
