@@ -3,3 +3,4 @@ export const XUMM_WEBSOCKET_URL = process.env.XUMM_WEBSOCKET_URL || 'wss://xumm.
 export const BITHOMP_API_TOKEN = process.env.BITHOMP_API_TOKEN;
 export const USE_PROXY = false;
 export const PROXY_URL = "http://proxy:81";
+export const RESET_CACHE_TOKEN = process.env.RESET_CACHE_TOKEN;

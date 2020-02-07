@@ -14,6 +14,10 @@ export class Xumm {
         await this.db.initDb();
     }
 
+    resetDBCache() {
+        this.db.resetCache();
+    }
+
     async pingXummBackend(): Promise<boolean> {
         let pingResponse = await this.callXumm(await this.db.getAppIdForOrigin("http://localhost:4200"), "ping", "GET");
         console.log("[XUMM]: pingXummBackend response: " + JSON.stringify(pingResponse))

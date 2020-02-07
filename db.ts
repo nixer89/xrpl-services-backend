@@ -14,6 +14,9 @@ export class DB {
     xrplAccountPayloadCollection:Collection = null;
     tmpInfoTable:Collection = null;
 
+    allowedOriginCache:any[] = null;
+    applicationApiKeysCache:any[] = null;
+
 
     async initDb(): Promise<void> {
         console.log("init mongodb");
@@ -154,9 +157,14 @@ export class DB {
     }
 
     async getAllOrigins(): Promise<any[]> {
-        console.log("[DB]: getOrigins");
         try {
-            return this.allowedOriginsCollection.find({}).toArray();
+            if(!this.allowedOriginCache) {
+                console.log("[DB]: getOrigins from DB");
+                this.allowedOriginCache = await this.allowedOriginsCollection.find({}).toArray();
+            } else {
+                console.log("[DB]: getOrigins from CACHE");
+            }
+            return this.allowedOriginCache;
         } catch(err) {
             console.log("[DB]: error getOrigins");
             console.log(JSON.stringify(err));
@@ -165,9 +173,14 @@ export class DB {
     }
 
     async getOriginProperties(origin: string): Promise<any> {
-        console.log("[DB]: getOriginProperties:" + " origin: " + origin);
         try {
-            return this.allowedOriginsCollection.findOne({origin: origin});
+            if(!this.allowedOriginCache) {
+                console.log("[DB]: getOriginProperties from DB:" + " origin: " + origin);
+                this.allowedOriginCache = await this.allowedOriginsCollection.find().toArray();
+            } else {
+                console.log("[DB]: getOriginProperties from CACHE:" + " origin: " + origin);
+            }
+            return this.allowedOriginCache.filter(originProperties => originProperties.origin === origin)[0];
         } catch(err) {
             console.log("[DB]: error getOriginProperties");
             console.log(JSON.stringify(err));
@@ -177,11 +190,16 @@ export class DB {
 
     async getAppIdForOrigin(origin: string): Promise<string> {
         try {
-            console.log("[DB]: getAppIdForOrigin:" + " origin: " + origin);
-            let findResult:any = await this.allowedOriginsCollection.findOne({origin: origin});
+            if(!this.allowedOriginCache) {
+                console.log("[DB]: getAppIdForOrigin:" + " origin from DB: " + origin);
+                this.allowedOriginCache = await this.allowedOriginsCollection.find().toArray();
+            } else {
+                console.log("[DB]: getAppIdForOrigin:" + " origin from CACHE: " + origin);
+            }
 
-            if(findResult)
-                return findResult.applicationId;
+            let searchResult:any[] = this.allowedOriginCache.filter(originProperties => originProperties.origin === origin);
+            if(searchResult)
+                return searchResult[0].applicationId;
             return null;
 
         } catch(err) {
@@ -192,14 +210,18 @@ export class DB {
     }
 
     async getAllowedOriginsAsArray(): Promise<string[]> {
-        console.log("[DB]: getAllowedOriginsAsArray");
         try {
-            let findResult:any[] = await this.allowedOriginsCollection.find().toArray();
+            if(!this.allowedOriginCache) {
+                console.log("[DB]: getAllowedOriginsAsArray from DB");
+                this.allowedOriginCache = await this.allowedOriginsCollection.find().toArray();
+            } else {
+                console.log("[DB]: getAllowedOriginsAsArray from CACHE");
+            }
 
             let allowedOrigins:string[] = [];
-            for(let i = 0; i < findResult.length; i++) {
-                if(findResult[i].origin && findResult[i].origin.trim().length > 0)
-                    allowedOrigins.push(findResult[i].origin)
+            for(let i = 0; i < this.allowedOriginCache.length; i++) {
+                if(this.allowedOriginCache[i].origin && this.allowedOriginCache[i].origin.trim().length > 0)
+                    allowedOrigins.push(this.allowedOriginCache[i].origin)
             }
 
             return allowedOrigins;
@@ -212,14 +234,20 @@ export class DB {
     }
 
     async getAllowedOriginDestinationAccount(origin: string): Promise<string> {
-        console.log("[DB]: getAllowedOriginDestinationAccount:" + " origin: " + origin);
+        
         try {
-            let findResult:any = await this.allowedOriginsCollection.findOne({origin: origin});
+            if(!this.allowedOriginCache) {
+                console.log("[DB]: getAllowedOriginDestinationAccount:" + " origin from DB: " + origin);
+                this.allowedOriginCache = await this.allowedOriginsCollection.find().toArray();
+            } else {
+                console.log("[DB]: getAllowedOriginDestinationAccount:" + " origin from CACHE: " + origin);
+            }
+            
+            let searchResult:any[] = this.allowedOriginCache.filter(originProperties => originProperties.origin === origin);
+            if(searchResult)
+                return searchResult[0].destinationAccount;
+            return null;
 
-            if(findResult && findResult.destinationAccount)
-                return findResult.destinationAccount;
-            else
-                return null;
         } catch(err) {
             console.log("[DB]: error getAllowedOriginDestinationAccount");
             console.log(JSON.stringify(err));
@@ -228,17 +256,23 @@ export class DB {
     }
 
     async getOriginReturnUrl(origin:string, applicationId:string, referer: string, isWeb:boolean): Promise<string> {
-        console.log("[DB]: getOriginReturnUrl:" + " origin: " + origin + " referer: " + referer + " isWeb: " + isWeb);
+        
         try {
-            let findResult = await this.allowedOriginsCollection.findOne({origin: origin, applicationId: applicationId});
+            if(!this.allowedOriginCache) {
+                console.log("[DB]: getOriginReturnUrl from DB:" + " origin: " + origin + " referer: " + referer + " isWeb: " + isWeb);
+                this.allowedOriginCache = await this.allowedOriginsCollection.find().toArray();
+            } else {
+                console.log("[DB]: getOriginReturnUrl from CACHE:" + " origin: " + origin + " referer: " + referer + " isWeb: " + isWeb);
+            }
             
-            if(findResult && findResult.return_urls) {
-                for(let i = 0; i < findResult.return_urls.length; i++) {
-                    if(findResult.return_urls[i].from === referer) {
+            let searchResult = this.allowedOriginCache.filter(originProperties => originProperties.origin === origin && originProperties.applicationId === applicationId)[0];
+            if(searchResult && searchResult.return_urls) {
+                for(let i = 0; i < searchResult.return_urls.length; i++) {
+                    if(searchResult.return_urls[i].from === referer) {
                         if(isWeb)
-                            return findResult.return_urls[i].to_web;
+                            return searchResult.return_urls[i].to_web;
                         else
-                            return findResult.return_urls[i].to_app;
+                            return searchResult.return_urls[i].to_app;
                     }
                 }
 
@@ -254,12 +288,19 @@ export class DB {
     }
 
     async getApiSecretForAppId(appId: string): Promise<string> {
-        console.log("[DB]: getApiSecretForAppId:" + " appId: " + appId);
+        
         try {
-            let findResult:any = await this.applicationApiKeysCollection.findOne({xumm_app_id: appId});
+            if(!this.applicationApiKeysCache) {
+                console.log("[DB]: getApiSecretForAppId from DB:" + " appId: " + appId);
+                this.applicationApiKeysCache = await this.applicationApiKeysCollection.find().toArray();
+            } else {
+                console.log("[DB]: getApiSecretForAppId from CACHE:" + " appId: " + appId);
+            }
 
-            if(findResult && findResult.xumm_app_secret)
-                return findResult.xumm_app_secret;
+            let searchResult = this.applicationApiKeysCache.filter(element => element.xumm_app_id === appId)[0];
+
+            if(searchResult && searchResult.xumm_app_secret)
+                return searchResult.xumm_app_secret;
             else
                 return null;
         } catch(err) {
@@ -396,5 +437,11 @@ export class DB {
         } catch(err) {
             console.log(JSON.stringify(err));
         }
+    }
+
+    resetCache() {
+        this.applicationApiKeysCache = null;
+        this.allowedOriginCache = null;
+        console.log("[DB]: CACHE has been reset!");
     }
 }

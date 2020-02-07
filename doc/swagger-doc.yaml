@@ -15,13 +15,13 @@ info:
 
 
    <b>To use this API you have to be whitlisted.</b> Please contact [@nixerFFM](https://twitter.com/nixerFFM) if you are interested to use this backend API.
-  version: 1.4.0
+  version: '1.7.0'
 paths:
   /api/v1/platform/payload:
     post:
       summary: Submits a payload to Xumm
-      description: Submits a payload to Xumm and returns information about the submit result. Payload field specification can be found here [Xumm API Reference](https://xumm.readme.io/reference/post-payload)
-                    <br>Additional parameters below
+      description: Submits a payload to Xumm and returns information about the submit result. Payload field specification can be found here [Xumm API Reference](https://xumm.readme.io/reference/post-payload)<br>
+                   Additional parameters below
       tags:
         - Xumm API
       produces:
@@ -41,6 +41,16 @@ paths:
             type: boolean
         - name: web
           description: specify where the request is coming from. web=true -> Desktop, web=false -> App. This is an important setting and determines which return_url is being set (app or web)
+          in: body
+          required: false
+          schema:
+            type: boolean
+        - name: signinToValidate
+          description: |
+            if set to true, this parameter indicates the backend that this is a SignIn request for an upcoming payload validation by XRPL Account. (see Special-API -> signinToValidate/:signinPayload_uuid)<br>
+            The backend appends a query parameter to your defined return_url: '&signinToValidate=true'.<br>
+            You can then check for this parameter in your website after the user was returned. If set to true, you know the sent payloadId in the URL is a SignIn request payload ID which you can use to call the "signinToValidate"-API.<br>
+            This parameter allows you to have a "Pay for..." and "Sign in ..." on the same page with the same return_url.
           in: body
           required: false
           schema:

@@ -16,6 +16,10 @@ export class Special {
         await this.db.initDb();
     }
 
+    resetDBCache() {
+        this.db.resetCache();
+    }
+
     async validFrontendUserIdToPayload(origin:string, requestParams:any, payloadType: string): Promise<boolean> {
         let frontendUserId:string = requestParams.frontendUserId
         let payloadId:string = requestParams.payloadId;

@@ -1,6 +1,7 @@
 import * as Xumm from './xumm';
 import * as Db from './db';
 import * as Special from './special';
+import * as config from './config';
 import consoleStamp = require("console-stamp");
 
 consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
@@ -175,6 +176,22 @@ export async function registerRoutes(fastify, opts, next) {
             } catch {
                 reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
             }
+        }
+    });
+
+    fastify.get('/api/resetCache/:token', async (request, reply) => {
+        //console.log("request params: " + JSON.stringify(request.params));
+        try {
+            if(config.RESET_CACHE_TOKEN === request.params.token) {
+                db.resetCache();
+                xummBackend.resetDBCache();
+                special.resetDBCache();
+                
+                return {success: true }
+            } else
+                return {success: false }
+        } catch {
+            reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
         }
     });
 

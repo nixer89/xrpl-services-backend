@@ -1,12 +1,13 @@
 {
   "name": "generic-xumm-backend",
-  "version": "1.6.4",
+  "version": "1.7.0",
   "description": "provides a generic backend, connected to xumm. Easy access of user tokens for push",
   "main": "server.ts",
   "scripts": {
     "start": "node dist/server.js",
     "develop": "tsc && concurrently \"tsc -w\" \"nodemon dist/server.js\"",
     "build": "tsc",
+    "postinstall": "sh updateSwaggerVersion.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
