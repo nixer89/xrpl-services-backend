@@ -26,6 +26,7 @@ export class Xumm {
 
     async submitPayload(payload:any, origin:string, referer: string): Promise<any> {
         //trying to resolve xumm user if from given frontendId:
+        console.log("received payload: " + JSON.stringify(payload));
         let frontendId:string;
         let pushDisabled:boolean = payload.pushDisabled;
         let appId = await this.db.getAppIdForOrigin(origin);
