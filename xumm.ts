@@ -146,6 +146,9 @@ export class Xumm {
         //handle return URLs
         let foundReturnUrls:boolean = false;
 
+        console.log("payload.web != undefined: " + payload.web != undefined)
+        console.log("originProperties.return_urls: " + JSON.stringify(originProperties.return_urls));
+
         if(payload.web != undefined && originProperties.return_urls) {
 
             if(!payload.options)
@@ -155,6 +158,7 @@ export class Xumm {
                 payload.options.return_url = {};
 
             for(let i = 0; i < originProperties.return_urls.length; i++) {
+                console.log("checking referer: " + referer + " against db value: " + originProperties.return_urls[i].from);
                 if(originProperties.return_urls[i].from === referer) {
                     foundReturnUrls = true;
 
@@ -167,6 +171,8 @@ export class Xumm {
 
             delete payload.signinToValidate;
             delete payload.web;
+
+            console.log("payload after return_url handling: " + JSON.stringify(payload));
         }
 
         //security measure: delete return URLs for unknown referer
