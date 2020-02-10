@@ -15,7 +15,7 @@ info:
 
 
    <b>To use this API you have to be whitlisted.</b> Please contact [@nixerFFM](https://twitter.com/nixerFFM) if you are interested to use this backend API.
-  version: '1.8.0'
+  version: '1.8.1'
 paths:
   /api/v1/platform/payload:
     post:
@@ -431,10 +431,10 @@ paths:
           description: Error. Is returned when no origin is set in the request or an exceptions occurs when handling your request. Please check your request parameters.
           schema:
             type: string
-  /api/v1/check/sigin/:frontendUserId/:payload_uuid:
+  /api/v1/check/sigin/referer/:frontendUserId/:payload_uuid:
     get:
-      summary: Returns the validation status of a signin payload signed by the specified user
-      description: Validates a signin payload. Checks if a signin payload can be matched to a user (signed by this user). Checks also the singin payload properties AND if it was signed successfully.
+      summary: Returns the validation status of a signin payload signed by the specified user and a specified referer URL
+      description: Validates a signin payload. Checks if a signin payload can be matched to a user (signed by this user) and a referer URL. Checks also the singin payload properties AND if it was signed successfully.
       tags:
         - Check API
       produces:
@@ -449,6 +449,12 @@ paths:
         - name: payload_uuid
           description: id of the signin payload to check
           in: path
+          required: true
+          schema:
+            type: string
+        - name: referer
+          description: referer URL to check the payment for. if not provided as query param, the request.header.referer will be used
+          in: query
           required: true
           schema:
             type: string
