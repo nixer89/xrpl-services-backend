@@ -25,14 +25,14 @@ export class Special {
         let payloadId:string = requestParams.payloadId;
     
         if(frontendUserId && payloadId)
-            return await this.validateFrontendIdToPayloadId(origin, await this.db.getAppIdForOrigin(origin), frontendUserId, payloadId,payloadType, referer);
+            return this.validateFrontendIdToPayloadId(origin, await this.db.getAppIdForOrigin(origin), frontendUserId, payloadId,payloadType, referer);
         else
             return false;
     }
     
     async getPayloadInfoForFrontendId(origin: string, requestParams:any, payloadType: string, referer?: string): Promise<any> {
         if(await this.validFrontendUserIdToPayload(origin, requestParams,payloadType, referer)) {
-            return await this.xummBackend.getPayloadInfoByOrigin(origin, requestParams.payloadId)
+            return this.xummBackend.getPayloadInfoByOrigin(origin, requestParams.payloadId)
         } else {
             return null;
         }
@@ -44,7 +44,14 @@ export class Special {
     }
     
     successfullPaymentPayloadValidation(payloadInfo: any): boolean {
-        return this.basicPayloadInfoValidation(payloadInfo) && 'payment' === payloadInfo.payload.tx_type.toLowerCase() && payloadInfo.meta.submit && payloadInfo.response.dispatched_result === 'tesSUCCESS'
+        if(this.basicPayloadInfoValidation(payloadInfo) && 'payment' === payloadInfo.payload.tx_type.toLowerCase() && payloadInfo.meta.submit && payloadInfo.response.dispatched_result === 'tesSUCCESS') {
+            //validate signature
+            let signatureValidation = verifySignature(payloadInfo.response.hex)
+
+            return signatureValidation.signatureValid && signatureValidation.signedBy === payloadInfo.response.account;
+        } else {
+            return false;
+        }
     }
     
     successfullSignInPayloadValidation(payloadInfo: any): boolean {
@@ -112,6 +119,8 @@ export class Special {
         else
             payloadIdsForFrontendId = await this.db.getPayloadIdsByFrontendIdForOrigin(origin, applicationId, frontendUserId, payloadType);
 
+        //console.log("payloadIdsForFrontendId: " + JSON.stringify(payloadIdsForFrontendId));
+        //console.log(payloadIdsForFrontendId.includes(payloadId));
         return payloadIdsForFrontendId.includes(payloadId);
     }
 

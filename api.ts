@@ -77,7 +77,7 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:any = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
 
-                if(special.successfullPaymentPayloadValidation(payloadInfo))
+                if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo))
                     return special.validatePaymentOnLedger(payloadInfo.response.txid, request.headers.origin, payloadInfo);
 
                 //we didn't go into the success:true -> so return false :)
@@ -97,9 +97,8 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment');
 
-                if(special.successfullPaymentPayloadValidation(payloadInfo)) {
+                if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo))
                     return special.validatePaymentOnLedger(payloadInfo.response.txid, request.headers.origin, payloadInfo);
-                }
 
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
@@ -118,9 +117,8 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', request.query.referer ? request.query.referer : request.headers.referer);
 
-                if(special.successfullPaymentPayloadValidation(payloadInfo)) {
+                if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo))
                     return special.validatePaymentOnLedger(payloadInfo.response.txid, request.headers.origin, payloadInfo);
-                }
 
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
@@ -139,7 +137,11 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:any = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
 
-                return special.validateTimedPaymentPayload(request.headers.origin, payloadInfo);
+                if(payloadInfo)
+                    return special.validateTimedPaymentPayload(request.headers.origin, payloadInfo);
+                
+                //we didn't go into the success:true -> so return false :)
+                return {success : false}
             } catch {
                 reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
             }
@@ -154,7 +156,11 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment');
 
-                return special.validateTimedPaymentPayload(request.headers.origin, payloadInfo);
+                if(payloadInfo)
+                    return special.validateTimedPaymentPayload(request.headers.origin, payloadInfo);
+                
+                //we didn't go into the success:true -> so return false :)
+                return {success : false}
 
             } catch {
                 reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
@@ -164,13 +170,18 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.get('/api/v1/check/timed/payment/referer/:frontendUserId/:payloadId', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
+        //console.log("request query: " + JSON.stringify(request.query));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
         else {
             try {
                 let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', request.query.referer ? request.query.referer : request.headers.referer);
 
-                return special.validateTimedPaymentPayload(request.headers.origin, payloadInfo);
+                if(payloadInfo)
+                    return special.validateTimedPaymentPayload(request.headers.origin, payloadInfo);
+                
+                //we didn't go into the success:true -> so return false :)
+                return {success : false}
 
             } catch {
                 reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
@@ -186,10 +197,11 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:any = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId);
 
-                if(special.successfullSignInPayloadValidation(payloadInfo))
+                if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo))
                     return {success: true }
-                else
-                    return {success: false }
+                
+                //we didn't go into the success:true -> so return false :)
+                return {success : false}
 
             } catch {
                 reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
@@ -205,10 +217,11 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin');
 
-                if(special.successfullSignInPayloadValidation(payloadInfo))
+                if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo))
                     return {success: true }
-                else
-                    return {success: false }
+                
+                //we didn't go into the success:true -> so return false :)
+                return {success : false}
 
             } catch {
                 reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
@@ -224,10 +237,11 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin', request.query.referer ? request.query.referer : request.headers.referer);
 
-                if(special.successfullSignInPayloadValidation(payloadInfo))
+                if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo))
                     return {success: true }
-                else
-                    return {success: false }
+                
+                //we didn't go into the success:true -> so return false :)
+                return {success : false}
 
             } catch {
                 reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
