@@ -78,12 +78,16 @@ export class DB {
     async getPayloadIdsByFrontendIdForOrigin(origin: string, applicationId: string, frontendUserId:string, payloadType: string): Promise<string[]> {
         console.log("[DB]: getPayloadIdsByFrontendId:" + " origin: " + origin + " frontendUserId: " + frontendUserId);
         try {
-            let findResult = await this.frontendIdPayloadCollection.findOne({origin: origin, applicationId: applicationId, frontendUserId: frontendUserId});
+            let findResult:any[] = await this.frontendIdPayloadCollection.find({origin: origin, applicationId: applicationId, frontendUserId: frontendUserId}).toArray();
 
-            if(findResult)
-                return this.getPayloadArrayForType(findResult, payloadType);
-            else
+            if(findResult && findResult.length > 0) {
+                let payloadsForUserAndOrigin:string[];
+                for(let i = 0; i < findResult.length; i++){
+                    payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], payloadType));
+                }
+            } else
                 return [];
+
         } catch(err) {
             console.log("[DB]: error getPayloadIdsByFrontendId");
             console.log(JSON.stringify(err));
@@ -127,11 +131,16 @@ export class DB {
     async getPayloadIdsByXummIdForOrigin(origin: string, applicationId: string, xummUserId:string, payloadType: string): Promise<string[]> {
         console.log("[DB]: getPayloadIdsByXummId:" + " origin: " + origin + " applicationId: " + applicationId +" xummUserId: " + xummUserId);
         try {
-            let findResult = await this.xummIdPayloadCollection.findOne({origin: origin, applicationId: applicationId, xummUserId: xummUserId})
-            if(findResult)
-                return this.getPayloadArrayForType(findResult, payloadType);
-            else
+            let findResult:any[] = await this.xummIdPayloadCollection.find({origin: origin, applicationId: applicationId, xummUserId: xummUserId}).toArray();
+
+            if(findResult && findResult.length > 0) {
+                let payloadsForUserAndOrigin:string[];
+                for(let i = 0; i < findResult.length; i++){
+                    payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], payloadType));
+                }
+            } else
                 return [];
+
         } catch(err) {
             console.log("[DB]: error getPayloadIdsByXummId");
             console.log(JSON.stringify(err));
@@ -171,8 +180,28 @@ export class DB {
         }
     }
 
-    async getPayloadIdsByXrplAccount(origin: string, referer:string, applicationId: string, xrplAccount:string, payloadType: string): Promise<string[]> {
+    async getPayloadIdsByXrplAccountForOrigin(origin: string, applicationId: string, xrplAccount:string, payloadType: string): Promise<string[]> {
         console.log("[DB]: getPayloadIdsByXrplAccount:" + " origin: " + origin + " xrplAccount: " + xrplAccount);
+        try {
+            let findResult:any[] = await this.xrplAccountPayloadCollection.find({origin: origin, applicationId: applicationId, xrplAccount: xrplAccount}).toArray();
+
+            if(findResult && findResult.length > 0) {
+                let payloadsForUserAndOrigin:string[];
+                for(let i = 0; i < findResult.length; i++){
+                    payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], payloadType));
+                }
+            } else
+                return [];
+
+        } catch(err) {
+            console.log("[DB]: error getPayloadIdsByXrplAccount");
+            console.log(JSON.stringify(err));
+            return [];
+        }
+    }
+
+    async getPayloadIdsByXrplAccountForOriginAndReferer(origin: string, referer:string, applicationId: string, xrplAccount:string, payloadType: string): Promise<string[]> {
+        console.log("[DB]: getPayloadIdsByXrplAccount:" + " origin: " + origin + "referer: " + referer + "applicationId: " + applicationId +" xrplAccount: " + xrplAccount + "payloadType: " + payloadType);
         try {
             let findResult = await this.xrplAccountPayloadCollection.findOne({origin: origin, referer:referer, applicationId: applicationId, xrplAccount: xrplAccount});
 
@@ -453,8 +482,9 @@ export class DB {
 
             await this.frontendIdPayloadCollection.createIndex({frontendUserId: -1});
             await this.frontendIdPayloadCollection.createIndex({origin: -1});
+            await this.frontendIdPayloadCollection.createIndex({referer: -1});
             await this.frontendIdPayloadCollection.createIndex({applicationId: -1});
-            await this.frontendIdPayloadCollection.createIndex({frontendUserId: -1, applicationId: -1, origin:-1}, {unique: true});
+            await this.frontendIdPayloadCollection.createIndex({frontendUserId: -1, applicationId: -1, origin:-1, referer: -1}, {unique: true});
 
             //XummIdPayloadCollection
             if((await this.xummIdPayloadCollection.indexes).length>0)
@@ -462,8 +492,19 @@ export class DB {
                 
             await this.xummIdPayloadCollection.createIndex({xummUserId: -1});
             await this.xummIdPayloadCollection.createIndex({origin: -1});
+            await this.xummIdPayloadCollection.createIndex({referer: -1});
             await this.xummIdPayloadCollection.createIndex({applicationId: -1});
-            await this.xummIdPayloadCollection.createIndex({xummUserId: -1, applicationId: -1, origin:-1}, {unique: true});
+            await this.xummIdPayloadCollection.createIndex({xummUserId: -1, applicationId: -1, origin:-1, referer: -1}, {unique: true});
+
+            //XrplAccountPayloadCollection
+            if((await this.xrplAccountPayloadCollection.indexes).length>0)
+                await this.xrplAccountPayloadCollection.dropIndexes();
+                
+            await this.xrplAccountPayloadCollection.createIndex({xrplAccount: -1});
+            await this.xrplAccountPayloadCollection.createIndex({origin: -1});
+            await this.xrplAccountPayloadCollection.createIndex({referer: -1});
+            await this.xrplAccountPayloadCollection.createIndex({applicationId: -1});
+            await this.xrplAccountPayloadCollection.createIndex({xrplAccount: -1, applicationId: -1, origin:-1, referer: -1}, {unique: true});
 
         } catch(err) {
             console.log(JSON.stringify(err));

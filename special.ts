@@ -75,7 +75,7 @@ export class Special {
                 if(payloadInfo && this.successfullSignInPayloadValidation(payloadInfo)) {
                     //console.log("sucessfully validated:" + JSON.stringify(payloadInfo));
                     //user signed in successfull -> check his latest payloads
-                    let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccount(origin, referer, await this.db.getAppIdForOrigin(origin), payloadInfo.response.account, "payment");
+                    let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccountForOriginAndReferer(origin, referer, await this.db.getAppIdForOrigin(origin), payloadInfo.response.account, "payment");
                     //reverse order to get latest first
                     //console.log("payloadIds: " + JSON.stringify(payloadIds));
                     payloadIds = payloadIds.reverse();
