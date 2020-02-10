@@ -103,11 +103,16 @@ export class Special {
         let transactionDate:Date;
         if(this.successfullPaymentPayloadValidation(payloadInfo)) {
             transactionDate = new Date(payloadInfo.response.resolved_at)
+            let originProperties = await this.db.getOriginProperties(origin);
 
-            if(transactionDate && transactionDate.setTime(transactionDate.getTime()+86400000) > Date.now()) {
-                return this.validatePaymentOnLedger(payloadInfo.response.txid, origin, payloadInfo);
+            if(originProperties && originProperties.payloadValidationTimeframe) {
+                if(transactionDate && transactionDate.setTime(transactionDate.getTime()+originProperties.payloadValidationTimeframe) > Date.now()) {
+                    return this.validatePaymentOnLedger(payloadInfo.response.txid, origin, payloadInfo);
+                } else {
+                    return { success: false, payloadExpired : true };
+                }
             } else {
-                return { success: false, payloadExpired : true };
+                return { success: false, noValidationTimeFrame : true };
             }
         }
     }

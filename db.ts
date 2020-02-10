@@ -432,8 +432,6 @@ export class DB {
     }
 
     getPayloadArrayForType(dbEntry:any, payloadType: string): string[] {
-        console.log("checking dbEntry: " + JSON.stringify(dbEntry));
-        console.log("with type: " + payloadType);
         let payloadTypeLC = ((payloadType && payloadType.trim().length > 0) ? payloadType.trim().toLowerCase() : "others");
 
         if(dbEntry[payloadTypeLC])
