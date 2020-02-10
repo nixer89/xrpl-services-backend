@@ -62,7 +62,7 @@ export class DB {
         console.log("[DB]: storePayloadForFrontendId:" + " origin: " + origin + " referer: " + referer + " frontendUserId: " + frontendUserId + " payloadId: " + payloadId + " payloadType: " + payloadType);
         try {
             await this.frontendIdPayloadCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, frontendUserId: frontendUserId}, {
-                $addToSet: this.getPayloadTypeDefinitionToUpdate(payloadId, payloadType.toLowerCase()),
+                $addToSet: this.getSetToUpdate(payloadType, payloadId),
                 $currentDate: {
                    "updated": { $type: "timestamp" }
                 }                
@@ -76,27 +76,30 @@ export class DB {
     }
 
     async getPayloadIdsByFrontendIdForOrigin(origin: string, applicationId: string, frontendUserId:string, payloadType: string): Promise<string[]> {
-        console.log("[DB]: getPayloadIdsByFrontendId:" + " origin: " + origin + " frontendUserId: " + frontendUserId);
+        console.log("[DB]: getPayloadIdsByFrontendIdForOrigin:" + " origin: " + origin + " frontendUserId: " + frontendUserId);
         try {
             let findResult:any[] = await this.frontendIdPayloadCollection.find({origin: origin, applicationId: applicationId, frontendUserId: frontendUserId}).toArray();
 
+            //console.log("findResult: " + JSON.stringify(findResult));
             if(findResult && findResult.length > 0) {
-                let payloadsForUserAndOrigin:string[];
+                let payloadsForUserAndOrigin:string[] = [];
                 for(let i = 0; i < findResult.length; i++){
-                    payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], payloadType));
+                    payloadsForUserAndOrigin = payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], payloadType));
                 }
+
+                return payloadsForUserAndOrigin;
             } else
                 return [];
 
         } catch(err) {
-            console.log("[DB]: error getPayloadIdsByFrontendId");
+            console.log("[DB]: error getPayloadIdsByFrontendIdForOrigin");
             console.log(JSON.stringify(err));
             return [];
         }
     }
 
     async getPayloadIdsByFrontendIdForOriginAndReferer(origin: string, referer: string, applicationId: string, frontendUserId:string, payloadType: string): Promise<string[]> {
-        console.log("[DB]: getPayloadIdsByFrontendId:" + " origin: " + origin + " frontendUserId: " + frontendUserId);
+        console.log("[DB]: getPayloadIdsByFrontendIdForOriginAndReferer:" + " origin: " + origin + " frontendUserId: " + frontendUserId);
         try {
             let findResult = await this.frontendIdPayloadCollection.findOne({origin: origin, referer: referer, applicationId: applicationId, frontendUserId: frontendUserId});
 
@@ -105,7 +108,7 @@ export class DB {
             else
                 return [];
         } catch(err) {
-            console.log("[DB]: error getPayloadIdsByFrontendId");
+            console.log("[DB]: error getPayloadIdsByFrontendIdForOriginAndReferer");
             console.log(JSON.stringify(err));
             return [];
         }
@@ -115,7 +118,7 @@ export class DB {
         console.log("[DB]: storePayloadForXummId:" + " origin: " + origin + " referer: " + referer + " xummUserId: " + xummUserId + " payloadId: " + payloadId + " payloadType: " + payloadType);
         try {
             await this.xummIdPayloadCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, xummUserId: xummUserId}, {
-                $addToSet: this.getPayloadTypeDefinitionToUpdate(payloadId, payloadType.toLowerCase()),
+                $addToSet: this.getSetToUpdate(payloadType, payloadId),
                 $currentDate: {
                    "updated": { $type: "timestamp" }
                 }   
@@ -134,10 +137,12 @@ export class DB {
             let findResult:any[] = await this.xummIdPayloadCollection.find({origin: origin, applicationId: applicationId, xummUserId: xummUserId}).toArray();
 
             if(findResult && findResult.length > 0) {
-                let payloadsForUserAndOrigin:string[];
+                let payloadsForUserAndOrigin:string[] = [];
                 for(let i = 0; i < findResult.length; i++){
-                    payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], payloadType));
+                    payloadsForUserAndOrigin = payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], payloadType));
                 }
+
+                return payloadsForUserAndOrigin;
             } else
                 return [];
 
@@ -167,7 +172,7 @@ export class DB {
         console.log("[DB]: storePayloadForXRPLAccount:" + " origin: " + origin + " xrplAccount: " + xrplAccount + " payloadId: " + payloadId + " payloadType: " + payloadType);
         try {
             await this.xrplAccountPayloadCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, xrplAccount: xrplAccount}, {
-                $addToSet: this.getPayloadTypeDefinitionToUpdate(payloadId, payloadType.toLowerCase()),
+                $addToSet: this.getSetToUpdate(payloadType, payloadId),
                 $currentDate: {
                    "updated": { $type: "timestamp" }
                 }                
@@ -186,10 +191,12 @@ export class DB {
             let findResult:any[] = await this.xrplAccountPayloadCollection.find({origin: origin, applicationId: applicationId, xrplAccount: xrplAccount}).toArray();
 
             if(findResult && findResult.length > 0) {
-                let payloadsForUserAndOrigin:string[];
+                let payloadsForUserAndOrigin:string[] = [];
                 for(let i = 0; i < findResult.length; i++){
-                    payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], payloadType));
+                    payloadsForUserAndOrigin = payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], payloadType));
                 }
+
+                return payloadsForUserAndOrigin;
             } else
                 return [];
 
@@ -415,25 +422,24 @@ export class DB {
         }
     }
 
-    getPayloadTypeDefinitionToUpdate(payloadId: string, payloadType: string): any {
-        let arrayType:any = {}
-        if('payment'===payloadType)
-            arrayType.paymentPayloadIds = payloadId;
-        else if('signin'===payloadType)
-            arrayType.signinPayloadIds = payloadId;
-        else
-            arrayType.otherPayloadIds = payloadId;
+    getSetToUpdate(payloadType: string, payloadId: string) {
+        let payloadTypeLC = ((payloadType && payloadType.trim().length > 0) ? payloadType.trim().toLowerCase() : "others");
+        let setToUpdate:any = {};
 
-        return arrayType;
+        setToUpdate[payloadTypeLC] = payloadId;
+
+        return setToUpdate;
     }
 
     getPayloadArrayForType(dbEntry:any, payloadType: string): string[] {
-        if("payment"===payloadType)
-            return dbEntry.paymentPayloadIds;
-        else if("signin"===payloadType)
-            return dbEntry.signinPayloadIds;
+        console.log("checking dbEntry: " + JSON.stringify(dbEntry));
+        console.log("with type: " + payloadType);
+        let payloadTypeLC = ((payloadType && payloadType.trim().length > 0) ? payloadType.trim().toLowerCase() : "others");
+
+        if(dbEntry[payloadTypeLC])
+            return dbEntry[payloadTypeLC];
         else
-            return dbEntry.otherPayloadIds;
+            return [];
     }
 
     async getNewDbModel(collectionName: string): Promise<Collection<any>> {
