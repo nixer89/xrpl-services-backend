@@ -1,9 +1,9 @@
 import * as Xumm from './xumm';
 import * as DB from './db';
 import * as config from './config'
-import * as WS from 'ws';
 import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as fetch from 'node-fetch';
+import {verifySignature} from 'verify-xrpl-signature'
 
 export class Special {
     proxy = new HttpsProxyAgent(config.PROXY_URL);
@@ -20,18 +20,18 @@ export class Special {
         this.db.resetCache();
     }
 
-    async validFrontendUserIdToPayload(origin:string, requestParams:any, payloadType: string): Promise<boolean> {
+    async validFrontendUserIdToPayload(origin:string, requestParams:any, payloadType: string, referer?: string): Promise<boolean> {
         let frontendUserId:string = requestParams.frontendUserId
         let payloadId:string = requestParams.payloadId;
     
         if(frontendUserId && payloadId)
-            return await this.validateFrontendIdToPayloadId(origin, await this.db.getAppIdForOrigin(origin), frontendUserId, payloadId,payloadType);
+            return await this.validateFrontendIdToPayloadId(origin, await this.db.getAppIdForOrigin(origin), frontendUserId, payloadId,payloadType, referer);
         else
             return false;
     }
     
-    async getPayloadInfoForFrontendId(origin: string, requestParams:any, payloadType: string): Promise<any> {
-        if(await this.validFrontendUserIdToPayload(origin, requestParams,payloadType)) {
+    async getPayloadInfoForFrontendId(origin: string, requestParams:any, payloadType: string, referer?: string): Promise<any> {
+        if(await this.validFrontendUserIdToPayload(origin, requestParams,payloadType, referer)) {
             return await this.xummBackend.getPayloadInfoByOrigin(origin, requestParams.payloadId)
         } else {
             return null;
@@ -48,43 +48,47 @@ export class Special {
     }
     
     successfullSignInPayloadValidation(payloadInfo: any): boolean {
-        return this.basicPayloadInfoValidation(payloadInfo) && 'signin' === payloadInfo.payload.tx_type.toLowerCase() && payloadInfo.response.txid && payloadInfo.response.hex && payloadInfo.response.account;
+        if(this.basicPayloadInfoValidation(payloadInfo) && 'signin' === payloadInfo.payload.tx_type.toLowerCase() && payloadInfo.response.txid && payloadInfo.response.hex && payloadInfo.response.account) {
+            //validate signature
+            let signatureValidation = verifySignature(payloadInfo.response.hex)
+
+            return signatureValidation.signatureValid && signatureValidation.signedBy === payloadInfo.response.account;
+        } else {
+            return false;
+        }
     }
 
-    async signInToValidate(siginPayloadId:string, origin: string, referer: string) {
+    async checkSignInToValidatePayment(siginPayloadId:string, origin: string, referer: string) {
+        console.log("signInToValidate: siginPayloadId: " + siginPayloadId + " origin: " + origin + " referer: " + referer);
         try {
             if(siginPayloadId) {
-                let payloadResolved:boolean = await this.waitForPayloadResolved(config.XUMM_WEBSOCKET_URL+siginPayloadId);
+                let payloadInfo:any = await this.xummBackend.getPayloadInfoByOrigin(origin, siginPayloadId);
 
-                if(payloadResolved) {
-                    let payloadInfo:any = await this.xummBackend.getPayloadInfoByOrigin(origin, siginPayloadId);
-                    //console.log("signInPayloadInfo:" + JSON.stringify(payloadInfo));
-                    if(payloadInfo && this.successfullSignInPayloadValidation(payloadInfo)) {
-                        //console.log("sucessfully validated:" + JSON.stringify(payloadInfo));
-                        //user signed in successfull -> check his latest payloads
-                        let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccount(origin, referer, await this.db.getAppIdForOrigin(origin), payloadInfo.response.account, "payment");
-                        //reverse order to get latest first
-                        //console.log("payloadIds: " + JSON.stringify(payloadIds));
-                        payloadIds = payloadIds.reverse();
-                        let validationInfo:any = {success: false};
-                        for(let i = 0; i < payloadIds.length; i++) {
-                            validationInfo = await this.validateTimedPaymentPayload(origin, await this.xummBackend.getPayloadInfoByOrigin(origin, payloadIds[i]));
-                            //console.log("validationInfo: " + JSON.stringify(validationInfo));
+                //console.log("signInPayloadInfo:" + JSON.stringify(payloadInfo));
+                if(payloadInfo && this.successfullSignInPayloadValidation(payloadInfo)) {
+                    //console.log("sucessfully validated:" + JSON.stringify(payloadInfo));
+                    //user signed in successfull -> check his latest payloads
+                    let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccount(origin, referer, await this.db.getAppIdForOrigin(origin), payloadInfo.response.account, "payment");
+                    //reverse order to get latest first
+                    //console.log("payloadIds: " + JSON.stringify(payloadIds));
+                    payloadIds = payloadIds.reverse();
+                    let validationInfo:any = {success: false};
+                    for(let i = 0; i < payloadIds.length; i++) {
+                        validationInfo = await this.validateTimedPaymentPayload(origin, await this.xummBackend.getPayloadInfoByOrigin(origin, payloadIds[i]));
+                        //console.log("validationInfo: " + JSON.stringify(validationInfo));
 
-                            if(validationInfo.success)
-                                return validationInfo;
-
-                            if(validationInfo.payloadExpired)
-                                return {success: false}
-                        }
+                        if(validationInfo.success || validationInfo.payloadExpired)
+                            return validationInfo;
                     }
                 }
+                return { success: false}
             }
 
             return { success: false }
         } catch(err) {
             console.log("Error signInToValidate");
             console.log(JSON.stringify(err));
+            return { success: false }
         }
     }
 
@@ -101,40 +105,24 @@ export class Special {
         }
     }
 
-    async validateFrontendIdToPayloadId(origin: string, applicationId: string, frontendUserId: string, payloadId: string, payloadType: string): Promise<boolean> {
-        let payloadIdsForFrontendId:string[] = await this.db.getPayloadIdsByFrontendId(origin, applicationId, frontendUserId, payloadType);
+    async validateFrontendIdToPayloadId(origin: string, applicationId: string, frontendUserId: string, payloadId: string, payloadType: string, referer?: string): Promise<boolean> {
+        let payloadIdsForFrontendId:string[];
+        if(referer)
+            payloadIdsForFrontendId = await this.db.getPayloadIdsByFrontendIdForOriginAndReferer(origin, referer, applicationId, frontendUserId, payloadType);
+        else
+            payloadIdsForFrontendId = await this.db.getPayloadIdsByFrontendIdForOrigin(origin, applicationId, frontendUserId, payloadType);
 
         return payloadIdsForFrontendId.includes(payloadId);
     }
 
-    async validateXummIdToPayloadId(origin: string, applicationId: string, xummUserId: string, payloadId: string, payloadType: string): Promise<boolean> {
-        let payloadIdsForXummUserId:string[] = await this.db.getPayloadIdsByXummId(origin, applicationId, xummUserId, payloadType);
+    async validateXummIdToPayloadId(origin: string, applicationId: string, xummUserId: string, payloadId: string, payloadType: string, referer?: string): Promise<boolean> {
+        let payloadIdsForXummUserId:string[]
+        if(referer)
+            payloadIdsForXummUserId = await this.db.getPayloadIdsByXummIdForOriginAndReferer(origin, referer, applicationId, xummUserId, payloadType);
+        else
+            payloadIdsForXummUserId = await this.db.getPayloadIdsByXummIdForOrigin(origin, applicationId, xummUserId, payloadType);
 
         return payloadIdsForXummUserId.includes(payloadId);
-    }
-
-    async waitForPayloadResolved(websocketUrl: string): Promise<boolean> {
-        let ws:WS;
-        try {
-            ws = new WS(websocketUrl, {agent: this.useProxy ? this.proxy : null});
-        } catch(err) {
-            console.log("Error connecting websocket.");
-            console.log(JSON.stringify(err));
-            return Promise.resolve(false);
-        }
-
-        return new Promise(function(resolve, reject) {    
-            ws.on("message", async data => {
-                let message = JSON.parse(data.toString());
-                if(message.payload_uuidv4 && message.signed) {
-                    ws.close();
-                    resolve(true);
-                } else if(message.expired || message.expires_in_seconds <= 0) {
-                    ws.close();
-                    resolve(false);
-                }
-            });
-        });
     }
 
     async validatePaymentOnLedger(trxHash:string, origin:string, payloadInfo: any): Promise<any> {

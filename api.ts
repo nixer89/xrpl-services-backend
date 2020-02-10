@@ -55,14 +55,14 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
-    fastify.get('/api/v1/special/signinToValidate/:signinPayloadId', async (request, reply) => {
-        //console.log("headers: " + JSON.stringify(request.headers));
+    fastify.get('/api/v1/check/signinToValidatePayment/:signinPayloadId', async (request, reply) => {
+        console.log("headers: " + JSON.stringify(request.headers));
 
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
         else {
             try {
-                return special.signInToValidate(request.params.signinPayloadId, request.headers.origin, request.query.referer ? request.query.referer : request.headers.referer);
+                return special.checkSignInToValidatePayment(request.params.signinPayloadId, request.headers.origin, request.query.referer ? request.query.referer : request.headers.referer);
             } catch {
                 reply.code(500).send('Something went wrong. Please check your query params');
             }
@@ -110,6 +110,27 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
+    fastify.get('/api/v1/check/payment/referer/:frontendUserId/:payloadId', async (request, reply) => {
+        //console.log("request params: " + JSON.stringify(request.params));
+        if(!request.headers.origin)
+            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+        else {
+            try {
+                let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', request.query.referer ? request.query.referer : request.headers.referer);
+
+                if(special.successfullPaymentPayloadValidation(payloadInfo)) {
+                    return special.validatePaymentOnLedger(payloadInfo.response.txid, request.headers.origin, payloadInfo);
+                }
+
+                //we didn't go into the success:true -> so return false :)
+                return {success : false}
+                
+            } catch {
+                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+            }
+        }
+    });
+
     fastify.get('/api/v1/check/timed/payment/:payloadId', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
@@ -132,6 +153,22 @@ export async function registerRoutes(fastify, opts, next) {
         else {
             try {
                 let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment');
+
+                return special.validateTimedPaymentPayload(request.headers.origin, payloadInfo);
+
+            } catch {
+                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+            }
+        }
+    });
+
+    fastify.get('/api/v1/check/timed/payment/referer/:frontendUserId/:payloadId', async (request, reply) => {
+        //console.log("request params: " + JSON.stringify(request.params));
+        if(!request.headers.origin)
+            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+        else {
+            try {
+                let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', request.query.referer ? request.query.referer : request.headers.referer);
 
                 return special.validateTimedPaymentPayload(request.headers.origin, payloadInfo);
 
@@ -179,6 +216,25 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
+    fastify.get('/api/v1/check/signin/referer/:frontendUserId/:payloadId', async (request, reply) => {
+        //console.log("request params: " + JSON.stringify(request.params));
+        if(!request.headers.origin)
+            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+        else {
+            try {
+                let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin', request.query.referer ? request.query.referer : request.headers.referer);
+
+                if(special.successfullSignInPayloadValidation(payloadInfo))
+                    return {success: true }
+                else
+                    return {success: false }
+
+            } catch {
+                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+            }
+        }
+    });
+
     fastify.get('/api/resetCache/:token', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
         try {
@@ -213,7 +269,7 @@ export async function registerRoutes(fastify, opts, next) {
                         if(tmpInfo) {
                             if(payloadInfo && payloadInfo.application && payloadInfo.application.issued_user_token) {
                                 db.saveUser(tmpInfo.origin, payloadInfo.application.uuidv4, tmpInfo.frontendId, payloadInfo.application.issued_user_token);
-                                db.storePayloadForXummId(tmpInfo.origin, payloadInfo.application.uuidv4, payloadInfo.application.issued_user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
+                                db.storePayloadForXummId(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.application.issued_user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
                             }
 
                             //store payload to XRPL account

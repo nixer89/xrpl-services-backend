@@ -15,7 +15,7 @@ info:
 
 
    <b>To use this API you have to be whitlisted.</b> Please contact [@nixerFFM](https://twitter.com/nixerFFM) if you are interested to use this backend API.
-  version: '1.7.4'
+  version: '1.8.0'
 paths:
   /api/v1/platform/payload:
     post:
@@ -193,6 +193,53 @@ paths:
           description: Error. Is returned when no origin is set in the request or an exceptions occurs when handling your request. Please check your request parameters.
           schema:
             type: string
+  /api/v1/check/payment/referer/:frontendUserId/:payload_uuid:
+    get:
+      summary: Returns the validation status of a payment payload signed by a specific user for a specific referer URL
+      description: Validates a payment payload. Checks if a payment payload can be matched to a user (signed by the user) and referer URL. Checks also the payload properties AND does check the transaction on the XRP Ledger. Checks the transaction on the XRPL live net AND test net!
+      tags:
+        - Check API
+      produces:
+        - application/json
+      parameters:
+        - name: frontendUserId
+          description: id of the user you want to check the payment payload for
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: payload_uuid
+          description: id of the payment payload to check
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: referer
+          description: referer URL to check the payment for. if not provided as query param, the request.header.referer will be used
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Returns the result of the payment payload validation. 
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                    success:
+                      description: true, if transactions was found and validated on XRPL live net OR test net
+                      type: boolean
+                      example: true
+                    testnet:
+                      description: true, if transaction was found on test net. false, if transaction was found on live net
+                      type: boolean
+                      example: true
+        500:
+          description: Error. Is returned when no origin is set in the request or an exceptions occurs when handling your request. Please check your request parameters.
+          schema:
+            type: string
   /api/v1/check/timed/payment/:payload_uuid:
     get:
       summary: Returns the validation status of a payment payload for a given time (currently 24h)
@@ -246,6 +293,53 @@ paths:
         - name: payload_uuid
           description: id of the payment payload to check
           in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Returns the result of the payment payload validation. 
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                    success:
+                      description: true, if payload is within timeframe (currently 24h) and if transactions was found and validated on XRPL live net OR test net
+                      type: boolean
+                      example: false
+                    testnet:
+                      description: true, if transaction was found on test net. false, if transaction was found on live net
+                      type: boolean
+                      example: true
+        500:
+          description: Error. Is returned when no origin is set in the request or an exceptions occurs when handling your request. Please check your request parameters.
+          schema:
+            type: string
+  /api/v1/check/timed/payment/referer/:frontendUserId/:payload_uuid:
+    get:
+      summary: Returns the validation status of a payment payload signed by the specified user and for a given time for a specific referer URL
+      description: Validates a payment payload agains an expiration time (currently 24h). Checks if a payload can be matched to a user (signed by this user). Checks also the payload properties AND does check the transaction on the XRP Ledger. Checks the transaction on the XRPL live net AND test net!
+      tags:
+        - Check API
+      produces:
+        - application/json
+      parameters:
+        - name: frontendUserId
+          description: id of the user you want to check the payment payload for
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: payload_uuid
+          description: id of the payment payload to check
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: referer
+          description: referer URL to check the payment for. if not provided as query param, the request.header.referer will be used
+          in: query
           required: true
           schema:
             type: string
@@ -337,15 +431,52 @@ paths:
           description: Error. Is returned when no origin is set in the request or an exceptions occurs when handling your request. Please check your request parameters.
           schema:
             type: string
-  /api/v1/special/signinToValidate/:signinPayload_uuid:
+  /api/v1/check/sigin/:frontendUserId/:payload_uuid:
+    get:
+      summary: Returns the validation status of a signin payload signed by the specified user
+      description: Validates a signin payload. Checks if a signin payload can be matched to a user (signed by this user). Checks also the singin payload properties AND if it was signed successfully.
+      tags:
+        - Check API
+      produces:
+        - application/json
+      parameters:
+        - name: frontendUserId
+          description: id of the user you want to check the signin payload for
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: payload_uuid
+          description: id of the signin payload to check
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Returns the result of the signin payload validation. 
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                    success:
+                      description: true, if signin payload was validated and signed
+                      type: boolean
+                      example: false
+        500:
+          description: Error. Is returned when no origin is set in the request or an exceptions occurs when handling your request. Please check your request parameters.
+          schema:
+            type: string
+  /api/v1/check/signInToValidate/:signinPayload_uuid:
     get:
       summary: Returns the validation status of a payment found for the XRPL account which signed the SignIn payload
       description: | 
-        This method matched the XRPL account used to sign the SignIn payload to a payment payload the same XRPL account has signed.<br>
+        This method matches the XRPL account used to sign the SignIn payload to a payment payload the same XRPL account has signed.<br>
         If the valid payment payload is not older than 24h, this method returns 'success'. (same as '/api/v1/check/timed/payment/{payloadId}' but with matching of the XRPL account from the SignIn request).<br>
         Can be used to allow users accessing their purchased goods (statistics, charts, ...) on different environments/machines.
       tags:
-        - Special API
+        - Check API
       produces:
         - application/json
       parameters:
@@ -364,7 +495,7 @@ paths:
                 type: object
                 properties:
                     success:
-                      description: true, if payload is within timeframe (currently 24h) and if transactions was found and validated on XRPL live net OR test net
+                      description: true, if payload is within timeframe (currently 24h) and if a transactions was found and validated on XRPL live net OR test net
                       type: boolean
                       example: false
                     testnet:

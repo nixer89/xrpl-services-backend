@@ -60,7 +60,7 @@ export class Xumm {
 
         //saving payloadId to frontendId
         if(frontendId && payloadResponse && payloadResponse.uuid) {
-            this.db.storePayloadForFrontendId(origin, appId, frontendId, payloadResponse.uuid, payload.txjson.TransactionType);
+            this.db.storePayloadForFrontendId(origin, referer, appId, frontendId, payloadResponse.uuid, payload.txjson.TransactionType);
         }
 
         try {

@@ -58,10 +58,10 @@ export class DB {
         }
     }
 
-    async storePayloadForFrontendId(origin:string, applicationId: string, frontendUserId:string, payloadId: string, payloadType: string): Promise<void> {
-        console.log("[DB]: storePayloadForFrontendId:" + " origin: " + origin + " frontendUserId: " + frontendUserId + " payloadId: " + payloadId + " payloadType: " + payloadType);
+    async storePayloadForFrontendId(origin:string, referer:string, applicationId: string, frontendUserId:string, payloadId: string, payloadType: string): Promise<void> {
+        console.log("[DB]: storePayloadForFrontendId:" + " origin: " + origin + " referer: " + referer + " frontendUserId: " + frontendUserId + " payloadId: " + payloadId + " payloadType: " + payloadType);
         try {
-            await this.frontendIdPayloadCollection.updateOne({origin: origin, applicationId: applicationId, frontendUserId: frontendUserId}, {
+            await this.frontendIdPayloadCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, frontendUserId: frontendUserId}, {
                 $addToSet: this.getPayloadTypeDefinitionToUpdate(payloadId, payloadType.toLowerCase()),
                 $currentDate: {
                    "updated": { $type: "timestamp" }
@@ -75,7 +75,7 @@ export class DB {
         }
     }
 
-    async getPayloadIdsByFrontendId(origin: string, applicationId: string, frontendUserId:string, payloadType: string): Promise<string[]> {
+    async getPayloadIdsByFrontendIdForOrigin(origin: string, applicationId: string, frontendUserId:string, payloadType: string): Promise<string[]> {
         console.log("[DB]: getPayloadIdsByFrontendId:" + " origin: " + origin + " frontendUserId: " + frontendUserId);
         try {
             let findResult = await this.frontendIdPayloadCollection.findOne({origin: origin, applicationId: applicationId, frontendUserId: frontendUserId});
@@ -91,10 +91,26 @@ export class DB {
         }
     }
 
-    async storePayloadForXummId(origin:string, applicationId: string, xummUserId:string, payloadId: string, payloadType: string): Promise<void> {
-        console.log("[DB]: storePayloadForXummId:" + " origin: " + origin + " xummUserId: " + xummUserId + " payloadId: " + payloadId + " payloadType: " + payloadType);
+    async getPayloadIdsByFrontendIdForOriginAndReferer(origin: string, referer: string, applicationId: string, frontendUserId:string, payloadType: string): Promise<string[]> {
+        console.log("[DB]: getPayloadIdsByFrontendId:" + " origin: " + origin + " frontendUserId: " + frontendUserId);
         try {
-            await this.xummIdPayloadCollection.updateOne({origin: origin, applicationId: applicationId, xummUserId: xummUserId}, {
+            let findResult = await this.frontendIdPayloadCollection.findOne({origin: origin, referer: referer, applicationId: applicationId, frontendUserId: frontendUserId});
+
+            if(findResult)
+                return this.getPayloadArrayForType(findResult, payloadType);
+            else
+                return [];
+        } catch(err) {
+            console.log("[DB]: error getPayloadIdsByFrontendId");
+            console.log(JSON.stringify(err));
+            return [];
+        }
+    }
+
+    async storePayloadForXummId(origin:string, referer:string, applicationId: string, xummUserId:string, payloadId: string, payloadType: string): Promise<void> {
+        console.log("[DB]: storePayloadForXummId:" + " origin: " + origin + " referer: " + referer + " xummUserId: " + xummUserId + " payloadId: " + payloadId + " payloadType: " + payloadType);
+        try {
+            await this.xummIdPayloadCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, xummUserId: xummUserId}, {
                 $addToSet: this.getPayloadTypeDefinitionToUpdate(payloadId, payloadType.toLowerCase()),
                 $currentDate: {
                    "updated": { $type: "timestamp" }
@@ -108,8 +124,23 @@ export class DB {
         }
     }
 
-    async getPayloadIdsByXummId(origin: string, applicationId: string, xummUserId:string, payloadType: string): Promise<string[]> {
-        console.log("[DB]: getPayloadIdsByXummId:" + " origin: " + origin + " xummUserId: " + xummUserId);
+    async getPayloadIdsByXummIdForOrigin(origin: string, applicationId: string, xummUserId:string, payloadType: string): Promise<string[]> {
+        console.log("[DB]: getPayloadIdsByXummId:" + " origin: " + origin + " applicationId: " + applicationId +" xummUserId: " + xummUserId);
+        try {
+            let findResult = await this.xummIdPayloadCollection.findOne({origin: origin, applicationId: applicationId, xummUserId: xummUserId})
+            if(findResult)
+                return this.getPayloadArrayForType(findResult, payloadType);
+            else
+                return [];
+        } catch(err) {
+            console.log("[DB]: error getPayloadIdsByXummId");
+            console.log(JSON.stringify(err));
+            return [];
+        }
+    }
+
+    async getPayloadIdsByXummIdForOriginAndReferer(origin: string, referer: string, applicationId: string, xummUserId:string, payloadType: string): Promise<string[]> {
+        console.log("[DB]: getPayloadIdsByXummId:" + " origin: " + origin + " referer: " + referer + " xummUserId: " + xummUserId);
         try {
             let findResult = await this.xummIdPayloadCollection.findOne({origin: origin, applicationId: applicationId, xummUserId: xummUserId})
             if(findResult)
