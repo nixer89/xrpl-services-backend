@@ -139,16 +139,35 @@ export class Special {
         return payloadIdsForXummUserId.includes(payloadId);
     }
 
+    async validateXRPLTransaction(txid: string): Promise<any> {
+        if(await this.callBithompAndValidate(txid, false)) {
+            return {
+                success: true,
+                testnet: false
+            };
+        } else if (await this.callBithompAndValidate(txid, true)) {
+            return {
+                success: true,
+                testnet: true
+            };
+        } else {
+            return {
+                success: false,
+                testnet: false
+            };
+        }
+    }
+
     async validatePaymentOnLedger(trxHash:string, origin:string, payloadInfo: any): Promise<any> {
         let destinationAccount = await this.db.getAllowedOriginDestinationAccount(origin);
         console.log("validate Payment with dest account: " + destinationAccount + " and hash: " + trxHash)
         if(trxHash && destinationAccount) {
-            if(await this.callBithompAndValidate(trxHash, destinationAccount, payloadInfo.payload.request_json.Amount, false)) {
+            if(await this.callBithompAndValidate(trxHash, false, destinationAccount, payloadInfo.payload.request_json.Amount)) {
                 return {
                     success: true,
                     testnet: false
                 }
-            } else if (await this.callBithompAndValidate(trxHash, destinationAccount, payloadInfo.payload.request_json.Amount, true)) {
+            } else if (await this.callBithompAndValidate(trxHash, true, destinationAccount, payloadInfo.payload.request_json.Amount)) {
                 return {
                     success: true,
                     testnet: true
@@ -168,7 +187,7 @@ export class Special {
         }
     }
 
-    async callBithompAndValidate(trxHash:string, destinationAccount:string, amount:any, testnet: boolean): Promise<boolean> {
+    async callBithompAndValidate(trxHash:string, testnet: boolean, destinationAccount?:string, amount?:any): Promise<boolean> {
         try {
             let bithompResponse:any = await fetch.default("https://"+(testnet?'test.':'')+"bithomp.com/api/v2/transaction/"+trxHash, {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN },agent: this.useProxy ? this.proxy : null});
             if(bithompResponse && bithompResponse.ok) {
@@ -196,6 +215,8 @@ export class Special {
                                         &&(parseFloat(ledgerTrx.outcome.deliveredAmount.value)*1000000 == parseInt(amount.value)); //check value
                             }
 
+                } else if( ledgerTrx && ledgerTrx.outcome  && ledgerTrx.outcome.result === 'tesSUCCESS') {
+                    return true;
                 } else {
                     //transaction not valid
                     return false;

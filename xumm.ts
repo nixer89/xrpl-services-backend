@@ -88,6 +88,20 @@ export class Xumm {
         return payloadResponse;
     }
 
+    async getPayloadForCustomIdentifierByOrigin(origin:string, custom_identifier: string): Promise<any> {
+        let appId:string = await this.db.getAppIdForOrigin(origin);
+        if(!appId)
+            return "not allowed";
+
+        return this.getPayloadForCustomIdentifierByAppId(appId, custom_identifier);
+    }
+
+    async getPayloadForCustomIdentifierByAppId(applicationId:string, custom_identifier: string): Promise<any> {
+        let payloadResponse = await this.callXumm(applicationId, "payload/ci/"+custom_identifier, "GET");
+        //console.log("getPayloadInfo response: " + JSON.stringify(payloadResponse))
+        return payloadResponse;
+    }
+
     async deletePayload(origin: string, payload_id:string): Promise<any> {
         let appId:string = await this.db.getAppIdForOrigin(origin);
         if(!appId)
