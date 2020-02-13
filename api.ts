@@ -24,7 +24,7 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 return xummBackend.submitPayload(request.body, request.headers.origin, request.headers.referer);
             } catch {
-                reply.code(500).send('Something went wrong. Please check your query params');
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
     });
@@ -33,13 +33,13 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(request.params.id) {
+        else if(!request.params.id) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
                 return xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.id);
             } catch {
-                reply.code(500).send('Something went wrong. Please check your query params');
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
     });
@@ -48,13 +48,13 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(request.params.custom_identifier) {
+        else if(!request.params.custom_identifier) {
             reply.code(500).send('Please provide a custom_identifier. Calls without custom_identifier are not allowed');
         } else {
             try {
                 return xummBackend.getPayloadForCustomIdentifierByOrigin(request.headers.origin, request.params.custom_identifier);
             } catch {
-                reply.code(500).send('Something went wrong. Please check your query params');
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
     });
@@ -63,13 +63,13 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(request.params.id) {
+        else if(!request.params.id) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
                 return xummBackend.deletePayload(request.headers.origin, request.params.id);
             } catch {
-                reply.code(500).send('Something went wrong. Please check your query params');
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
     });
@@ -79,13 +79,13 @@ export async function registerRoutes(fastify, opts, next) {
 
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(request.params.signinPayloadId) {
+        else if(!request.params.signinPayloadId) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
                 return special.checkSignInToValidatePayment(request.params.signinPayloadId, request.headers.origin, request.query.referer ? request.query.referer : request.headers.referer);
             } catch {
-                reply.code(500).send('Something went wrong. Please check your query params');
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
     });
@@ -94,7 +94,7 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(request.params.payloadId) {
+        else if(!request.params.payloadId) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
@@ -107,7 +107,7 @@ export async function registerRoutes(fastify, opts, next) {
                 return {success : false}
                 
             } catch {
-                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
     });
@@ -116,9 +116,9 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(request.params.frontendUserId)
+        else if(!request.params.frontendUserId)
             reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
-        else if(request.params.payloadId)
+        else if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
@@ -131,7 +131,7 @@ export async function registerRoutes(fastify, opts, next) {
                 return {success : false}
                 
             } catch {
-                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
     });
@@ -140,9 +140,9 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(request.params.frontendUserId)
+        else if(!request.params.frontendUserId)
             reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
-        else if(request.params.payloadId)
+        else if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
@@ -155,7 +155,7 @@ export async function registerRoutes(fastify, opts, next) {
                 return {success : false}
                 
             } catch {
-                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
     });
@@ -164,7 +164,7 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(request.params.payloadId)
+        else if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
@@ -176,7 +176,7 @@ export async function registerRoutes(fastify, opts, next) {
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
             } catch {
-                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
     });
@@ -185,9 +185,9 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(request.params.frontendUserId)
+        else if(!request.params.frontendUserId)
             reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
-        else if(request.params.payloadId)
+        else if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
@@ -200,7 +200,7 @@ export async function registerRoutes(fastify, opts, next) {
                 return {success : false}
 
             } catch {
-                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
     });
@@ -210,9 +210,9 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request query: " + JSON.stringify(request.query));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(request.params.frontendUserId)
+        else if(!request.params.frontendUserId)
             reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
-        else if(request.params.payloadId)
+        else if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
@@ -225,7 +225,7 @@ export async function registerRoutes(fastify, opts, next) {
                 return {success : false}
 
             } catch {
-                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
     });
@@ -234,7 +234,7 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(request.params.payloadId)
+        else if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
@@ -247,7 +247,7 @@ export async function registerRoutes(fastify, opts, next) {
                 return {success : false}
 
             } catch {
-                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
     });
@@ -256,9 +256,9 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(request.params.frontendUserId)
+        else if(!request.params.frontendUserId)
             reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
-        else if(request.params.payloadId)
+        else if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
@@ -271,7 +271,7 @@ export async function registerRoutes(fastify, opts, next) {
                 return {success : false}
 
             } catch {
-                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
     });
@@ -280,9 +280,9 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(request.params.frontendUserId)
+        else if(!request.params.frontendUserId)
             reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
-        else if(request.params.payloadId)
+        else if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
@@ -295,20 +295,20 @@ export async function registerRoutes(fastify, opts, next) {
                 return {success : false}
 
             } catch {
-                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
     });
 
     fastify.get('/api/v1/xrpl/validatetx/:payloadId', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
-        if(!request.headers.origin)
+        if(!request.headers.origin) {
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(request.params.payloadId)
+        } else if(!request.params.payloadId) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
-        else {
+        } else {
             try {
-                let payloadInfo:any = await xummBackend.getPayloadInfoByOrigin(request.header.origin, request.params.payloadId);
+                let payloadInfo:any = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId)
 
                 if(payloadInfo && payloadInfo.response && payloadInfo.response.txid) {
                     let txResult:any = await special.validateXRPLTransaction(payloadInfo.response.txid);
@@ -322,7 +322,7 @@ export async function registerRoutes(fastify, opts, next) {
                 return {success : false, testnet: false}
 
             } catch {
-                reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
     });
@@ -339,7 +339,7 @@ export async function registerRoutes(fastify, opts, next) {
             } else
                 return {success: false }
         } catch {
-            reply.code(500).send({ success : false, message: 'Something went wrong. Please check your query params'});
+            return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
     });
 
@@ -371,13 +371,11 @@ export async function registerRoutes(fastify, opts, next) {
 
                             db.deleteTempInfo(tmpInfo);
                         }
-                    } catch(err) {
-                        console.log("error in webhook handling tmpInfo");
-                        console.log(err);
+                    } catch {
+                        return { success : false, error: true, message: 'Something went wrong. Please check your request'};
                     }
-                } catch(err) {
-                    console.log(JSON.stringify(err));
-                    reply.code(500).send('Something went wrong. Please check your query params');
+                } catch {
+                    return { success : false, error: true, message: 'Something went wrong. Please check your request'};
                 }
             });
         }

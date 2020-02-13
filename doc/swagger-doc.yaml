@@ -15,7 +15,7 @@ info:
 
 
    <b>To use this API you have to be whitlisted.</b> Please contact [@nixerFFM](https://twitter.com/nixerFFM) if you are interested to use this backend API.
-  version: '1.9.1'
+  version: '2.0.0'
 paths:
   /api/v1/platform/payload:
     post:
@@ -29,6 +29,12 @@ paths:
       parameters:
         - name: frontendId
           description: Unique ID to identify a user of your application. If included, push notifications to users are possible.
+          in: body
+          required: false
+          schema:
+            type: string
+        - name: xrplAccount
+          description: XRPL account of the user. If included, push notifications to users are possible.
           in: body
           required: false
           schema:

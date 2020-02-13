@@ -28,6 +28,7 @@ export class Xumm {
         //trying to resolve xumm user if from given frontendId:
         console.log("received payload: " + JSON.stringify(payload));
         let frontendId:string;
+        let xrplAccount:string;
         let pushDisabled:boolean = payload.pushDisabled;
         let appId = await this.db.getAppIdForOrigin(origin);
 
@@ -38,10 +39,23 @@ export class Xumm {
             referer = payload.referer;
 
         try {
+            //get xummId by frontendId
             if(frontendId = payload.frontendId) {
                 let xummId:string = await this.db.getXummId(origin, appId, payload.frontendId);
                 if(!pushDisabled && xummId && xummId.trim().length > 0)
                     payload.user_token = xummId; 
+            }
+
+            //get xummId by xrplAccount
+            if((xrplAccount = payload.xrplAccount) && !payload.user_token) {
+                //get xumm id by xrpl account
+                console.log("getting xummId by xplAccount: " + xrplAccount);
+                let appId:string = await this.db.getAppIdForOrigin(origin)
+                let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccountForOrigin(origin, appId, xrplAccount, payload.txjson.TransactionType);
+                payloadIds = payloadIds.reverse();
+                let latestPayloadInfo = await this.getPayloadInfoByAppId(appId, payloadIds[0]);
+                if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token)
+                    payload.user_token = latestPayloadInfo.application.issued_user_token;
             }
 
             payload = await this.adaptOriginProperties(origin, payload, referer);
@@ -77,7 +91,7 @@ export class Xumm {
     async getPayloadInfoByOrigin(origin:string, payload_id:string): Promise<any> {
         let appId:string = await this.db.getAppIdForOrigin(origin);
         if(!appId)
-            return "not allowed";
+            return null;
 
         return this.getPayloadInfoByAppId(appId, payload_id);
     }
@@ -91,7 +105,7 @@ export class Xumm {
     async getPayloadForCustomIdentifierByOrigin(origin:string, custom_identifier: string): Promise<any> {
         let appId:string = await this.db.getAppIdForOrigin(origin);
         if(!appId)
-            return "not allowed";
+            return null;
 
         return this.getPayloadForCustomIdentifierByAppId(appId, custom_identifier);
     }
@@ -105,7 +119,7 @@ export class Xumm {
     async deletePayload(origin: string, payload_id:string): Promise<any> {
         let appId:string = await this.db.getAppIdForOrigin(origin);
         if(!appId)
-            return "not allowed";
+            return null;
 
         let payloadResponse = await this.callXumm(appId, "payload/"+payload_id, "DELETE");
         //console.log("deletePayload response: " + JSON.stringify(payloadResponse))
@@ -116,6 +130,8 @@ export class Xumm {
         try {
             let appSecret:any = await this.db.getApiSecretForAppId(applicationId);
             if(appSecret) {
+                //console.log("[XUMM]: applicationId: " + applicationId);
+                //console.log("[XUMM]: appSecret: " + appSecret);
                 console.log("[XUMM]: calling xumm: " + method + " - " + config.XUMM_API_URL+path);
                 //console.log("[XUMM]: with body: " + JSON.stringify(body));
                 let xummResponse = await fetch.default(config.XUMM_API_URL+path,
