@@ -73,6 +73,7 @@ export class Xumm {
         //cleanup before sending payload to xumm
         delete payload.pushDisabled;
         delete payload.frontendId;
+        delete payload.xrplAccount;
 
         console.log("[XUMM]: payload to send:" + JSON.stringify(payload));
         let payloadResponse = await this.callXumm(appId, "payload", "POST", payload);
