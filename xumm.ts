@@ -55,9 +55,13 @@ export class Xumm {
                 let appId:string = await this.db.getAppIdForOrigin(origin)
                 let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccountForOrigin(origin, appId, xrplAccount, payload.txjson.TransactionType);
                 payloadIds = payloadIds.reverse();
-                let latestPayloadInfo = await this.getPayloadInfoByAppId(appId, payloadIds[0]);
-                if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token)
-                    payload.user_token = latestPayloadInfo.application.issued_user_token;
+                console.log("payloadIds: " + JSON.stringify(payloadIds));
+                if(payloadIds.length > 0) {
+                    let latestPayloadInfo = await this.getPayloadInfoByAppId(appId, payloadIds[0]);
+                    console.log("latestPayloadInfo: " + JSON.stringify(latestPayloadInfo));
+                    if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token)
+                        payload.user_token = latestPayloadInfo.application.issued_user_token;
+                }
             }
 
             payload = await this.adaptOriginProperties(origin, payload, referer);
