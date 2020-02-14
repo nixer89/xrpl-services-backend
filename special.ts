@@ -143,12 +143,14 @@ export class Special {
         if(await this.callBithompAndValidate(txid, false)) {
             return {
                 success: true,
-                testnet: false
+                testnet: false,
+                txid: txid
             };
         } else if (await this.callBithompAndValidate(txid, true)) {
             return {
                 success: true,
-                testnet: true
+                testnet: true,
+                txid: txid
             };
         } else {
             return {
@@ -165,12 +167,14 @@ export class Special {
             if(await this.callBithompAndValidate(trxHash, false, destinationAccount, payloadInfo.payload.request_json.Amount)) {
                 return {
                     success: true,
-                    testnet: false
+                    testnet: false,
+                    txid: trxHash
                 }
             } else if (await this.callBithompAndValidate(trxHash, true, destinationAccount, payloadInfo.payload.request_json.Amount)) {
                 return {
                     success: true,
-                    testnet: true
+                    testnet: true,
+                    txid: trxHash
                 }
             }
 

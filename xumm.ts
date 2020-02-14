@@ -35,8 +35,10 @@ export class Xumm {
         if(!appId)
             return "not allowed";
         
-        if(payload.referer)
+        if(payload.referer) {
             referer = payload.referer;
+            delete payload.referer;
+        }
 
         try {
             //get xummId by frontendId
