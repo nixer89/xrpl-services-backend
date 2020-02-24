@@ -185,8 +185,30 @@ export class DB {
         }
     }
 
-    async getPayloadIdsByXrplAccountForOrigin(origin: string, applicationId: string, xrplAccount:string, payloadType: string): Promise<string[]> {
-        console.log("[DB]: getPayloadIdsByXrplAccount:" + " origin: " + origin + " xrplAccount: " + xrplAccount);
+    async getPayloadIdsByXrplAccountForOriginBySignin(origin: string, applicationId: string, xrplAccount:string) {
+        console.log("[DB]: getPayloadIdsByXrplAccountForOriginBySignin:" + " origin: " + origin + " xrplAccount: " + xrplAccount);
+        try {
+            let findResult:any[] = await this.xrplAccountPayloadCollection.find({origin: origin, applicationId: applicationId, xrplAccount: xrplAccount}).toArray();
+
+            if(findResult && findResult.length > 0) {
+                let payloadsForUserAndOrigin:string[] = [];
+                for(let i = 0; i < findResult.length; i++){
+                    payloadsForUserAndOrigin = payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], 'signin'));
+                }
+
+                return payloadsForUserAndOrigin.reverse();
+            } else
+                return [];
+
+        } catch(err) {
+            console.log("[DB]: error getPayloadIdsByXrplAccountForOriginBySignin");
+            console.log(JSON.stringify(err));
+            return [];
+        }
+    }
+
+    async getPayloadIdsByXrplAccountForOriginAndType(origin: string, applicationId: string, xrplAccount:string, payloadType: string): Promise<string[]> {
+        console.log("[DB]: getPayloadIdsByXrplAccountForOriginAndType:" + " origin: " + origin + " xrplAccount: " + xrplAccount + " payloadType: " + payloadType);
         try {
             let findResult:any[] = await this.xrplAccountPayloadCollection.find({origin: origin, applicationId: applicationId, xrplAccount: xrplAccount}).toArray();
 
@@ -201,7 +223,7 @@ export class DB {
                 return [];
 
         } catch(err) {
-            console.log("[DB]: error getPayloadIdsByXrplAccount");
+            console.log("[DB]: error getPayloadIdsByXrplAccountForOriginAndType");
             console.log(JSON.stringify(err));
             return [];
         }

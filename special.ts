@@ -4,6 +4,7 @@ import * as config from './config'
 import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as fetch from 'node-fetch';
 import {verifySignature} from 'verify-xrpl-signature'
+import { XummGetPayloadResponse } from 'xumm-api';
 
 export class Special {
     proxy = new HttpsProxyAgent(config.PROXY_URL);
@@ -30,7 +31,7 @@ export class Special {
             return false;
     }
     
-    async getPayloadInfoForFrontendId(origin: string, requestParams:any, payloadType: string, referer?: string): Promise<any> {
+    async getPayloadInfoForFrontendId(origin: string, requestParams:any, payloadType: string, referer?: string): Promise<XummGetPayloadResponse> {
         if(await this.validFrontendUserIdToPayload(origin, requestParams,payloadType, referer)) {
             return this.xummBackend.getPayloadInfoByOrigin(origin, requestParams.payloadId)
         } else {
@@ -99,7 +100,7 @@ export class Special {
         }
     }
 
-    async validateTimedPaymentPayload(origin: string, payloadInfo: any): Promise<any> {
+    async validateTimedPaymentPayload(origin: string, payloadInfo: XummGetPayloadResponse): Promise<any> {
         let transactionDate:Date;
         if(this.successfullPaymentPayloadValidation(payloadInfo)) {
             transactionDate = new Date(payloadInfo.response.resolved_at)

@@ -20,9 +20,11 @@ export async function registerRoutes(fastify, opts, next) {
 
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+        else if(!request.body.payload)
+            reply.code(500).send('Please provide a xumm payload. Calls without xumm payload are not allowed');
         else {
             try {
-                return xummBackend.submitPayload(request.body, request.headers.origin, request.headers.referer);
+                return xummBackend.submitPayload(request.body.payload, request.headers.origin, request.headers.referer, request.body.options);
             } catch {
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }

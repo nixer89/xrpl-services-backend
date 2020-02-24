@@ -2,6 +2,7 @@ import * as fetch from 'node-fetch';
 import * as config from './config';
 import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as DB from './db';
+import { XummPostPayloadBodyJson, XummPostPayloadResponse, XummGetPayloadResponse, XummDeletePayloadResponse} from 'xumm-api';
 
 export class Xumm {
 
@@ -24,59 +25,57 @@ export class Xumm {
         return pingResponse && pingResponse.pong;
     }
 
-    async submitPayload(payload:any, origin:string, referer: string): Promise<any> {
+    async submitPayload(payload:XummPostPayloadBodyJson, origin:string, referer: string, options?:any): Promise<XummPostPayloadResponse> {
         //trying to resolve xumm user if from given frontendId:
         console.log("received payload: " + JSON.stringify(payload));
         let frontendId:string;
         let xrplAccount:string;
-        let pushDisabled:boolean = payload.pushDisabled;
+        let pushDisabled:boolean = options && options.pushDisabled;
         let appId = await this.db.getAppIdForOrigin(origin);
 
         if(!appId)
-            return "not allowed";
+            return {uuid: "error", next: null, refs: null, pushed: null};
         
-        if(payload.referer) {
-            referer = payload.referer;
-            delete payload.referer;
+        if(options && options.referer) {
+            referer = options.referer;
         }
 
         try {
             //get xummId by frontendId
-            if(frontendId = payload.frontendId) {
-                let xummId:string = await this.db.getXummId(origin, appId, payload.frontendId);
+            if(options && (frontendId = options.frontendId)) {
+                let xummId:string = await this.db.getXummId(origin, appId, options.frontendId);
                 if(!pushDisabled && xummId && xummId.trim().length > 0)
                     payload.user_token = xummId; 
             }
 
             //get xummId by xrplAccount
-            if((xrplAccount = payload.xrplAccount) && !payload.user_token) {
+            if(options && (xrplAccount = options.xrplAccount) && !payload.user_token) {
                 //get xumm id by xrpl account
                 console.log("getting xummId by xplAccount: " + xrplAccount);
                 let appId:string = await this.db.getAppIdForOrigin(origin)
-                let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccountForOrigin(origin, appId, xrplAccount, payload.txjson.TransactionType);
-                payloadIds = payloadIds.reverse();
+                let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccountForOriginBySignin(origin, appId, xrplAccount);
                 console.log("payloadIds: " + JSON.stringify(payloadIds));
-                if(payloadIds.length > 0) {
-                    let latestPayloadInfo = await this.getPayloadInfoByAppId(appId, payloadIds[0]);
+
+                //no SignIn found. Check payload type
+                if(!payloadIds || payloadIds.length == 0)
+                    payloadIds = await this.db.getPayloadIdsByXrplAccountForOriginAndType(origin, appId, xrplAccount, payload.txjson.TransactionTypes);
+
+                if(payloadIds && payloadIds.length > 0) {
+                    let latestPayloadInfo:XummGetPayloadResponse = await this.getPayloadInfoByAppId(appId, payloadIds[0]);
                     console.log("latestPayloadInfo: " + JSON.stringify(latestPayloadInfo));
                     if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token)
                         payload.user_token = latestPayloadInfo.application.issued_user_token;
                 }
             }
 
-            payload = await this.adaptOriginProperties(origin, payload, referer);
+            payload = await this.adaptOriginProperties(origin, payload, referer, options);
             
         } catch(err) {
             console.log(JSON.stringify(err));
         }
 
-        //cleanup before sending payload to xumm
-        delete payload.pushDisabled;
-        delete payload.frontendId;
-        delete payload.xrplAccount;
-
         console.log("[XUMM]: payload to send:" + JSON.stringify(payload));
-        let payloadResponse = await this.callXumm(appId, "payload", "POST", payload);
+        let payloadResponse:XummPostPayloadResponse = await this.callXumm(appId, "payload", "POST", payload);
         console.log("[XUMM]: submitPayload response: " + JSON.stringify(payloadResponse))
 
         //saving payloadId to frontendId
@@ -85,7 +84,7 @@ export class Xumm {
         }
 
         try {
-            let payloadInfo:any = await this.getPayloadInfoByAppId(appId, payloadResponse.uuid);
+            let payloadInfo:XummGetPayloadResponse = await this.getPayloadInfoByAppId(appId, payloadResponse.uuid);
             this.db.saveTempInfo({origin: origin, referer: referer, frontendId: frontendId, applicationId: appId, xummUserId: payload.user_token, payloadId: payloadResponse.uuid, expires: payloadInfo.payload.expires_at});
         } catch(err) {
             console.log("Error saving TempInfo");
@@ -95,7 +94,7 @@ export class Xumm {
         return payloadResponse;
     }
 
-    async getPayloadInfoByOrigin(origin:string, payload_id:string): Promise<any> {
+    async getPayloadInfoByOrigin(origin:string, payload_id:string): Promise<XummGetPayloadResponse> {
         let appId:string = await this.db.getAppIdForOrigin(origin);
         if(!appId)
             return null;
@@ -103,13 +102,13 @@ export class Xumm {
         return this.getPayloadInfoByAppId(appId, payload_id);
     }
 
-    async getPayloadInfoByAppId(applicationId:string, payload_id:string): Promise<any> {
-        let payloadResponse = await this.callXumm(applicationId, "payload/"+payload_id, "GET");
+    async getPayloadInfoByAppId(applicationId:string, payload_id:string): Promise<XummGetPayloadResponse> {
+        let payloadResponse:XummGetPayloadResponse = await this.callXumm(applicationId, "payload/"+payload_id, "GET");
         //console.log("getPayloadInfo response: " + JSON.stringify(payloadResponse))
         return payloadResponse;
     }
 
-    async getPayloadForCustomIdentifierByOrigin(origin:string, custom_identifier: string): Promise<any> {
+    async getPayloadForCustomIdentifierByOrigin(origin:string, custom_identifier: string): Promise<XummGetPayloadResponse> {
         let appId:string = await this.db.getAppIdForOrigin(origin);
         if(!appId)
             return null;
@@ -117,13 +116,13 @@ export class Xumm {
         return this.getPayloadForCustomIdentifierByAppId(appId, custom_identifier);
     }
 
-    async getPayloadForCustomIdentifierByAppId(applicationId:string, custom_identifier: string): Promise<any> {
-        let payloadResponse = await this.callXumm(applicationId, "payload/ci/"+custom_identifier, "GET");
+    async getPayloadForCustomIdentifierByAppId(applicationId:string, custom_identifier: string): Promise<XummGetPayloadResponse> {
+        let payloadResponse:XummGetPayloadResponse = await this.callXumm(applicationId, "payload/ci/"+custom_identifier, "GET");
         //console.log("getPayloadInfo response: " + JSON.stringify(payloadResponse))
         return payloadResponse;
     }
 
-    async deletePayload(origin: string, payload_id:string): Promise<any> {
+    async deletePayload(origin: string, payload_id:string): Promise<XummDeletePayloadResponse> {
         let appId:string = await this.db.getAppIdForOrigin(origin);
         if(!appId)
             return null;
@@ -167,7 +166,7 @@ export class Xumm {
         }
     }
 
-    async adaptOriginProperties(origin: string, payload: any, referer: string): Promise<any> {
+    async adaptOriginProperties(origin: string, payload: XummPostPayloadBodyJson, referer: string, options: any): Promise<XummPostPayloadBodyJson> {
         let originProperties:any = await this.db.getOriginProperties(origin);
         //console.log("[XUMM]: originProperties: " + JSON.stringify(originProperties));
 
@@ -186,7 +185,7 @@ export class Xumm {
         //handle return URLs
         let foundReturnUrls:boolean = false;
 
-        if(payload.web != undefined && originProperties.return_urls) {
+        if(options.web != undefined && originProperties.return_urls) {
 
             if(!payload.options)
                 payload.options = {};
@@ -198,15 +197,12 @@ export class Xumm {
                 if(originProperties.return_urls[i].from === referer) {
                     foundReturnUrls = true;
 
-                    if(payload.web)
-                        payload.options.return_url.web = originProperties.return_urls[i].to_web+(payload.signinToValidate?"&signinToValidate=true":"");
+                    if(options.web)
+                        payload.options.return_url.web = originProperties.return_urls[i].to_web+(options.signinToValidate?"&signinToValidate=true":"");
                     else
-                        payload.options.return_url.app = originProperties.return_urls[i].to_app+(payload.signinToValidate?"&signinToValidate=true":"");
+                        payload.options.return_url.app = originProperties.return_urls[i].to_app+(options.signinToValidate?"&signinToValidate=true":"");
                 }
             }
-
-            delete payload.signinToValidate;
-            delete payload.web;
         }
 
         //security measure: delete return URLs for unknown referer

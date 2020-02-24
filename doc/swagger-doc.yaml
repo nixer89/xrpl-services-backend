@@ -15,7 +15,7 @@ info:
 
 
    <b>To use this API you have to be whitlisted.</b> Please contact [@nixerFFM](https://twitter.com/nixerFFM) if you are interested to use this backend API.
-  version: '2.0.3'
+  version: '2.1.0'
 paths:
   /api/v1/platform/payload:
     post:
@@ -27,40 +27,61 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: frontendId
-          description: Unique ID to identify a user of your application. If included, push notifications to users are possible.
+        - name: body
+          description: contains the payload and optional backend parameters for xumm and transaction handling
           in: body
-          required: false
           schema:
-            type: string
-        - name: xrplAccount
-          description: XRPL account of the user. If included, push notifications to users are possible.
-          in: body
-          required: false
-          schema:
-            type: string
-        - name: pushDisabled
-          description: enable or disable push notifications for a specific user (only required if frontendId is available)
-          in: body
-          required: false
-          schema:
-            type: boolean
-        - name: web
-          description: specify where the request is coming from. web=true -> Desktop, web=false -> App. This is an important setting and determines which return_url is being set (app or web)
-          in: body
-          required: false
-          schema:
-            type: boolean
-        - name: signinToValidate
-          description: |
-            if set to true, this parameter indicates the backend that this is a SignIn request for an upcoming payload validation by XRPL Account. (see Special-API -> signinToValidate/:signinPayload_uuid)<br>
-            The backend appends a query parameter to your defined return_url: '&signinToValidate=true'.<br>
-            You can then check for this parameter in your website after the user was returned. If set to true, you know the sent payloadId in the URL is a SignIn request payload ID which you can use to call the "signinToValidate"-API.<br>
-            This parameter allows you to have a "Pay for..." and "Sign in ..." on the same page with the same return_url.
-          in: body
-          required: false
-          schema:
-            type: boolean
+            type: object
+            properties:
+              options:
+                description: optional backend parameter values
+                required: false
+                type: object
+                properties:
+                  frontendId:
+                    description: Unique ID to identify a user of your application. If included, push notifications to users are possible.
+                    required: false
+                    type: string
+                  xrplAccount:
+                    description: XRPL account of the user. If included, push notifications to users are possible.
+                    required: false
+                    type: string
+                  pushDisabled:
+                    description: enable or disable push notifications for a specific user (only required if frontendId is available)
+                    required: false
+                    type: boolean
+                  web:
+                    description: specify where the request is coming from. web=true -> Desktop, web=false -> App. This is an important setting and determines which return_url is being set (app or web)
+                    required: false
+                    type: boolean
+                  signinToValidate:
+                    description: |
+                      if set to true, this parameter indicates the backend that this is a SignIn request for an upcoming payload validation by XRPL Account. (see Special-API -> signinToValidate/:signinPayload_uuid)<br>
+                      The backend appends a query parameter to your defined return_url: '&signinToValidate=true'.<br>
+                      You can then check for this parameter in your website after the user was returned. If set to true, you know the sent payloadId in the URL is a SignIn request payload ID which you can use to call the "signinToValidate"-API.<br>
+                      This parameter allows you to have a "Pay for..." and "Sign in ..." on the same page with the same return_url.
+                    required: false
+                    type: boolean
+              payload:
+                description: the payload which will be sent to Xumm
+                required: false
+                type: object
+            example:
+              options:
+                frontendId: 'UNIQUE_USER_ID_12345'
+                xrplAccount: 'rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF'
+                pushDisabled: true
+                web: false
+                signinToValidate: false
+              payload: {
+                options: {
+                  ...: ...
+                },
+                txjson: {
+                  ...: ...
+                }
+              }
+                
       responses:
         200:
           description: Returns a payload submit response. Please refer to (https://xumm.readme.io/reference/post-payload)
