@@ -66,6 +66,19 @@ export class Xumm {
                     if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token)
                         payload.user_token = latestPayloadInfo.application.issued_user_token;
                 }
+
+                //no SignIn found or SignIn did not have issued user token
+                if(!payload.user_token) {
+                    //try getting issued_user_token by type!
+                    payloadIds = await this.db.getPayloadIdsByXrplAccountForOriginAndType(origin, appId, xrplAccount, payload.txjson.TransactionTypes);
+
+                    if(payloadIds && payloadIds.length > 0) {
+                        let latestPayloadInfo:XummGetPayloadResponse = await this.getPayloadInfoByAppId(appId, payloadIds[0]);
+                        console.log("latestPayloadInfo: " + JSON.stringify(latestPayloadInfo));
+                        if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token)
+                            payload.user_token = latestPayloadInfo.application.issued_user_token;
+                    }
+                }
             }
 
             payload = await this.adaptOriginProperties(origin, payload, referer, options);
