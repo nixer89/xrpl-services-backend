@@ -4,7 +4,7 @@ import * as config from './config'
 import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as fetch from 'node-fetch';
 import {verifySignature} from 'verify-xrpl-signature'
-import { XummGetPayloadResponse } from 'xumm-api';
+import { XummGetPayloadResponse, XummPostPayloadResponse } from 'xumm-api';
 
 export class Special {
     proxy = new HttpsProxyAgent(config.PROXY_URL);
@@ -39,12 +39,12 @@ export class Special {
         }
     }
     
-    basicPayloadInfoValidation(payloadInfo: any): boolean {
-        return payloadInfo && !payloadInfo.error && payloadInfo.meta && payloadInfo.payload && payloadInfo.response
+    basicPayloadInfoValidation(payloadInfo: XummGetPayloadResponse): boolean {
+        return payloadInfo && payloadInfo.meta && payloadInfo.payload && payloadInfo.response
             && payloadInfo.meta.exists && payloadInfo.meta.resolved && payloadInfo.meta.signed;
     }
     
-    successfullPaymentPayloadValidation(payloadInfo: any): boolean {
+    successfullPaymentPayloadValidation(payloadInfo: XummGetPayloadResponse): boolean {
         if(this.basicPayloadInfoValidation(payloadInfo) && 'payment' === payloadInfo.payload.tx_type.toLowerCase() && payloadInfo.meta.submit && payloadInfo.response.dispatched_result === 'tesSUCCESS') {
             //validate signature
             let signatureValidation = verifySignature(payloadInfo.response.hex)
@@ -55,22 +55,23 @@ export class Special {
         }
     }
     
-    successfullSignInPayloadValidation(payloadInfo: any): boolean {
+    successfullSignInPayloadValidation(payloadInfo: XummGetPayloadResponse): boolean {
         if(this.basicPayloadInfoValidation(payloadInfo) && 'signin' === payloadInfo.payload.tx_type.toLowerCase() && payloadInfo.response.txid && payloadInfo.response.hex && payloadInfo.response.account) {
             //validate signature
             let signatureValidation = verifySignature(payloadInfo.response.hex)
 
             return signatureValidation.signatureValid && signatureValidation.signedBy === payloadInfo.response.account;
+
         } else {
             return false;
         }
     }
 
-    async checkSignInToValidatePayment(siginPayloadId:string, origin: string, referer: string) {
+    async checkSignInToValidatePayment(siginPayloadId:string, origin: string, referer: string): Promise<any> {
         console.log("signInToValidate: siginPayloadId: " + siginPayloadId + " origin: " + origin + " referer: " + referer);
         try {
             if(siginPayloadId) {
-                let payloadInfo:any = await this.xummBackend.getPayloadInfoByOrigin(origin, siginPayloadId);
+                let payloadInfo:XummGetPayloadResponse = await this.xummBackend.getPayloadInfoByOrigin(origin, siginPayloadId);
 
                 //console.log("signInPayloadInfo:" + JSON.stringify(payloadInfo));
                 if(payloadInfo && this.successfullSignInPayloadValidation(payloadInfo)) {
@@ -89,7 +90,10 @@ export class Special {
                             return validationInfo;
                     }
                 }
-                return { success: false}
+                return {
+                        success: false,
+                        account: payloadInfo.response.account
+                    }
             }
 
             return { success: false }
@@ -161,7 +165,7 @@ export class Special {
         }
     }
 
-    async validatePaymentOnLedger(trxHash:string, origin:string, payloadInfo: any): Promise<any> {
+    async validatePaymentOnLedger(trxHash:string, origin:string, payloadInfo: XummGetPayloadResponse): Promise<any> {
         let destinationAccount = await this.db.getAllowedOriginDestinationAccount(origin);
         console.log("validate Payment with dest account: " + destinationAccount + " and hash: " + trxHash)
         if(trxHash && destinationAccount) {
@@ -169,25 +173,29 @@ export class Special {
                 return {
                     success: true,
                     testnet: false,
-                    txid: trxHash
+                    txid: trxHash,
+                    account: payloadInfo.response.account
                 }
             } else if (await this.callBithompAndValidate(trxHash, true, destinationAccount, payloadInfo.payload.request_json.Amount)) {
                 return {
                     success: true,
                     testnet: true,
-                    txid: trxHash
+                    txid: trxHash,
+                    account: payloadInfo.response.account
                 }
             }
 
             return {
                 success: false,
-                testnet: false
+                testnet: false,
+                account: payloadInfo.response.account
             }
 
         } else {
             return {
                 success: false,
-                testnet: false
+                testnet: false,
+                account: payloadInfo.response.account
             };
         }
     }

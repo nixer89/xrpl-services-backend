@@ -3,6 +3,7 @@ import * as Db from './db';
 import * as Special from './special';
 import * as config from './config';
 import consoleStamp = require("console-stamp");
+import { XummGetPayloadResponse } from 'xumm-api';
 
 consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
 
@@ -100,7 +101,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
-                let payloadInfo:any = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
+                let payloadInfo:XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
 
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo))
                     return special.validatePaymentOnLedger(payloadInfo.response.txid, request.headers.origin, payloadInfo);
@@ -124,7 +125,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
-                let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment');
+                let payloadInfo:XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment');
 
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo))
                     return special.validatePaymentOnLedger(payloadInfo.response.txid, request.headers.origin, payloadInfo);
@@ -148,7 +149,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
-                let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', request.query.referer ? request.query.referer : request.headers.referer);
+                let payloadInfo:XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', request.query.referer ? request.query.referer : request.headers.referer);
 
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo))
                     return special.validatePaymentOnLedger(payloadInfo.response.txid, request.headers.origin, payloadInfo);
@@ -170,13 +171,13 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
-                let payloadInfo:any = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
+                let payloadInfo:XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
 
                 if(payloadInfo)
                     return special.validateTimedPaymentPayload(request.headers.origin, payloadInfo);
                 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false}
+                return {success : false }
             } catch {
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
@@ -193,7 +194,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
-                let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment');
+                let payloadInfo:XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment');
 
                 if(payloadInfo)
                     return special.validateTimedPaymentPayload(request.headers.origin, payloadInfo);
@@ -218,7 +219,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
-                let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', request.query.referer ? request.query.referer : request.headers.referer);
+                let payloadInfo:XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', request.query.referer ? request.query.referer : request.headers.referer);
 
                 if(payloadInfo)
                     return special.validateTimedPaymentPayload(request.headers.origin, payloadInfo);
@@ -240,10 +241,10 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
-                let payloadInfo:any = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId);
+                let payloadInfo:XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId);
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo))
-                    return {success: true }
+                    return {success: true, account: payloadInfo.response.account }
                 
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
@@ -264,10 +265,10 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
-                let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin');
+                let payloadInfo:XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin');
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo))
-                    return {success: true }
+                    return {success: true, account: payloadInfo.response.account }
                 
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
@@ -288,10 +289,10 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
-                let payloadInfo:any = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin', request.query.referer ? request.query.referer : request.headers.referer);
+                let payloadInfo:XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin', request.query.referer ? request.query.referer : request.headers.referer);
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo))
-                    return {success: true }
+                    return {success: true, account: payloadInfo.response.account }
                 
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
@@ -315,7 +316,7 @@ export async function registerRoutes(fastify, opts, next) {
                 if(payloadInfo && payloadInfo.response && payloadInfo.response.txid) {
                     let txResult:any = await special.validateXRPLTransaction(payloadInfo.response.txid);
                     if(txResult && txResult.success)
-                        txResult.xrplAccount = payloadInfo.response.account;
+                        txResult.account = payloadInfo.response.account;
 
                     return txResult;
                 }
