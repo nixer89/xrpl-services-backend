@@ -92,12 +92,12 @@ async function cleanupTmpInfoTable() {
   for(let i = 0; i < tmpInfoEntries.length; i++) {
     let expirationDate:Date = new Date(tmpInfoEntries[i].expires);
     console.log("expirationDate: " + expirationDate);
+    //add one day to expiration date to make sure payload is not used anymore
+    expirationDate.setDate(expirationDate.getDate()+10);
     //payload is expired. Check if user has opened it
     if(Date.now() > expirationDate.getTime()) {
       //console.log("checking entry: " + JSON.stringify(tmpInfoEntries[i]));
-      let payloadInfo:XummGetPayloadResponse = await xummBackend.getPayloadInfoByAppId(tmpInfoEntries[i].applicationId, tmpInfoEntries[i].payloadId);
-      if(payloadInfo && payloadInfo.meta.expired && !payloadInfo.response.hex)
-        await mongo.deleteTempInfo(tmpInfoEntries[i]);
+      await mongo.deleteTempInfo(tmpInfoEntries[i]);
     }
   }
 }
