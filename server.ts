@@ -3,6 +3,7 @@ import * as DB from './db';
 import * as apiRoute from './api';
 import * as config from './config';
 import * as scheduler from 'node-schedule';
+import { XummGetPayloadResponse } from 'xumm-api'
 
 const fastify = require('fastify')({ trustProxy: true })
 
@@ -94,7 +95,7 @@ async function cleanupTmpInfoTable() {
     //payload is expired. Check if user has opened it
     if(Date.now() > expirationDate.getTime()) {
       //console.log("checking entry: " + JSON.stringify(tmpInfoEntries[i]));
-      let payloadInfo:any = await xummBackend.getPayloadInfoByAppId(tmpInfoEntries[i].applicationId, tmpInfoEntries[i].payloadId);
+      let payloadInfo:XummGetPayloadResponse = await xummBackend.getPayloadInfoByAppId(tmpInfoEntries[i].applicationId, tmpInfoEntries[i].payloadId);
       if(payloadInfo && payloadInfo.meta.expired && !payloadInfo.response.hex)
         await mongo.deleteTempInfo(tmpInfoEntries[i]);
     }

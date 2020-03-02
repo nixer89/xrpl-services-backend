@@ -311,7 +311,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
-                let payloadInfo:any = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId)
+                let payloadInfo:XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId)
 
                 if(payloadInfo && payloadInfo.response && payloadInfo.response.txid) {
                     let txResult:any = await special.validateXRPLTransaction(payloadInfo.response.txid);
@@ -355,7 +355,7 @@ export async function registerRoutes(fastify, opts, next) {
                 //console.log("webhook body: " + JSON.stringify(request.body));
                
                 try {
-                    let payloadInfo:any = await xummBackend.getPayloadInfoByAppId(request.body.meta.application_uuidv4, request.body.meta.payload_uuidv4);
+                    let payloadInfo:XummGetPayloadResponse = await xummBackend.getPayloadInfoByAppId(request.body.meta.application_uuidv4, request.body.meta.payload_uuidv4);
                     
                     //check if we have to store the user
                     try {
