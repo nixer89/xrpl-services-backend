@@ -15,6 +15,7 @@ export async function registerRoutes(fastify, opts, next) {
     await xummBackend.init();
     await db.initDb();
     await special.init();
+    
     fastify.post('/api/v1/platform/payload', async (request, reply) => {
         console.log("post payload headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));

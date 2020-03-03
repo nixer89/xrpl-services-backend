@@ -56,10 +56,6 @@ export class Xumm {
                 let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccountForOriginBySignin(origin, appId, xrplAccount);
                 console.log("payloadIds: " + JSON.stringify(payloadIds));
 
-                //no SignIn found. Check payload type
-                if(!payloadIds || payloadIds.length == 0)
-                    payloadIds = await this.db.getPayloadIdsByXrplAccountForOriginAndType(origin, appId, xrplAccount, payload.txjson.TransactionTypes);
-
                 if(payloadIds && payloadIds.length > 0) {
                     let latestPayloadInfo:XummGetPayloadResponse = await this.getPayloadInfoByAppId(appId, payloadIds[0]);
                     console.log("latestPayloadInfo: " + JSON.stringify(latestPayloadInfo));
