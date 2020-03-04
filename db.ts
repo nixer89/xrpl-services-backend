@@ -196,7 +196,7 @@ export class DB {
                     payloadsForUserAndOrigin = payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], 'signin'));
                 }
 
-                return payloadsForUserAndOrigin.reverse();
+                return payloadsForUserAndOrigin;
             } else
                 return [];
 
