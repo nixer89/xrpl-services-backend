@@ -3,7 +3,8 @@ import * as Db from './db';
 import * as Special from './special';
 import * as config from './config';
 import consoleStamp = require("console-stamp");
-import { XummGetPayloadResponse } from 'xumm-api';
+import { XummGetPayloadResponse, XummWebhookBody } from 'xumm-api';
+import { GenericBackendPostRequest } from './types';
 
 consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
 
@@ -356,7 +357,8 @@ export async function registerRoutes(fastify, opts, next) {
                 //console.log("webhook body: " + JSON.stringify(request.body));
                
                 try {
-                    let payloadInfo:XummGetPayloadResponse = await xummBackend.getPayloadInfoByAppId(request.body.meta.application_uuidv4, request.body.meta.payload_uuidv4);
+                    let webhookRequest:XummWebhookBody = request.body;
+                    let payloadInfo:XummGetPayloadResponse = await xummBackend.getPayloadInfoByAppId(webhookRequest.meta.application_uuidv4, webhookRequest.meta.payload_uuidv4);
                     
                     //check if we have to store the user
                     try {
@@ -370,7 +372,7 @@ export async function registerRoutes(fastify, opts, next) {
 
                             //store payload to XRPL account
                             if(payloadInfo && payloadInfo.response && payloadInfo.response.account) {
-                                db.storePayloadForXRPLAccount(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
+                                db.storePayloadForXRPLAccount(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, webhookRequest.userToken.user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
                             }
 
                             db.deleteTempInfo(tmpInfo);

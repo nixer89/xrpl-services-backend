@@ -4,7 +4,8 @@ import * as config from './config'
 import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as fetch from 'node-fetch';
 import {verifySignature} from 'verify-xrpl-signature'
-import { XummGetPayloadResponse, XummPostPayloadResponse } from 'xumm-api';
+import { XummGetPayloadResponse } from 'xumm-api';
+import { TransactionValidation } from './types';
 
 export class Special {
     proxy = new HttpsProxyAgent(config.PROXY_URL);
@@ -67,7 +68,7 @@ export class Special {
         }
     }
 
-    async checkSignInToValidatePayment(siginPayloadId:string, origin: string, referer: string): Promise<any> {
+    async checkSignInToValidatePayment(siginPayloadId:string, origin: string, referer: string): Promise<TransactionValidation> {
         console.log("signInToValidate: siginPayloadId: " + siginPayloadId + " origin: " + origin + " referer: " + referer);
         try {
             if(siginPayloadId) {
@@ -92,19 +93,20 @@ export class Special {
                 }
                 return {
                         success: false,
-                        account: payloadInfo.response.account
+                        account: payloadInfo.response.account,
+                        testnet: false
                     }
             }
 
-            return { success: false }
+            return { success: false, testnet: false }
         } catch(err) {
             console.log("Error signInToValidate");
             console.log(JSON.stringify(err));
-            return { success: false }
+            return { success: false, testnet: false }
         }
     }
 
-    async validateTimedPaymentPayload(origin: string, payloadInfo: XummGetPayloadResponse): Promise<any> {
+    async validateTimedPaymentPayload(origin: string, payloadInfo: XummGetPayloadResponse): Promise<TransactionValidation> {
         let transactionDate:Date;
         if(this.successfullPaymentPayloadValidation(payloadInfo)) {
             transactionDate = new Date(payloadInfo.response.resolved_at)
@@ -114,10 +116,10 @@ export class Special {
                 if(transactionDate && transactionDate.setTime(transactionDate.getTime()+originProperties.payloadValidationTimeframe) > Date.now()) {
                     return this.validatePaymentOnLedger(payloadInfo.response.txid, origin, payloadInfo);
                 } else {
-                    return { success: false, payloadExpired : true };
+                    return { success: false, payloadExpired : true, testnet: false };
                 }
             } else {
-                return { success: false, noValidationTimeFrame : true };
+                return { success: false, noValidationTimeFrame : true, testnet: false };
             }
         }
     }
@@ -144,7 +146,7 @@ export class Special {
         return payloadIdsForXummUserId.includes(payloadId);
     }
 
-    async validateXRPLTransaction(txid: string): Promise<any> {
+    async validateXRPLTransaction(txid: string): Promise<TransactionValidation> {
         if(await this.callBithompAndValidate(txid, false)) {
             return {
                 success: true,
@@ -165,7 +167,7 @@ export class Special {
         }
     }
 
-    async validatePaymentOnLedger(trxHash:string, origin:string, payloadInfo: XummGetPayloadResponse): Promise<any> {
+    async validatePaymentOnLedger(trxHash:string, origin:string, payloadInfo: XummGetPayloadResponse): Promise<TransactionValidation> {
         let destinationAccount = await this.db.getAllowedOriginDestinationAccount(origin);
         console.log("validate Payment with dest account: " + destinationAccount + " and hash: " + trxHash)
         if(trxHash && destinationAccount) {

@@ -50,7 +50,7 @@ export class Xumm {
 
             //get xummId by xrplAccount
             if(options && (xrplAccount = options.xrplAccount) && !payload.user_token) {
-                //get xumm id by xrpl account
+                //resolve xummId by latest sign in payload
                 console.log("getting xummId by xplAccount: " + xrplAccount);
                 let appId:string = await this.db.getAppIdForOrigin(origin)
                 let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccountForOriginBySignin(origin, appId, xrplAccount);
@@ -61,6 +61,13 @@ export class Xumm {
                     console.log("latestPayloadInfo: " + JSON.stringify(latestPayloadInfo));
                     if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token)
                         payload.user_token = latestPayloadInfo.application.issued_user_token;
+                }
+
+                //resolve xummId by XrplAccount
+                if(!payload.user_token) {
+                    let xummIdForXrplAccount:string = await this.db.getXummIdForXRPLAccount(origin, appId, xrplAccount);
+                    if(xummIdForXrplAccount)
+                        payload.user_token = xummIdForXrplAccount;
                 }
 
                 //no SignIn found or SignIn did not have issued user token
@@ -143,7 +150,7 @@ export class Xumm {
 
     async callXumm(applicationId:string, path:string, method:string, body?:any): Promise<any> {
         try {
-            let appSecret:any = await this.db.getApiSecretForAppId(applicationId);
+            let appSecret:string = await this.db.getApiSecretForAppId(applicationId);
             if(appSecret) {
                 //console.log("[XUMM]: applicationId: " + applicationId);
                 //console.log("[XUMM]: appSecret: " + appSecret);
