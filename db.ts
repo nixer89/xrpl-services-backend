@@ -172,9 +172,14 @@ export class DB {
     async storePayloadForXRPLAccount(origin:string, referer:string, applicationId: string, xrplAccount:string, xummId:string, payloadId: string, payloadType: string): Promise<void> {
         console.log("[DB]: storePayloadForXRPLAccount:" + " origin: " + origin + " xrplAccount: " + xrplAccount + " xummId: " + xummId + " payloadId: " + payloadId + " payloadType: " + payloadType);
         try {
+            if(!xummId)
+                xummId = await this.getXummIdForXRPLAccount(origin, applicationId, xrplAccount);
+
             await this.xrplAccountPayloadCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, xrplAccount: xrplAccount}, {
+                $set: {
+                    xummId: xummId
+                },
                 $addToSet: this.getSetToUpdate(payloadType, payloadId),
-                xummId: xummId,
                 $currentDate: {
                    "updated": { $type: "timestamp" }
                 }                
@@ -190,7 +195,7 @@ export class DB {
     async getXummIdForXRPLAccount(origin: string, applicationId: string, xrplAccount:string): Promise<string> {
         console.log("[DB]: getXummIdForXRPLAccount:" + " origin: " + origin + " xrplAccount: " + xrplAccount);
         try {
-            let findResult:XrplAccountPayloadCollection = await this.xrplAccountPayloadCollection.findOne({origin: origin, applicationId: applicationId, xrplAccount: xrplAccount});
+            let findResult:XrplAccountPayloadCollection = await this.xrplAccountPayloadCollection.findOne({origin: origin, applicationId: applicationId, xrplAccount: xrplAccount, xummId: { $ne: null}});
 
             if(findResult && findResult.xummId) {
                 return findResult.xummId;
@@ -207,7 +212,7 @@ export class DB {
     async getPayloadIdsByXrplAccountForOriginBySignin(origin: string, applicationId: string, xrplAccount:string) {
         console.log("[DB]: getPayloadIdsByXrplAccountForOriginBySignin:" + " origin: " + origin + " xrplAccount: " + xrplAccount);
         try {
-            let findResult:XrplAccountPayloadCollection[] = await this.xrplAccountPayloadCollection.find({origin: origin, applicationId: applicationId, xrplAccount: xrplAccount}).toArray();
+            let findResult:XrplAccountPayloadCollection[] = await this.xrplAccountPayloadCollection.find({origin: origin, applicationId: applicationId, xrplAccount: xrplAccount, signin: {$ne: null}}).toArray();
 
             if(findResult && findResult.length > 0) {
                 let payloadsForUserAndOrigin:string[] = [];
