@@ -48,9 +48,7 @@ export class Special {
     successfullPaymentPayloadValidation(payloadInfo: XummGetPayloadResponse): boolean {
         if(this.basicPayloadInfoValidation(payloadInfo) && 'payment' === payloadInfo.payload.tx_type.toLowerCase() && payloadInfo.meta.submit && payloadInfo.response.dispatched_result === 'tesSUCCESS') {
             //validate signature
-            let signatureValidation = verifySignature(payloadInfo.response.hex)
-
-            return signatureValidation.signatureValid && signatureValidation.signedBy === payloadInfo.response.account;
+            return verifySignature(payloadInfo.response.hex).signatureValid
         } else {
             return false;
         }
@@ -59,10 +57,7 @@ export class Special {
     successfullSignInPayloadValidation(payloadInfo: XummGetPayloadResponse): boolean {
         if(this.basicPayloadInfoValidation(payloadInfo) && 'signin' === payloadInfo.payload.tx_type.toLowerCase() && payloadInfo.response.txid && payloadInfo.response.hex && payloadInfo.response.account) {
             //validate signature
-            let signatureValidation = verifySignature(payloadInfo.response.hex)
-
-            return signatureValidation.signatureValid && signatureValidation.signedBy === payloadInfo.response.account;
-
+            return verifySignature(payloadInfo.response.hex).signatureValid;
         } else {
             return false;
         }

@@ -1,6 +1,6 @@
 {
   "name": "generic-xumm-backend",
-  "version": "2.1.6",
+  "version": "2.1.7",
   "description": "provides a generic backend, connected to xumm. Easy access of user tokens for push",
   "main": "server.ts",
   "scripts": {
