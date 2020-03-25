@@ -219,6 +219,20 @@ export class Xumm {
                         payload.options.return_url.app = originProperties.return_urls[i].to_app+(options.signinToValidate?"&signinToValidate=true":"");
                 }
             }
+
+            //check if there is a default return path: '*'
+            if(!foundReturnUrls && originProperties.return_urls.length > 0) {
+                let filtered:any[] = originProperties.return_urls.filter(url => url.from === '*');
+
+                if(filtered.length == 1) {
+                    foundReturnUrls = true;
+
+                    if(options.web)
+                        payload.options.return_url.web = filtered[0].to_web+(options.signinToValidate?"&signinToValidate=true":"");
+                    else
+                        payload.options.return_url.app = filtered[0].to_app+(options.signinToValidate?"&signinToValidate=true":"");
+                }
+            }
         }
 
         //security measure: delete return URLs for unknown referer
