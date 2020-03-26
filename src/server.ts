@@ -1,11 +1,10 @@
 import * as Xumm from './xumm';
 import * as DB from './db';
 import * as apiRoute from './api';
-import * as config from './config';
+import * as config from './util/config';
 import * as scheduler from 'node-schedule';
-import { XummGetPayloadResponse } from 'xumm-api'
 
-const fastify = require('fastify')({ trustProxy: true })
+const fastify = require('fastify')({ trustProxy: config.USE_PROXY, logger: true })
 
 import consoleStamp = require("console-stamp");
 consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
@@ -19,11 +18,18 @@ fastify.register(require('fastify-helmet'));
 fastify.register(require('fastify-swagger'), {
   mode: 'static',
   specification: {
-    path: './doc/swagger-doc.yaml'
+    path: './src/doc/swagger-doc.yaml'
   },
   exposeRoute: true,
   routePrefix: '/docs'
 });
+
+fastify.addHook('onRequest', (request, reply, done) => {
+  if(!request.headers.origin)
+    reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+  else 
+    done()
+})
 
 let mongo = new DB.DB();
 let xummBackend:Xumm.Xumm = new Xumm.Xumm();
@@ -64,16 +70,22 @@ const start = async () => {
 
         console.log("declaring routes");
         fastify.register(apiRoute.registerRoutes);
+        console.log("finished declaring routes");
 
-        await fastify.listen(4001,'0.0.0.0');
-        console.log(`server listening on ${fastify.server.address().port}`);
-        console.log("http://localhost:4001/");
+        try {
+          await fastify.listen(4001, '0.0.0.0');
 
-        scheduler.scheduleJob("tmpInfoTableCleanup", {minute: 5}, () => cleanupTmpInfoTable());
+          console.log("http://localhost:4001/");
 
-        fastify.ready(err => {
+          fastify.ready(err => {
             if (err) throw err
         });
+        } catch(err) {
+          console.log('Error starting server:', err)
+        }
+
+        scheduler.scheduleJob("tmpInfoTableCleanup", {minute: 5}, () => cleanupTmpInfoTable());
+        
       } else {
           console.log("Xumm backend not available");
           process.exit(1);

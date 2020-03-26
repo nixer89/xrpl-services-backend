@@ -1,11 +1,11 @@
 import * as Xumm from './xumm';
 import * as DB from './db';
-import * as config from './config'
+import * as config from './util/config'
 import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as fetch from 'node-fetch';
 import {verifySignature} from 'verify-xrpl-signature'
 import { XummGetPayloadResponse } from 'xumm-api';
-import { TransactionValidation } from './types';
+import { TransactionValidation } from './util/types';
 
 export class Special {
     proxy = new HttpsProxyAgent(config.PROXY_URL);

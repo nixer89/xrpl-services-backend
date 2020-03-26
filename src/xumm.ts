@@ -1,5 +1,5 @@
 import * as fetch from 'node-fetch';
-import * as config from './config';
+import * as config from './util/config';
 import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as DB from './db';
 import { XummPostPayloadBodyJson, XummPostPayloadResponse, XummGetPayloadResponse, XummDeletePayloadResponse} from 'xumm-api';
@@ -8,7 +8,6 @@ export class Xumm {
 
     proxy = new HttpsProxyAgent(config.PROXY_URL);
     useProxy = config.USE_PROXY;
-    websocketMap:Map<string, any> = new Map();
     db = new DB.DB();
 
     async init() {

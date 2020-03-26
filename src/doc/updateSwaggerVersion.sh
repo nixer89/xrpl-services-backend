@@ -8,7 +8,7 @@ PACKAGE_VERSION=$(cat package.json \
 echo "Extracted version: ${PACKAGE_VERSION}"
 
 # Find the swagger file
-SWAGGER_FILE='./doc/swagger-doc.yaml'
+SWAGGER_FILE='./src/doc/swagger-doc.yaml'
 echo "Swagger file found: ${SWAGGER_FILE}"
 
 # Now do the replacement in-place (MacOS/Unix compatible)

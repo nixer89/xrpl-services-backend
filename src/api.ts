@@ -1,10 +1,9 @@
 import * as Xumm from './xumm';
 import * as Db from './db';
 import * as Special from './special';
-import * as config from './config';
+import * as config from './util/config';
 import consoleStamp = require("console-stamp");
 import { XummGetPayloadResponse, XummWebhookBody } from 'xumm-api';
-import { GenericBackendPostRequest } from './types';
 
 consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
 
@@ -20,10 +19,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.post('/api/v1/platform/payload', async (request, reply) => {
         console.log("post payload headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
-
-        if(!request.headers.origin)
-            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(!request.body.payload)
+        if(!request.body.payload)
             reply.code(500).send('Please provide a xumm payload. Calls without xumm payload are not allowed');
         else {
             try {
@@ -36,9 +32,7 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.get('/api/v1/platform/payload/:id', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
-        if(!request.headers.origin)
-            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(!request.params.id) {
+        if(!request.params.id) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
@@ -51,9 +45,7 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.get('/api/v1/platform/payload/ci/:custom_identifier', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
-        if(!request.headers.origin)
-            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(!request.params.custom_identifier) {
+        if(!request.params.custom_identifier) {
             reply.code(500).send('Please provide a custom_identifier. Calls without custom_identifier are not allowed');
         } else {
             try {
@@ -66,9 +58,7 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.delete('/api/v1/platform/payload/:id', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
-        if(!request.headers.origin)
-            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(!request.params.id) {
+        if(!request.params.id) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
@@ -80,11 +70,8 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/check/signinToValidatePayment/:signinPayloadId', async (request, reply) => {
-        console.log("headers: " + JSON.stringify(request.headers));
-
-        if(!request.headers.origin)
-            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(!request.params.signinPayloadId) {
+        //console.log("headers: " + JSON.stringify(request.headers));
+        if(!request.params.signinPayloadId) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
@@ -97,9 +84,7 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.get('/api/v1/check/payment/:payloadId', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
-        if(!request.headers.origin)
-            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(!request.params.payloadId) {
+        if(!request.params.payloadId) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
@@ -119,9 +104,7 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.get('/api/v1/check/payment/:frontendUserId/:payloadId', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
-        if(!request.headers.origin)
-            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(!request.params.frontendUserId)
+        if(!request.params.frontendUserId)
             reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
         else if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
@@ -143,9 +126,7 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.get('/api/v1/check/payment/referer/:frontendUserId/:payloadId', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
-        if(!request.headers.origin)
-            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(!request.params.frontendUserId)
+        if(!request.params.frontendUserId)
             reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
         else if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
@@ -167,9 +148,7 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.get('/api/v1/check/timed/payment/:payloadId', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
-        if(!request.headers.origin)
-            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(!request.params.payloadId)
+        if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
@@ -188,9 +167,7 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.get('/api/v1/check/timed/payment/:frontendUserId/:payloadId', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
-        if(!request.headers.origin)
-            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(!request.params.frontendUserId)
+        if(!request.params.frontendUserId)
             reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
         else if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
@@ -213,9 +190,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/check/timed/payment/referer/:frontendUserId/:payloadId', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
         //console.log("request query: " + JSON.stringify(request.query));
-        if(!request.headers.origin)
-            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(!request.params.frontendUserId)
+        if(!request.params.frontendUserId)
             reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
         else if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
@@ -237,9 +212,7 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.get('/api/v1/check/signin/:payloadId', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
-        if(!request.headers.origin)
-            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(!request.params.payloadId)
+        if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
@@ -259,9 +232,7 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.get('/api/v1/check/signin/:frontendUserId/:payloadId', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
-        if(!request.headers.origin)
-            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(!request.params.frontendUserId)
+        if(!request.params.frontendUserId)
             reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
         else if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
@@ -283,9 +254,7 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.get('/api/v1/check/signin/referer/:frontendUserId/:payloadId', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
-        if(!request.headers.origin)
-            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(!request.params.frontendUserId)
+        if(!request.params.frontendUserId)
             reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
         else if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
@@ -307,9 +276,7 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.get('/api/v1/xrpl/validatetx/:payloadId', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
-        if(!request.headers.origin) {
-            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        } else if(!request.params.payloadId) {
+        if(!request.params.payloadId) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
