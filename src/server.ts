@@ -57,10 +57,9 @@ const start = async () => {
       });
       
       fastify.addHook('onRequest', (request, reply, done) => {
-        console.log("ORIGIN: " + request.headers.origin);
         if(request.raw.url != '/' && !request.raw.url.startsWith('/docs/') && !request.headers.origin)
           reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-        else if(!allowedOrigins.includes(request.headers.origin))
+        else if(request.raw.url != '/' && !request.raw.url.startsWith('/docs/') && !allowedOrigins.includes(request.headers.origin))
           reply.code(500).send('Origin not allowed');
         else
           done()
