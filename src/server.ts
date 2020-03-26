@@ -30,7 +30,7 @@ fastify.register(require('fastify-swagger'), {
 });
 
 fastify.addHook('onRequest', (request, reply, done) => {
-  if(!request.headers.origin)
+  if(request.raw.url != '/' && !request.headers.origin)
     reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
   else 
     done()
