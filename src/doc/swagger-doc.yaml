@@ -15,7 +15,7 @@ info:
 
 
    <b>To use this API you have to be whitlisted.</b> Please contact [@nixerFFM](https://twitter.com/nixerFFM) if you are interested to use this backend API.
-  version: '2.1.11'
+  version: '2.2.0'
 paths:
   /api/v1/platform/payload:
     post:
@@ -136,6 +136,32 @@ paths:
       responses:
         200:
           description: Returns the status of the delete. Please refer to (https://xumm.readme.io/reference/cancel-payload)
+          content:
+            application/json:
+              schema:
+                type: object
+        500:
+          description: Error. Is returned when no origin is set in the request or an exceptions occurs when handling your request. Please check your request parameters.
+          schema:
+            type: string
+  /api/v1/initiate/simplePayment/:device:
+    get:
+      summary: Initiate a simple payment
+      description: Initiates a simple payment and submits the payment request to XUMM with an expiration time of 5 minutes. Returns a normal XUMM submitPayload response
+      tags:
+        - Initiate API
+      produces:
+        - application/json
+      parameters:
+        - name: device
+          description: device type. Only allowed values are 'web' or 'app'
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Returns a payload submit response. Please refer to (https://xumm.readme.io/reference/post-payload)
           content:
             application/json:
               schema:

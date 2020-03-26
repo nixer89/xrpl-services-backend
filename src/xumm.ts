@@ -3,6 +3,7 @@ import * as config from './util/config';
 import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as DB from './db';
 import { XummPostPayloadBodyJson, XummPostPayloadResponse, XummGetPayloadResponse, XummDeletePayloadResponse} from 'xumm-api';
+import { GenericBackendPostRequest, GenericBackendPostRequestOptions } from './util/types';
 
 export class Xumm {
 
@@ -24,7 +25,7 @@ export class Xumm {
         return pingResponse && pingResponse.pong;
     }
 
-    async submitPayload(payload:XummPostPayloadBodyJson, origin:string, referer: string, options?:any): Promise<XummPostPayloadResponse> {
+    async submitPayload(payload:XummPostPayloadBodyJson, origin:string, referer: string, options?:GenericBackendPostRequestOptions): Promise<XummPostPayloadResponse> {
         //trying to resolve xumm user if from given frontendId:
         console.log("received payload: " + JSON.stringify(payload));
         let frontendId:string;

@@ -3,7 +3,7 @@ import * as Db from './db';
 import * as Special from './special';
 import * as config from './util/config';
 import consoleStamp = require("console-stamp");
-import { XummGetPayloadResponse, XummWebhookBody } from 'xumm-api';
+import { XummGetPayloadResponse, XummWebhookBody, XummPostPayloadBodyJson } from 'xumm-api';
 
 consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
 
@@ -66,6 +66,24 @@ export async function registerRoutes(fastify, opts, next) {
             } catch {
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
+        }
+    });
+
+    fastify.get('/api/v1/initiate/simplePayment/:device', async (request, reply) => {
+        console.log("post payload headers: " + JSON.stringify(request.headers));
+        //console.log("body: " + JSON.stringify(request.body));
+        try {
+            let xummPayload:XummPostPayloadBodyJson = {
+                options: {
+                    expire: 5
+                },
+                txjson: {
+                    TransactionType: "Payment"
+                }
+            }
+            return xummBackend.submitPayload(xummPayload, request.headers.origin, request.headers.referer, {web: request.params.device === 'web'});
+        } catch {
+            return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
     });
 

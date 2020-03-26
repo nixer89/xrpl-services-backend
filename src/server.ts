@@ -29,13 +29,6 @@ fastify.register(require('fastify-swagger'), {
   routePrefix: '/docs'
 });
 
-fastify.addHook('onRequest', (request, reply, done) => {
-  if(request.raw.url != '/' && !request.headers.origin)
-    reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-  else 
-    done()
-})
-
 let mongo = new DB.DB();
 let xummBackend:Xumm.Xumm = new Xumm.Xumm();
 
@@ -59,10 +52,19 @@ const start = async () => {
       console.log("setting allowed origins: " + allowedOrigins);
       fastify.register(require('fastify-cors'), {
         origin: allowedOrigins,
-        methods: 'GET, POST, DELETE',
+        methods: 'GET, POST, DELETE, OPTIONS',
         allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'Referer']
       });
       
+      fastify.addHook('onRequest', (request, reply, done) => {
+        console.log("ORIGIN: " + request.headers.origin);
+        if(request.raw.url != '/' && !request.raw.url.startsWith('/docs/') && !request.headers.origin)
+          reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+        else if(!allowedOrigins.includes(request.headers.origin))
+          reply.code(500).send('Origin not allowed');
+        else
+          done()
+      });
       
       await xummBackend.init();
 
