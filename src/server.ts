@@ -4,7 +4,12 @@ import * as apiRoute from './api';
 import * as config from './util/config';
 import * as scheduler from 'node-schedule';
 
-const fastify = require('fastify')({ trustProxy: config.USE_PROXY, logger: true })
+const fastify = require('fastify')({
+  trustProxy: config.USE_PROXY,
+  logger: {
+    level: 'info',
+    file: '/home/ubuntu/fastify-logs/fastify.log' // Will use pino.destination()
+  }})
 
 import consoleStamp = require("console-stamp");
 consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
@@ -85,7 +90,7 @@ const start = async () => {
         }
 
         scheduler.scheduleJob("tmpInfoTableCleanup", {minute: 5}, () => cleanupTmpInfoTable());
-        
+
       } else {
           console.log("Xumm backend not available");
           process.exit(1);
