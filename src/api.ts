@@ -4,12 +4,15 @@ import * as Special from './special';
 import * as config from './util/config';
 import consoleStamp = require("console-stamp");
 import { XummGetPayloadResponse, XummWebhookBody, XummPostPayloadBodyJson } from 'xumm-api';
+import DeviceDetector = require("device-detector-js");
+import { GenericBackendPostRequestOptions } from './util/types';
 
 consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
 
 let xummBackend = new Xumm.Xumm();
 let db = new Db.DB();
 let special = new Special.Special();
+let deviceDetector = new DeviceDetector();
 
 export async function registerRoutes(fastify, opts, next) {
     await xummBackend.init();
@@ -69,10 +72,12 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
-    fastify.get('/api/v1/initiate/simplePayment/:device', async (request, reply) => {
+    fastify.get('/api/v1/initiate/simplePayment/:deviceType', async (request, reply) => {
         console.log("post payload headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
         try {
+            let genericPayloadOptions:GenericBackendPostRequestOptions = {};
+
             let xummPayload:XummPostPayloadBodyJson = {
                 options: {
                     expire: 5
@@ -81,7 +86,20 @@ export async function registerRoutes(fastify, opts, next) {
                     TransactionType: "Payment"
                 }
             }
-            return xummBackend.submitPayload(xummPayload, request.headers.origin, request.headers.referer, {web: request.params.device === 'web'});
+
+            if(request.params && request.params.deviceType) {
+                if('web' === request.params.deviceType)
+                    genericPayloadOptions.web = true;
+                else if('app' === request.params.deviceType)
+                    genericPayloadOptions.web = false;
+            } else {
+                let parseResult = deviceDetector.parse(request.headers['user-agent'])
+                if(parseResult && parseResult.device && parseResult.device.type) {
+                    genericPayloadOptions.web = 'desktop' === parseResult.device.type;
+                }
+            }
+
+            return xummBackend.submitPayload(xummPayload, request.headers.origin, request.headers.referer, genericPayloadOptions);
         } catch {
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }

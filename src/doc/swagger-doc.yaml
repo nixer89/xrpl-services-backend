@@ -15,7 +15,7 @@ info:
 
 
    <b>To use this API you have to be whitlisted.</b> Please contact [@nixerFFM](https://twitter.com/nixerFFM) if you are interested to use this backend API.
-  version: '2.2.1'
+  version: '2.2.2'
 paths:
   /api/v1/platform/payload:
     post:
@@ -147,21 +147,21 @@ paths:
   /api/v1/initiate/simplePayment/:device:
     get:
       summary: Initiate a simple payment
-      description: Initiates a simple payment and submits the payment request to XUMM with an expiration time of 5 minutes. Returns a normal XUMM submitPayload response
+      description: Initiates a simple payment and submits the payment request to XUMM with an expiration time of 5 minutes. Returns a normal XUMM payload submit response (https://xumm.readme.io/docs/payload-response-resources).
       tags:
         - Initiate API
       produces:
         - application/json
       parameters:
-        - name: device
-          description: device type. Only allowed values are 'web' or 'app'
+        - name: deviceType
+          description: device type. Allowed values are 'web' or 'app'. If omitted, the backend tries to determine the device the request is coming from to set the correct return_url.
           in: path
-          required: true
+          required: false
           schema:
             type: string
       responses:
         200:
-          description: Returns a payload submit response. Please refer to (https://xumm.readme.io/reference/post-payload)
+          description: Returns a payload submit response. Please refer to (https://xumm.readme.io/docs/payload-response-resources)
           content:
             application/json:
               schema:
