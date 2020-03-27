@@ -72,6 +72,32 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
+    fastify.get('/api/v1/initiate/simplePayment', async (request, reply) => {
+        console.log("post payload headers: " + JSON.stringify(request.headers));
+        //console.log("body: " + JSON.stringify(request.body));
+        try {
+            let genericPayloadOptions:GenericBackendPostRequestOptions = {};
+
+            let xummPayload:XummPostPayloadBodyJson = {
+                options: {
+                    expire: 5
+                },
+                txjson: {
+                    TransactionType: "Payment"
+                }
+            }
+
+            let parseResult = deviceDetector.parse(request.headers['user-agent'])
+            if(parseResult && parseResult.device && parseResult.device.type) {
+                genericPayloadOptions.web = 'desktop' === parseResult.device.type;
+            }
+
+            return xummBackend.submitPayload(xummPayload, request.headers.origin, request.headers.referer, genericPayloadOptions);
+        } catch {
+            return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+        }
+    });
+
     fastify.get('/api/v1/initiate/simplePayment/:deviceType', async (request, reply) => {
         console.log("post payload headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
