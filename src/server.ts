@@ -68,7 +68,7 @@ const start = async () => {
       });
       
       fastify.addHook('onRequest', (request, reply, done) => {
-        if(request.raw.url != '/' && !request.raw.url.startsWith('/docs/') && !request.raw.url.startsWith('/docs')) {
+        if(request.raw.url != '/' && !request.raw.url.startsWith('/docs/') && !request.raw.url.startsWith('/docs') && !request.raw.url.startsWith('/api/resetCache/') && !request.raw.url.startsWith('/api/resetOrigins/')) {
           if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
           else if(!allowedOrigins.includes(request.headers.origin))
