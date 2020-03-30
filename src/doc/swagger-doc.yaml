@@ -144,7 +144,7 @@ paths:
           description: Error. Is returned when no origin is set in the request or an exceptions occurs when handling your request. Please check your request parameters.
           schema:
             type: string
-  /api/v1/initiate/simplePayment/:device:
+  /api/v1/initiate/simplePayment/:deviceType:
     get:
       summary: Initiate a simple payment
       description: Initiates a simple payment and submits the payment request to XUMM with an expiration time of 5 minutes. Returns a normal XUMM payload submit response (https://xumm.readme.io/docs/payload-response-resources).
@@ -154,7 +154,7 @@ paths:
         - application/json
       parameters:
         - name: deviceType
-          description: device type. Allowed values are 'web' or 'app'. If omitted, the backend tries to determine the device the request is coming from to set the correct return_url.
+          description: device type. Allowed values are 'web' or 'app'. If omitted, the backend tries to determine the device type by the sent request.
           in: path
           required: false
           schema:
