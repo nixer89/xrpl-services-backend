@@ -31,6 +31,7 @@ fastify.register(require('fastify-swagger'), {
 
 let mongo = new DB.DB();
 let xummBackend:Xumm.Xumm = new Xumm.Xumm();
+let allowedOrigins:string[];
 
 // Run the server!
 const start = async () => {
@@ -47,7 +48,7 @@ const start = async () => {
       await mongo.ensureIndexes()
 
       console.log("adding cors");
-      let allowedOrigins:string[] = await mongo.getAllowedOriginsAsArray();
+      allowedOrigins = await mongo.getAllowedOriginsAsArray();
 
       console.log("setting allowed origins: " + allowedOrigins);
       fastify.register(require('fastify-cors'), {
@@ -78,6 +79,21 @@ const start = async () => {
           done()
         }
       });
+
+      fastify.get('/api/resetOrigins/:token', async (request, reply) => {
+        //console.log("request params: " + JSON.stringify(request.params));
+        try {
+            if(config.RESET_CACHE_TOKEN === request.params.token) {
+                mongo.resetCache();
+                allowedOrigins = await mongo.getAllowedOriginsAsArray();
+
+                return {success: true }
+            } else
+                return {success: false }
+        } catch {
+            return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+        }
+    });
       
       await xummBackend.init();
 
