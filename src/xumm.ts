@@ -3,7 +3,7 @@ import * as config from './util/config';
 import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as DB from './db';
 import { XummPostPayloadBodyJson, XummPostPayloadResponse, XummGetPayloadResponse, XummDeletePayloadResponse} from 'xumm-api';
-import { GenericBackendPostRequest, GenericBackendPostRequestOptions } from './util/types';
+import { GenericBackendPostRequest, GenericBackendPostRequestOptions, AllowedOrigins } from './util/types';
 
 export class Xumm {
 
@@ -85,7 +85,7 @@ export class Xumm {
                 }
             }
 
-            payload = await this.adaptOriginProperties(appId, payload, referer, options);
+            payload = await this.adaptOriginProperties(origin, appId, payload, referer, options);
             
         } catch(err) {
             console.log("err creating payload request")
@@ -194,8 +194,8 @@ export class Xumm {
         }
     }
 
-    async adaptOriginProperties(appId: string, payload: XummPostPayloadBodyJson, referer: string, options: any): Promise<XummPostPayloadBodyJson> {
-        let originProperties:any = await this.db.getOriginProperties(appId);
+    async adaptOriginProperties(origin: string, appId: string, payload: XummPostPayloadBodyJson, referer: string, options: any): Promise<XummPostPayloadBodyJson> {
+        let originProperties:AllowedOrigins = await this.db.getOriginProperties(appId);
         //console.log("[XUMM]: originProperties: " + JSON.stringify(originProperties));
 
         //for payments -> set destination account in backend
@@ -234,7 +234,7 @@ export class Xumm {
 
             //check if there is a default return path: '*'
             if(!foundReturnUrls && originProperties.return_urls.length > 0) {
-                console.log("checking for whitecard");
+                console.log("checking for wildcard");
                 let filtered:any[] = originProperties.return_urls.filter(url => url.from === (origin+'/*'));
                 console.log("found: " + JSON.stringify(filtered));
 
