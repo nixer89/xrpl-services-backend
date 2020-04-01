@@ -28,6 +28,7 @@ export class Xumm {
     async submitPayload(payload:XummPostPayloadBodyJson, origin:string, referer: string, options?:GenericBackendPostRequestOptions): Promise<XummPostPayloadResponse> {
         //trying to resolve xumm user if from given frontendId:
         console.log("received payload: " + JSON.stringify(payload));
+        console.log("received options: " + JSON.stringify(options));
         let frontendId:string;
         let xrplAccount:string;
         let pushDisabled:boolean = options && options.pushDisabled;
