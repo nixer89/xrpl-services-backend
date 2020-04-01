@@ -27,7 +27,7 @@ export class Special {
         let payloadId:string = requestParams.payloadId;
     
         if(frontendUserId && payloadId)
-            return this.validateFrontendIdToPayloadId(origin, await this.db.getAppIdForOrigin(origin), frontendUserId, payloadId,payloadType, referer);
+            return this.validateFrontendIdToPayloadId(await this.db.getAppIdForOrigin(origin), frontendUserId, payloadId,payloadType, referer);
         else
             return false;
     }
@@ -105,7 +105,8 @@ export class Special {
         let transactionDate:Date;
         if(this.successfullPaymentPayloadValidation(payloadInfo)) {
             transactionDate = new Date(payloadInfo.response.resolved_at)
-            let originProperties = await this.db.getOriginProperties(origin);
+            let appId = await this.db.getAppIdForOrigin(origin);
+            let originProperties = await this.db.getOriginProperties(appId);
 
             if(originProperties && originProperties.payloadValidationTimeframe) {
                 if(transactionDate && transactionDate.setTime(transactionDate.getTime()+originProperties.payloadValidationTimeframe) > Date.now()) {
@@ -119,7 +120,7 @@ export class Special {
         }
     }
 
-    async validateFrontendIdToPayloadId(origin: string, applicationId: string, frontendUserId: string, payloadId: string, payloadType: string, referer?: string): Promise<boolean> {
+    async validateFrontendIdToPayloadId(applicationId: string, frontendUserId: string, payloadId: string, payloadType: string, referer?: string): Promise<boolean> {
         let payloadIdsForFrontendId:string[];
         if(referer)
             payloadIdsForFrontendId = await this.db.getPayloadIdsByFrontendIdForApplicationAndReferer(referer, applicationId, frontendUserId, payloadType);
@@ -131,7 +132,7 @@ export class Special {
         return payloadIdsForFrontendId.includes(payloadId);
     }
 
-    async validateXummIdToPayloadId(origin: string, applicationId: string, xummUserId: string, payloadId: string, payloadType: string, referer?: string): Promise<boolean> {
+    async validateXummIdToPayloadId(applicationId: string, xummUserId: string, payloadId: string, payloadType: string, referer?: string): Promise<boolean> {
         let payloadIdsForXummUserId:string[]
         if(referer)
             payloadIdsForXummUserId = await this.db.getPayloadIdsByXummIdForApplicationAndReferer(referer, applicationId, xummUserId, payloadType);
@@ -235,6 +236,7 @@ export class Special {
                 return false;
             }
         } catch(err) {
+            console.log("ERR validating with bithomp");
             console.log(JSON.stringify(err));
         }
     }

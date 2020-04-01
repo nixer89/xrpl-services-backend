@@ -32,11 +32,13 @@ export class DB {
         return Promise.resolve();
     }
 
-    async saveUser(origin:string, applicationId: string, userId:string, xummId: string) {
+    async saveUser(origin:string, applicationId: string, userId:string, xummId: string): Promise<any> {
         console.log("[DB]: saveUser:" + " origin: " + origin + " userId: " + userId + " xummId: " + xummId);
         try {
             if((await this.userIdCollection.find({origin: origin, applicationId: applicationId, frontendUserId: userId, xummUserId: xummId}).toArray()).length == 0) {
-                await this.userIdCollection.insertOne({origin: origin, applicationId: applicationId, frontendUserId: userId, xummUserId: xummId, created: new Date()});
+                return this.userIdCollection.insertOne({origin: origin, applicationId: applicationId, frontendUserId: userId, xummUserId: xummId, created: new Date()});
+            } else {
+                return Promise.resolve();
             }
         } catch(err) {
             console.log("[DB]: error saveUser");
@@ -115,17 +117,15 @@ export class DB {
         }
     }
 
-    async storePayloadForXummId(origin:string, referer:string, applicationId: string, xummUserId:string, payloadId: string, payloadType: string): Promise<void> {
+    async storePayloadForXummId(origin:string, referer:string, applicationId: string, xummUserId:string, payloadId: string, payloadType: string): Promise<any> {
         console.log("[DB]: storePayloadForXummId:" + " origin: " + origin + " referer: " + referer + " xummUserId: " + xummUserId + " payloadId: " + payloadId + " payloadType: " + payloadType);
         try {
-            await this.xummIdPayloadCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, xummUserId: xummUserId}, {
+            return this.xummIdPayloadCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, xummUserId: xummUserId}, {
                 $addToSet: this.getSetToUpdate(payloadType, payloadId),
                 $currentDate: {
                    "updated": { $type: "timestamp" }
                 }   
             }, {upsert: true});
-
-            return Promise.resolve();
         } catch(err) {
             console.log("[DB]: error storePayloadForXummId");
             console.log(JSON.stringify(err));
@@ -169,13 +169,13 @@ export class DB {
         }
     }
 
-    async storePayloadForXRPLAccount(origin:string, referer:string, applicationId: string, xrplAccount:string, xummId:string, payloadId: string, payloadType: string): Promise<void> {
+    async storePayloadForXRPLAccount(origin:string, referer:string, applicationId: string, xrplAccount:string, xummId:string, payloadId: string, payloadType: string): Promise<any> {
         console.log("[DB]: storePayloadForXRPLAccount:" + " origin: " + origin + " xrplAccount: " + xrplAccount + " xummId: " + xummId + " payloadId: " + payloadId + " payloadType: " + payloadType);
         try {
             if(!xummId)
                 xummId = await this.getXummIdForXRPLAccount(applicationId, xrplAccount);
 
-            await this.xrplAccountPayloadCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, xrplAccount: xrplAccount}, {
+            return this.xrplAccountPayloadCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, xrplAccount: xrplAccount}, {
                 $set: {
                     xummId: xummId
                 },
@@ -184,8 +184,6 @@ export class DB {
                    "updated": { $type: "timestamp" }
                 }                
               }, {upsert: true});
-
-            return Promise.resolve();
         } catch(err) {
             console.log("[DB]: error storePayloadForXRPLAccount");
             console.log(JSON.stringify(err));
@@ -285,7 +283,7 @@ export class DB {
         }
     }
 
-    async getOriginProperties(origin: string): Promise<AllowedOrigins> {
+    async getOriginProperties(applicationId: string): Promise<AllowedOrigins> {
         try {
             if(!this.allowedOriginCache) {
                 console.log("[DB]: getOriginProperties from DB:" + " origin: " + origin);
@@ -293,7 +291,7 @@ export class DB {
             } else {
                 console.log("[DB]: getOriginProperties from CACHE:" + " origin: " + origin);
             }
-            return this.allowedOriginCache.filter(originProperties => originProperties.origin.split(',').includes(origin))[0];
+            return this.allowedOriginCache.filter(originProperties => originProperties.applicationId === applicationId)[0];
         } catch(err) {
             console.log("[DB]: error getOriginProperties");
             console.log(JSON.stringify(err));
@@ -423,13 +421,11 @@ export class DB {
         }
     }
 
-    async saveTempInfo(anyInfo: any): Promise<void> {
+    async saveTempInfo(anyInfo: any): Promise<any> {
         console.log("[DB]: saveTempInfo");
         try {
             anyInfo.created = new Date().toUTCString();
-            await this.tmpInfoTable.insertOne(anyInfo);
-
-            return Promise.resolve();
+            return this.tmpInfoTable.insertOne(anyInfo);
         } catch(err) {
             console.log("[DB]: error saveTempInfo");
             console.log(JSON.stringify(err));
@@ -456,12 +452,10 @@ export class DB {
         }
     }
 
-    async deleteTempInfo(anyFilter: any): Promise<void> {
+    async deleteTempInfo(anyFilter: any): Promise<any> {
         console.log("[DB]: deleteTempInfo: " + JSON.stringify(anyFilter));
         try {
-            await this.tmpInfoTable.deleteOne(anyFilter);
-
-            return Promise.resolve();
+            return this.tmpInfoTable.deleteOne(anyFilter);
         } catch(err) {
             console.log("[DB]: error deleteTempInfo");
             console.log(JSON.stringify(err));
@@ -557,6 +551,7 @@ export class DB {
             await this.xrplAccountPayloadCollection.createIndex({xrplAccount: -1, applicationId: -1, origin:-1, referer: -1}, {unique: true});
 
         } catch(err) {
+            console.log("ERR creating indexes");
             console.log(JSON.stringify(err));
         }
     }

@@ -77,16 +77,17 @@ export class Xumm {
 
                     if(payloadIds && payloadIds.length > 0) {
                         let latestPayloadInfo:XummGetPayloadResponse = await this.getPayloadInfoByAppId(appId, payloadIds[payloadIds.length-1]);
-                        console.log("latestPayloadInfo: " + JSON.stringify(latestPayloadInfo));
+                        //console.log("latestPayloadInfo: " + JSON.stringify(latestPayloadInfo));
                         if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token)
                             payload.user_token = latestPayloadInfo.application.issued_user_token;
                     }
                 }
             }
 
-            payload = await this.adaptOriginProperties(origin, payload, referer, options);
+            payload = await this.adaptOriginProperties(appId, payload, referer, options);
             
         } catch(err) {
+            console.log("err creating payload request")
             console.log(JSON.stringify(err));
         }
 
@@ -187,12 +188,13 @@ export class Xumm {
                 return null;
             }
         } catch(err) {
+            console.log("err calling xumm");
             console.log(JSON.stringify(err));
         }
     }
 
-    async adaptOriginProperties(origin: string, payload: XummPostPayloadBodyJson, referer: string, options: any): Promise<XummPostPayloadBodyJson> {
-        let originProperties:any = await this.db.getOriginProperties(origin);
+    async adaptOriginProperties(appId: string, payload: XummPostPayloadBodyJson, referer: string, options: any): Promise<XummPostPayloadBodyJson> {
+        let originProperties:any = await this.db.getOriginProperties(appId);
         //console.log("[XUMM]: originProperties: " + JSON.stringify(originProperties));
 
         //for payments -> set destination account in backend
@@ -231,7 +233,9 @@ export class Xumm {
 
             //check if there is a default return path: '*'
             if(!foundReturnUrls && originProperties.return_urls.length > 0) {
+                console.log("checking for whitecard");
                 let filtered:any[] = originProperties.return_urls.filter(url => url.from === (origin+'/*'));
+                console.log("found: " + JSON.stringify(filtered));
 
                 if(filtered.length > 0) {
                     foundReturnUrls = true;

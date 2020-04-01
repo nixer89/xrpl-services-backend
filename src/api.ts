@@ -418,13 +418,13 @@ export async function registerRoutes(fastify, opts, next) {
 
                         if(tmpInfo) {
                             if(payloadInfo && payloadInfo.application && payloadInfo.application.issued_user_token) {
-                                db.saveUser(tmpInfo.origin, payloadInfo.application.uuidv4, tmpInfo.frontendId, payloadInfo.application.issued_user_token);
-                                db.storePayloadForXummId(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.application.issued_user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
+                                await db.saveUser(tmpInfo.origin, payloadInfo.application.uuidv4, tmpInfo.frontendId, payloadInfo.application.issued_user_token);
+                                await db.storePayloadForXummId(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.application.issued_user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
                             }
 
                             //store payload to XRPL account
                             if(payloadInfo && payloadInfo.response && payloadInfo.response.account) {
-                                db.storePayloadForXRPLAccount(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, webhookRequest.userToken.user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
+                                await db.storePayloadForXRPLAccount(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, webhookRequest.userToken.user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
                             }
 
                             db.deleteTempInfo(tmpInfo);
