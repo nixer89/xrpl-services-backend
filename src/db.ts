@@ -286,10 +286,10 @@ export class DB {
     async getOriginProperties(applicationId: string): Promise<AllowedOrigins> {
         try {
             if(!this.allowedOriginCache) {
-                console.log("[DB]: getOriginProperties from DB:" + " origin: " + origin);
+                console.log("[DB]: getOriginProperties from DB:" + " applicationId: " + applicationId);
                 this.allowedOriginCache = await this.allowedOriginsCollection.find().toArray();
             } else {
-                console.log("[DB]: getOriginProperties from CACHE:" + " origin: " + origin);
+                console.log("[DB]: getOriginProperties from CACHE:" + " applicationId: " + applicationId);
             }
             return this.allowedOriginCache.filter(originProperties => originProperties.applicationId === applicationId)[0];
         } catch(err) {
