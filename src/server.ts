@@ -58,7 +58,7 @@ const start = async () => {
       });
       
       fastify.addHook('onRequest', (request, reply, done) => {
-        if(request.raw.url != '/' && !request.raw.url.startsWith('/docs/') && !request.raw.url.startsWith('/docs') && !request.raw.url.startsWith('/api/resetCache/') && !request.raw.url.startsWith('/api/resetOrigins/')) {
+        if(request.raw.url != '/' && !request.raw.url.startsWith('/docs/') && !request.raw.url.startsWith('/docs') && !request.raw.url.startsWith('/api/resetCache/') && !request.raw.url.startsWith('/api/resetOrigins/') && !request.raw.url.startsWith('/api/v1/webhook/')) {
           if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
           else if(!allowedOrigins.includes(request.headers.origin))
@@ -129,8 +129,7 @@ async function cleanupTmpInfoTable() {
   console.log("cleanup having entries: " + tmpInfoEntries.length);
   for(let i = 0; i < tmpInfoEntries.length; i++) {
     let expirationDate:Date = new Date(tmpInfoEntries[i].expires);
-    console.log("expirationDate: " + expirationDate);
-    //add one day to expiration date to make sure payload is not used anymore
+    //add 10 days to expiration date to make sure payload is not used anymore
     expirationDate.setDate(expirationDate.getDate()+10);
     //payload is expired. Check if user has opened it
     if(Date.now() > expirationDate.getTime()) {
