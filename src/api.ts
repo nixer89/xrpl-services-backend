@@ -86,7 +86,8 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/initiate/simplePayment', async (request, reply) => {
-        console.log("post payload headers: " + JSON.stringify(request.headers));
+        console.log("simplePayment headers: " + JSON.stringify(request.headers));
+        console.log("simplePayment request.params: " + JSON.stringify(request.params));
         //console.log("body: " + JSON.stringify(request.body));
         try {
             let genericPayloadOptions:GenericBackendPostRequestOptions = {};
@@ -102,6 +103,7 @@ export async function registerRoutes(fastify, opts, next) {
             
             try {
                 let parseResult = deviceDetector.parse(request.headers['user-agent'])
+                console.log("parsed user agent: " + JSON.stringify(parseResult));
                 if(parseResult && parseResult.device && parseResult.device.type) {
                     genericPayloadOptions.web = 'desktop' === parseResult.device.type;
                 }
@@ -117,7 +119,8 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/initiate/simplePayment/:deviceType', async (request, reply) => {
-        console.log("post payload headers: " + JSON.stringify(request.headers));
+        console.log("simplePayment/ headers: " + JSON.stringify(request.headers));
+        console.log("simplePayment/ request.params: " + JSON.stringify(request.params));
         //console.log("body: " + JSON.stringify(request.body));
         try {
             let genericPayloadOptions:GenericBackendPostRequestOptions = {};
@@ -132,6 +135,7 @@ export async function registerRoutes(fastify, opts, next) {
             }
 
             if(request.params && request.params.deviceType != null) {
+                console.log("received device type");
                 if('web' === request.params.deviceType)
                     genericPayloadOptions.web = true;
                 else if('app' === request.params.deviceType)
@@ -139,6 +143,7 @@ export async function registerRoutes(fastify, opts, next) {
             } else {
                 try {
                     let parseResult = deviceDetector.parse(request.headers['user-agent'])
+                    console.log("parsed user agent: " + JSON.stringify(parseResult));
                     if(parseResult && parseResult.device && parseResult.device.type) {
                         genericPayloadOptions.web = 'desktop' === parseResult.device.type;
                     }
