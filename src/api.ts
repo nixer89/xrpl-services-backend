@@ -25,7 +25,20 @@ export async function registerRoutes(fastify, opts, next) {
         if(!request.body.payload)
             reply.code(500).send('Please provide a xumm payload. Calls without xumm payload are not allowed');
         else {
+            //try parsing the user agent when unknown to determine if web or app
             try {
+                try {
+                    if(request.body && request.body.options && request.body.options.web ===null) {
+                        let parseResult = deviceDetector.parse(request.headers['user-agent'])
+                        if(parseResult && parseResult.device && parseResult.device.type) {
+                            request.body.options.web = 'desktop' === parseResult.device.type;
+                        }
+                    }
+                } catch(err) {
+                    console.log("failed to parse user agent");
+                    console.log(JSON.stringify(err));
+                }
+
                 return xummBackend.submitPayload(request.body.payload, request.headers.origin, request.headers.referer, request.body.options);
             } catch {
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -86,10 +99,15 @@ export async function registerRoutes(fastify, opts, next) {
                     TransactionType: "Payment"
                 }
             }
-
-            let parseResult = deviceDetector.parse(request.headers['user-agent'])
-            if(parseResult && parseResult.device && parseResult.device.type) {
-                genericPayloadOptions.web = 'desktop' === parseResult.device.type;
+            
+            try {
+                let parseResult = deviceDetector.parse(request.headers['user-agent'])
+                if(parseResult && parseResult.device && parseResult.device.type) {
+                    genericPayloadOptions.web = 'desktop' === parseResult.device.type;
+                }
+            } catch(err) {
+                console.log("failed to parse user agent");
+                console.log(JSON.stringify(err));
             }
 
             return xummBackend.submitPayload(xummPayload, request.headers.origin, request.headers.referer, genericPayloadOptions);
@@ -113,15 +131,20 @@ export async function registerRoutes(fastify, opts, next) {
                 }
             }
 
-            if(request.params && request.params.deviceType) {
+            if(request.params && request.params.deviceType != null) {
                 if('web' === request.params.deviceType)
                     genericPayloadOptions.web = true;
                 else if('app' === request.params.deviceType)
                     genericPayloadOptions.web = false;
             } else {
-                let parseResult = deviceDetector.parse(request.headers['user-agent'])
-                if(parseResult && parseResult.device && parseResult.device.type) {
-                    genericPayloadOptions.web = 'desktop' === parseResult.device.type;
+                try {
+                    let parseResult = deviceDetector.parse(request.headers['user-agent'])
+                    if(parseResult && parseResult.device && parseResult.device.type) {
+                        genericPayloadOptions.web = 'desktop' === parseResult.device.type;
+                    }
+                } catch(err) {
+                    console.log("failed to parse user agent");
+                    console.log(JSON.stringify(err));
                 }
             }
 

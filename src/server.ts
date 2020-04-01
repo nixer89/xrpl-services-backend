@@ -52,17 +52,7 @@ const start = async () => {
 
       console.log("setting allowed origins: " + allowedOrigins);
       fastify.register(require('fastify-cors'), {
-        origin: (origin, cb) => {
-          if(allowedOrigins && allowedOrigins.length > 0) {
-            for(let i = 0; i < allowedOrigins.length; i++) {
-              if(allowedOrigins[i].split(',').includes(origin)){
-                cb(null, true)
-                return
-              }
-            }
-          }
-          cb(null, false)
-        },
+        origin: allowedOrigins,
         methods: 'GET, POST, DELETE, OPTIONS',
         allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'Referer']
       });

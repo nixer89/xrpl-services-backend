@@ -43,7 +43,7 @@ export class Xumm {
         try {
             //get xummId by frontendId
             if(options && (frontendId = options.frontendId)) {
-                let xummId:string = await this.db.getXummId(origin, appId, options.frontendId);
+                let xummId:string = await this.db.getXummId(appId, options.frontendId);
                 if(!pushDisabled && xummId && xummId.trim().length > 0)
                     payload.user_token = xummId; 
             }
@@ -53,7 +53,7 @@ export class Xumm {
                 //resolve xummId by latest sign in payload
                 console.log("getting xummId by xplAccount: " + xrplAccount);
                 let appId:string = await this.db.getAppIdForOrigin(origin)
-                let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccountForOriginBySignin(origin, appId, xrplAccount);
+                let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccountForApplicationBySignin(appId, xrplAccount);
                 console.log("payloadIds: " + JSON.stringify(payloadIds));
 
                 if(payloadIds && payloadIds.length > 0) {
@@ -65,7 +65,7 @@ export class Xumm {
 
                 //resolve xummId by XrplAccount
                 if(!payload.user_token) {
-                    let xummIdForXrplAccount:string = await this.db.getXummIdForXRPLAccount(origin, appId, xrplAccount);
+                    let xummIdForXrplAccount:string = await this.db.getXummIdForXRPLAccount(appId, xrplAccount);
                     if(xummIdForXrplAccount)
                         payload.user_token = xummIdForXrplAccount;
                 }
@@ -73,7 +73,7 @@ export class Xumm {
                 //no SignIn found or SignIn did not have issued user token
                 if(!payload.user_token) {
                     //try getting issued_user_token by type!
-                    payloadIds = await this.db.getPayloadIdsByXrplAccountForOriginAndType(origin, appId, xrplAccount, payload.txjson.TransactionType);
+                    payloadIds = await this.db.getPayloadIdsByXrplAccountForApplicationAndType(appId, xrplAccount, payload.txjson.TransactionType);
 
                     if(payloadIds && payloadIds.length > 0) {
                         let latestPayloadInfo:XummGetPayloadResponse = await this.getPayloadInfoByAppId(appId, payloadIds[payloadIds.length-1]);
@@ -94,11 +94,22 @@ export class Xumm {
         let payloadResponse:XummPostPayloadResponse = await this.callXumm(appId, "payload", "POST", payload);
         console.log("[XUMM]: submitPayload response: " + JSON.stringify(payloadResponse))
 
-        //saving payloadId to frontendId
-        if(frontendId && payloadResponse && payloadResponse.uuid) {
-            this.db.storePayloadForFrontendId(origin, referer, appId, frontendId, payloadResponse.uuid, payload.txjson.TransactionType);
-        }
+        //don't block the response
+        setTimeout(() => { this.storePayloadInfo(origin, referer, frontendId, appId, payload, payloadResponse) },2000);
+        
+        return payloadResponse;
+    }
 
+    async storePayloadInfo(origin:string, referer: string, frontendId: string, appId: string, payload: XummPostPayloadBodyJson, payloadResponse: XummPostPayloadResponse) {
+        //saving payloadId to frontendId
+        try {
+            if(frontendId && payloadResponse && payloadResponse.uuid) {
+                this.db.storePayloadForFrontendId(origin, referer, appId, frontendId, payloadResponse.uuid, payload.txjson.TransactionType);
+            }
+        } catch(err) {
+            console.log("Error saving PayloadForFrontendId");
+            console.log(JSON.stringify(err));
+        }
         try {
             let payloadInfo:XummGetPayloadResponse = await this.getPayloadInfoByAppId(appId, payloadResponse.uuid);
             this.db.saveTempInfo({origin: origin, referer: referer, frontendId: frontendId, applicationId: appId, xummUserId: payload.user_token, payloadId: payloadResponse.uuid, expires: payloadInfo.payload.expires_at});
@@ -106,8 +117,6 @@ export class Xumm {
             console.log("Error saving TempInfo");
             console.log(JSON.stringify(err));
         }
-        
-        return payloadResponse;
     }
 
     async getPayloadInfoByOrigin(origin:string, payload_id:string): Promise<XummGetPayloadResponse> {
@@ -222,9 +231,9 @@ export class Xumm {
 
             //check if there is a default return path: '*'
             if(!foundReturnUrls && originProperties.return_urls.length > 0) {
-                let filtered:any[] = originProperties.return_urls.filter(url => url.from === '*');
+                let filtered:any[] = originProperties.return_urls.filter(url => url.from === (origin+'/*'));
 
-                if(filtered.length == 1) {
+                if(filtered.length > 0) {
                     foundReturnUrls = true;
 
                     if(options.web)

@@ -73,7 +73,7 @@ export class Special {
                 if(payloadInfo && this.successfullSignInPayloadValidation(payloadInfo)) {
                     //console.log("sucessfully validated:" + JSON.stringify(payloadInfo));
                     //user signed in successfull -> check his latest payloads
-                    let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccountForOriginAndReferer(origin, referer, await this.db.getAppIdForOrigin(origin), payloadInfo.response.account, "payment");
+                    let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccountForApplicationAndReferer(referer, await this.db.getAppIdForOrigin(origin), payloadInfo.response.account, "payment");
                     //reverse order to get latest first
                     //console.log("payloadIds: " + JSON.stringify(payloadIds));
                     payloadIds = payloadIds.reverse();
@@ -122,9 +122,9 @@ export class Special {
     async validateFrontendIdToPayloadId(origin: string, applicationId: string, frontendUserId: string, payloadId: string, payloadType: string, referer?: string): Promise<boolean> {
         let payloadIdsForFrontendId:string[];
         if(referer)
-            payloadIdsForFrontendId = await this.db.getPayloadIdsByFrontendIdForOriginAndReferer(origin, referer, applicationId, frontendUserId, payloadType);
+            payloadIdsForFrontendId = await this.db.getPayloadIdsByFrontendIdForApplicationAndReferer(referer, applicationId, frontendUserId, payloadType);
         else
-            payloadIdsForFrontendId = await this.db.getPayloadIdsByFrontendIdForOrigin(origin, applicationId, frontendUserId, payloadType);
+            payloadIdsForFrontendId = await this.db.getPayloadIdsByFrontendIdForApplication(applicationId, frontendUserId, payloadType);
 
         //console.log("payloadIdsForFrontendId: " + JSON.stringify(payloadIdsForFrontendId));
         //console.log(payloadIdsForFrontendId.includes(payloadId));
@@ -134,9 +134,9 @@ export class Special {
     async validateXummIdToPayloadId(origin: string, applicationId: string, xummUserId: string, payloadId: string, payloadType: string, referer?: string): Promise<boolean> {
         let payloadIdsForXummUserId:string[]
         if(referer)
-            payloadIdsForXummUserId = await this.db.getPayloadIdsByXummIdForOriginAndReferer(origin, referer, applicationId, xummUserId, payloadType);
+            payloadIdsForXummUserId = await this.db.getPayloadIdsByXummIdForApplicationAndReferer(referer, applicationId, xummUserId, payloadType);
         else
-            payloadIdsForXummUserId = await this.db.getPayloadIdsByXummIdForOrigin(origin, applicationId, xummUserId, payloadType);
+            payloadIdsForXummUserId = await this.db.getPayloadIdsByXummIdForApplication(applicationId, xummUserId, payloadType);
 
         return payloadIdsForXummUserId.includes(payloadId);
     }
