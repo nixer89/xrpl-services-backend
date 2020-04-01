@@ -28,7 +28,7 @@ export async function registerRoutes(fastify, opts, next) {
             //try parsing the user agent when unknown to determine if web or app
             try {
                 try {
-                    if(request.body && request.body.options && request.body.options.web ===null) {
+                    if(request.body && request.body.options && (request.body.options.web == null || request.body.options.web == undefined)) {
                         let parseResult = deviceDetector.parse(request.headers['user-agent'])
                         if(parseResult && parseResult.device && parseResult.device.type) {
                             request.body.options.web = 'desktop' === parseResult.device.type;
@@ -134,12 +134,8 @@ export async function registerRoutes(fastify, opts, next) {
                 }
             }
 
-            if(request.params && request.params.deviceType != null) {
-                console.log("received device type");
-                if('web' === request.params.deviceType)
-                    genericPayloadOptions.web = true;
-                else if('app' === request.params.deviceType)
-                    genericPayloadOptions.web = false;
+            if(request.params && request.params && (request.params.deviceType === 'app' || request.params.deviceType === 'web')) {
+                genericPayloadOptions.web = 'web' === request.params.deviceType;
             } else {
                 try {
                     let parseResult = deviceDetector.parse(request.headers['user-agent'])
