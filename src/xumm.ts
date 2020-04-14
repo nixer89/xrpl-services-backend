@@ -3,7 +3,7 @@ import * as config from './util/config';
 import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as DB from './db';
 import { XummPostPayloadBodyJson, XummPostPayloadResponse, XummGetPayloadResponse, XummDeletePayloadResponse} from 'xumm-api';
-import { GenericBackendPostRequest, GenericBackendPostRequestOptions, AllowedOrigins } from './util/types';
+import { GenericBackendPostRequestOptions, AllowedOrigins } from './util/types';
 
 export class Xumm {
 
@@ -200,14 +200,25 @@ export class Xumm {
 
         //for payments -> set destination account in backend
         if(payload.txjson && payload.txjson.TransactionType && payload.txjson.TransactionType.trim().toLowerCase() === 'payment') {
-            if(originProperties.destinationAccount && originProperties.destinationAccount.trim().length > 0)
-                payload.txjson.Destination = originProperties.destinationAccount;
 
-            if(originProperties.destinationTag && Number.isInteger(originProperties.destinationTag))
-                payload.txjson.DestinationTag = originProperties.destinationTag;
-
-            if(originProperties.fixAmount && JSON.stringify(originProperties.fixAmount).trim().length > 0)
-                payload.txjson.Amount = originProperties.fixAmount;
+            if(originProperties.destinationAccount) {
+                if(originProperties.destinationAccount[referer]) {
+                    payload.txjson.Destination = originProperties.destinationAccount[referer].account;
+                    if(originProperties.destinationAccount[referer].tag && Number.isInteger(originProperties.destinationAccount[referer].tag))
+                        payload.txjson.DestinationTag = originProperties.destinationAccount[referer].tag;
+                } else if(originProperties.destinationAccount['*']) {
+                    payload.txjson.Destination = originProperties.destinationAccount['*'].account;
+                    if(originProperties.destinationAccount['*'].tag && Number.isInteger(originProperties.destinationAccount['*'].tag))
+                        payload.txjson.DestinationTag = originProperties.destinationAccount['*'].tag;
+                }
+            }
+            
+            if(originProperties.fixAmount && JSON.stringify(originProperties.fixAmount).trim().length > 0) {
+                if(originProperties.fixAmount[referer])
+                    payload.txjson.Amount = originProperties.fixAmount[referer];
+                else if(originProperties.fixAmount['*'])
+                    payload.txjson.Amount = originProperties.fixAmount['*'];
+            }
         }
 
         //handle return URLs

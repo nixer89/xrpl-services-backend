@@ -344,23 +344,27 @@ export class DB {
         }
     }
 
-    async getAllowedOriginDestinationAccount(origin: string): Promise<string> {
+    async getAllowedDestinationAccountByAppIdAndReferer(appId: string, referer: string): Promise<string> {
         
         try {
             if(!this.allowedOriginCache) {
-                console.log("[DB]: getAllowedOriginDestinationAccount:" + " origin from DB: " + origin);
+                console.log("[DB]: getAllowedDestinationAccountByReferer:" + " origin from DB: " + origin);
                 this.allowedOriginCache = await this.allowedOriginsCollection.find().toArray();
             } else {
-                console.log("[DB]: getAllowedOriginDestinationAccount:" + " origin from CACHE: " + origin);
+                console.log("[DB]: getAllowedDestinationAccountByReferer:" + " origin from CACHE: " + origin);
             }
             
-            let searchResult:AllowedOrigins[] = this.allowedOriginCache.filter(originProperties => originProperties.origin.split(',').includes(origin));
-            if(searchResult)
-                return searchResult[0].destinationAccount;
-            return null;
+            let originprops:AllowedOrigins[] = this.allowedOriginCache.filter(originProperties => originProperties.applicationId === appId);
+            if(originprops && originprops[0] && originprops[0].destinationAccount) {
+                if(originprops[0].destinationAccount[referer])
+                    return originprops[0].destinationAccount[referer];
+                else
+                    originprops[0].destinationAccount['*'];
+            } else
+                return null;
 
         } catch(err) {
-            console.log("[DB]: error getAllowedOriginDestinationAccount");
+            console.log("[DB]: error getAllowedDestinationAccountByReferer");
             console.log(JSON.stringify(err));
             return null;
         }

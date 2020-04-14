@@ -31,8 +31,8 @@ export interface AllowedOrigins {
     applicationId: string,
     destinationAccount?: string,
     destinationTag?: number,
-    fixAmount?: number,
-    payloadValidationTimeframe?: number,
+    fixAmount?: any,
+    payloadValidationTimeframe?: any,
     return_urls?: any[]
 }
 

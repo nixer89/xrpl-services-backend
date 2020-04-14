@@ -52,7 +52,31 @@ const start = async () => {
 
       console.log("setting allowed origins: " + allowedOrigins);
       fastify.register(require('fastify-cors'), {
-        origin: allowedOrigins,
+        origin: (origin, cb) => {
+          if(!origin) {
+            //  Requests will pass
+            cb(null, true);
+            return;
+          }
+
+          if(allowedOrigins) {
+            if(allowedOrigins.includes(origin)) {
+              // Requests will pass
+              cb(null, true);
+              return;
+            }
+
+            for(let i = 0; i < allowedOrigins.length; i++) {
+              if(new RegExp(allowedOrigins[i]).test(origin)) {
+                // Request will pass
+                cb(null, true)
+                return
+              }
+            }
+          }
+          
+          cb(new Error("Origin not allowed"), false);
+        },
         methods: 'GET, POST, DELETE, OPTIONS',
         allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'Referer']
       });
@@ -63,12 +87,11 @@ const start = async () => {
             !request.raw.url.startsWith('/docs') &&
             !request.raw.url.startsWith('/api/resetCache/') &&
             !request.raw.url.startsWith('/api/resetOrigins/') &&
-            !request.raw.url.startsWith('/api/v1/webhook/'))
+            !request.raw.url.startsWith('/api/v1/webhook/') &&
+            !(request.raw.url === '/api/v1/webhook'))
         {
           if(!request.headers.origin)
             reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
-          else if(!allowedOrigins.includes(request.headers.origin))
-            reply.code(500).send('Origin not allowed');
           else
             done()
         } else {

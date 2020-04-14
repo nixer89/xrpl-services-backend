@@ -75,11 +75,11 @@ export class Special {
                     //user signed in successfull -> check his latest payloads
                     let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccountForApplicationAndReferer(referer, await this.db.getAppIdForOrigin(origin), payloadInfo.response.account, "payment");
                     //reverse order to get latest first
-                    //console.log("payloadIds: " + JSON.stringify(payloadIds));
+                    console.log("payloadIds: " + JSON.stringify(payloadIds));
                     payloadIds = payloadIds.reverse();
                     let validationInfo:any = {success: false};
                     for(let i = 0; i < payloadIds.length; i++) {
-                        validationInfo = await this.validateTimedPaymentPayload(origin, await this.xummBackend.getPayloadInfoByOrigin(origin, payloadIds[i]));
+                        validationInfo = await this.validateTimedPaymentPayload(origin, referer, await this.xummBackend.getPayloadInfoByOrigin(origin, payloadIds[i]));
                         //console.log("validationInfo: " + JSON.stringify(validationInfo));
 
                         if(validationInfo.success || validationInfo.payloadExpired)
@@ -101,16 +101,24 @@ export class Special {
         }
     }
 
-    async validateTimedPaymentPayload(origin: string, payloadInfo: XummGetPayloadResponse): Promise<TransactionValidation> {
+    async validateTimedPaymentPayload(origin: string, referer:string, payloadInfo: XummGetPayloadResponse): Promise<TransactionValidation> {
         let transactionDate:Date;
         if(this.successfullPaymentPayloadValidation(payloadInfo)) {
             transactionDate = new Date(payloadInfo.response.resolved_at)
             let appId = await this.db.getAppIdForOrigin(origin);
             let originProperties = await this.db.getOriginProperties(appId);
 
-            if(originProperties && originProperties.payloadValidationTimeframe) {
-                if(transactionDate && transactionDate.setTime(transactionDate.getTime()+originProperties.payloadValidationTimeframe) > Date.now()) {
-                    return this.validatePaymentOnLedger(payloadInfo.response.txid, origin, payloadInfo);
+            console.log("checking timeframe");
+            if(originProperties && originProperties.payloadValidationTimeframe && JSON.stringify(originProperties.payloadValidationTimeframe).trim().length > 0) {
+                //resolve validation time
+                let validationTime:number = 0;
+                if(originProperties.payloadValidationTimeframe[referer])
+                    validationTime = originProperties.payloadValidationTimeframe[referer];
+                else if(originProperties.payloadValidationTimeframe['*'])
+                    validationTime = originProperties.payloadValidationTimeframe['*'];
+
+                if(validationTime == -1 || (transactionDate && transactionDate.setTime(transactionDate.getTime()+validationTime) > Date.now())) {
+                    return this.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
                 } else {
                     return { success: false, payloadExpired : true, testnet: false };
                 }
@@ -163,9 +171,12 @@ export class Special {
         }
     }
 
-    async validatePaymentOnLedger(trxHash:string, origin:string, payloadInfo: XummGetPayloadResponse): Promise<TransactionValidation> {
-        let destinationAccount = await this.db.getAllowedOriginDestinationAccount(origin);
-        console.log("validate Payment with dest account: " + destinationAccount + " and hash: " + trxHash)
+    async validatePaymentOnLedger(trxHash:string, payloadInfo: XummGetPayloadResponse): Promise<TransactionValidation> {
+        let destinationAccount:any = {
+            account: payloadInfo.payload.request_json.Destination,
+            tag: payloadInfo.payload.request_json.DestinationTag,
+        }
+        
         if(trxHash && destinationAccount) {
             if(await this.callBithompAndValidate(trxHash, false, destinationAccount, payloadInfo.payload.request_json.Amount)) {
                 return {
@@ -198,19 +209,20 @@ export class Special {
         }
     }
 
-    async callBithompAndValidate(trxHash:string, testnet: boolean, destinationAccount?:string, amount?:any): Promise<boolean> {
+    async callBithompAndValidate(trxHash:string, testnet: boolean, destinationAccount?:any, amount?:any): Promise<boolean> {
         try {
+            console.log("checking bithomp with trxHash: " + trxHash);
+            console.log("checking bithomp with testnet: " + testnet + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount));
             let bithompResponse:any = await fetch.default("https://"+(testnet?'test.':'')+"bithomp.com/api/v2/transaction/"+trxHash, {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN },agent: this.useProxy ? this.proxy : null});
             if(bithompResponse && bithompResponse.ok) {
                 let ledgerTrx:any = await bithompResponse.json();
-                //console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(ledgerTrx));
+                console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(ledgerTrx));
 
                 //standard validation of successfull transaction
                 if(ledgerTrx && ledgerTrx.type.toLowerCase() === 'payment'
-                    && ledgerTrx.specification && ledgerTrx.specification.destination && ledgerTrx.specification.destination.address === destinationAccount
-                        && ledgerTrx.outcome  && ledgerTrx.outcome.result === 'tesSUCCESS') {
+                    && ledgerTrx.specification && ledgerTrx.specification.destination && (destinationAccount ? ledgerTrx.specification.destination.address === destinationAccount.account : true)
+                        && (destinationAccount && destinationAccount.tag ? ledgerTrx.specification.destination.tag == destinationAccount.tag : true) && ledgerTrx.outcome  && ledgerTrx.outcome.result === 'tesSUCCESS') {
 
-                            
                             if(!amount) {
                                 //no amount in request. Accept any amount then
                                 return true;
@@ -223,7 +235,7 @@ export class Special {
                                 //amount not a number so it must be a IOU
                                 return ledgerTrx.outcome.deliveredAmount.currency === amount.currency //check currency
                                     && ledgerTrx.outcome.deliveredAmount.issuer === amount.issuer //check issuer
-                                        &&(parseFloat(ledgerTrx.outcome.deliveredAmount.value)*1000000 == parseInt(amount.value)); //check value
+                                        && (Number(ledgerTrx.outcome.deliveredAmount.value) == Number(amount.value)); //check value
                             }
 
                 } else if( ledgerTrx && ledgerTrx.outcome  && ledgerTrx.outcome.result === 'tesSUCCESS') {
