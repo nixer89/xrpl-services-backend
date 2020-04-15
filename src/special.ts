@@ -114,6 +114,8 @@ export class Special {
                 let validationTime:number = 0;
                 if(originProperties.payloadValidationTimeframe[referer])
                     validationTime = originProperties.payloadValidationTimeframe[referer];
+                else if(originProperties.payloadValidationTimeframe[origin+'/*'])
+                    validationTime = originProperties.payloadValidationTimeframe[origin+'/*'];
                 else if(originProperties.payloadValidationTimeframe['*'])
                     validationTime = originProperties.payloadValidationTimeframe['*'];
 

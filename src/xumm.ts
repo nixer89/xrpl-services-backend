@@ -194,18 +194,24 @@ export class Xumm {
         }
     }
 
-    async adaptOriginProperties(origin: string, appId: string, payload: XummPostPayloadBodyJson, referer: string, options: any): Promise<XummPostPayloadBodyJson> {
+    async adaptOriginProperties(origin: string, appId: string, payload: XummPostPayloadBodyJson, referer: string, options: GenericBackendPostRequestOptions): Promise<XummPostPayloadBodyJson> {
         let originProperties:AllowedOrigins = await this.db.getOriginProperties(appId);
         //console.log("[XUMM]: originProperties: " + JSON.stringify(originProperties));
 
         //for payments -> set destination account in backend
-        if(payload.txjson && payload.txjson.TransactionType && payload.txjson.TransactionType.trim().toLowerCase() === 'payment') {
+        if(payload.txjson && payload.txjson.TransactionType && payload.txjson.TransactionType.trim().toLowerCase() === 'payment' && !options.issuing) {
 
             if(originProperties.destinationAccount) {
                 if(originProperties.destinationAccount[referer]) {
                     payload.txjson.Destination = originProperties.destinationAccount[referer].account;
                     if(originProperties.destinationAccount[referer].tag && Number.isInteger(originProperties.destinationAccount[referer].tag))
                         payload.txjson.DestinationTag = originProperties.destinationAccount[referer].tag;
+
+                } else if(originProperties.destinationAccount[origin+'/*']) {
+                    payload.txjson.Destination = originProperties.destinationAccount[origin+'/*'].account;
+                    if(originProperties.destinationAccount[origin+'/*'].tag && Number.isInteger(originProperties.destinationAccount[origin+'/*'].tag))
+                        payload.txjson.DestinationTag = originProperties.destinationAccount[origin+'/*'].tag;
+
                 } else if(originProperties.destinationAccount['*']) {
                     payload.txjson.Destination = originProperties.destinationAccount['*'].account;
                     if(originProperties.destinationAccount['*'].tag && Number.isInteger(originProperties.destinationAccount['*'].tag))
@@ -213,9 +219,11 @@ export class Xumm {
                 }
             }
             
-            if(originProperties.fixAmount && JSON.stringify(originProperties.fixAmount).trim().length > 0) {
+            if(originProperties.fixAmount) {
                 if(originProperties.fixAmount[referer])
                     payload.txjson.Amount = originProperties.fixAmount[referer];
+                else if(originProperties.fixAmount[origin+'/*'])
+                    payload.txjson.Amount = originProperties.fixAmount[origin+'/*'];
                 else if(originProperties.fixAmount['*'])
                     payload.txjson.Amount = originProperties.fixAmount['*'];
             }
@@ -243,10 +251,26 @@ export class Xumm {
                 }
             }
 
-            //check if there is a default return path: '*'
+            //check if there is a default return path: 'origin/*'
             if(!foundReturnUrls && originProperties.return_urls.length > 0) {
                 console.log("checking for wildcard");
                 let filtered:any[] = originProperties.return_urls.filter(url => url.from === (origin+'/*'));
+                console.log("found: " + JSON.stringify(filtered));
+
+                if(filtered.length > 0) {
+                    foundReturnUrls = true;
+
+                    if(options.web)
+                        payload.options.return_url.web = filtered[0].to_web+(options.signinToValidate?"&signinToValidate=true":"");
+                    else
+                        payload.options.return_url.app = filtered[0].to_app+(options.signinToValidate?"&signinToValidate=true":"");
+                }
+            }
+
+            //check if there is a default return path: '*'
+            if(!foundReturnUrls && originProperties.return_urls.length > 0) {
+                console.log("checking for wildcard");
+                let filtered:any[] = originProperties.return_urls.filter(url => url.from === ('*'));
                 console.log("found: " + JSON.stringify(filtered));
 
                 if(filtered.length > 0) {

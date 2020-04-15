@@ -11,7 +11,8 @@ export interface GenericBackendPostRequestOptions {
     pushDisabled?: boolean,
     referer?: string,
     xrplAccount?: string,
-    signinToValidate?: boolean
+    signinToValidate?: boolean,
+    issuing?: boolean
 }
 
 export interface TransactionValidation {

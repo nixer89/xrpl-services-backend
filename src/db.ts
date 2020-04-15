@@ -344,32 +344,6 @@ export class DB {
         }
     }
 
-    async getAllowedDestinationAccountByAppIdAndReferer(appId: string, referer: string): Promise<string> {
-        
-        try {
-            if(!this.allowedOriginCache) {
-                console.log("[DB]: getAllowedDestinationAccountByReferer:" + " origin from DB: " + origin);
-                this.allowedOriginCache = await this.allowedOriginsCollection.find().toArray();
-            } else {
-                console.log("[DB]: getAllowedDestinationAccountByReferer:" + " origin from CACHE: " + origin);
-            }
-            
-            let originprops:AllowedOrigins[] = this.allowedOriginCache.filter(originProperties => originProperties.applicationId === appId);
-            if(originprops && originprops[0] && originprops[0].destinationAccount) {
-                if(originprops[0].destinationAccount[referer])
-                    return originprops[0].destinationAccount[referer];
-                else
-                    originprops[0].destinationAccount['*'];
-            } else
-                return null;
-
-        } catch(err) {
-            console.log("[DB]: error getAllowedDestinationAccountByReferer");
-            console.log(JSON.stringify(err));
-            return null;
-        }
-    }
-
     async getOriginReturnUrl(origin: string, applicationId: string, referer: string, isWeb: boolean): Promise<string> {
         
         try {
