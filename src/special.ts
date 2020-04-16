@@ -75,16 +75,18 @@ export class Special {
                     //console.log("sucessfully validated:" + JSON.stringify(payloadInfo));
                     //user signed in successfull -> check his latest payloads
                     let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccountForApplicationAndReferer(referer, await this.db.getAppIdForOrigin(origin), payloadInfo.response.account, "payment");
-                    //reverse order to get latest first
-                    console.log("payloadIds: " + JSON.stringify(payloadIds));
-                    payloadIds = payloadIds.reverse();
-                    let validationInfo:any = {success: false};
-                    for(let i = 0; i < payloadIds.length; i++) {
-                        validationInfo = await this.validateTimedPaymentPayload(origin, referer, await this.xummBackend.getPayloadInfoByOrigin(origin, payloadIds[i]));
-                        //console.log("validationInfo: " + JSON.stringify(validationInfo));
+                    //console.log("payloadIds: " + JSON.stringify(payloadIds));
+                    if(payloadIds && payloadIds.length > 0) {
+                        //reverse order to get latest first
+                        payloadIds = payloadIds.reverse();
+                        let validationInfo:any = {success: false};
+                        for(let i = 0; i < payloadIds.length; i++) {
+                            validationInfo = await this.validateTimedPaymentPayload(origin, referer, await this.xummBackend.getPayloadInfoByOrigin(origin, payloadIds[i]));
+                            //console.log("validationInfo: " + JSON.stringify(validationInfo));
 
-                        if(validationInfo.success || validationInfo.payloadExpired)
-                            return validationInfo;
+                            if(validationInfo.success || validationInfo.payloadExpired)
+                                return validationInfo;
+                        }
                     }
                 }
                 return {
@@ -109,7 +111,6 @@ export class Special {
             let appId = await this.db.getAppIdForOrigin(origin);
             let originProperties = await this.db.getOriginProperties(appId);
 
-            console.log("checking timeframe");
             if(originProperties && originProperties.payloadValidationTimeframe && JSON.stringify(originProperties.payloadValidationTimeframe).trim().length > 0) {
                 //resolve validation time
                 let validationTime:number = 0;
@@ -128,6 +129,8 @@ export class Special {
             } else {
                 return { success: false, noValidationTimeFrame : true, testnet: false };
             }
+        } else {
+            return { success: false, testnet: false, error: true, message: "invalid payload or transaction not successfull"}
         }
     }
 

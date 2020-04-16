@@ -7,6 +7,7 @@ import * as scheduler from 'node-schedule';
 const fastify = require('fastify')({
   trustProxy: config.USE_PROXY,
   logger: {
+    //level: 'warn',
     level: 'info',
     file: '/home/ubuntu/fastify-logs/fastify.log' // Will use pino.destination()
   }})
