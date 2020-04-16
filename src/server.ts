@@ -104,6 +104,7 @@ const start = async () => {
         try {
             if(config.RESET_CACHE_TOKEN === request.params.token) {
                 mongo.resetCache();
+                xummBackend.resetDBCache();
                 allowedOrigins = await mongo.getAllowedOriginsAsArray();
 
                 return {success: true }

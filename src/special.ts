@@ -20,6 +20,7 @@ export class Special {
 
     resetDBCache() {
         this.db.resetCache();
+        this.xummBackend.resetDBCache();
     }
 
     async validFrontendUserIdToPayload(origin:string, requestParams:any, payloadType: string, referer?: string): Promise<boolean> {

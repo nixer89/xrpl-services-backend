@@ -430,9 +430,9 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         try {
             if(config.RESET_CACHE_TOKEN === request.params.token) {
-                db.resetCache();
-                xummBackend.resetDBCache();
-                special.resetDBCache();
+                await db.resetCache();
+                await xummBackend.resetDBCache();
+                await special.resetDBCache();
 
                 return {success: true }
             } else
@@ -475,44 +475,38 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
-    let origins:any[] = await db.getAllOrigins();
+    fastify.post('/api/v1/webhook/*', async (request, reply) => {
+        console.log("webhook/* headers: " + JSON.stringify(request.headers));
+        //console.log("webhook body: " + JSON.stringify(request.body));
+       
+        try {
+            let webhookRequest:XummWebhookBody = request.body;
+            let payloadInfo:XummGetPayloadResponse = await xummBackend.getPayloadInfoByAppId(webhookRequest.meta.application_uuidv4, webhookRequest.meta.payload_uuidv4);
+            
+            //check if we have to store the user
+            try {
+                let tmpInfo:any = await db.getTempInfo({payloadId: payloadInfo.meta.uuid, applicationId: payloadInfo.application.uuidv4});
 
-    for(let i = 0; i < origins.length; i++) {
-        if(origins[i].applicationId) {
-            fastify.post('/api/v1/webhook/'+origins[i].applicationId, async (request, reply) => {
-                console.log("webhook headers: " + JSON.stringify(request.headers));
-                //console.log("webhook body: " + JSON.stringify(request.body));
-               
-                try {
-                    let webhookRequest:XummWebhookBody = request.body;
-                    let payloadInfo:XummGetPayloadResponse = await xummBackend.getPayloadInfoByAppId(webhookRequest.meta.application_uuidv4, webhookRequest.meta.payload_uuidv4);
-                    
-                    //check if we have to store the user
-                    try {
-                        let tmpInfo:any = await db.getTempInfo({payloadId: payloadInfo.meta.uuid, applicationId: payloadInfo.application.uuidv4});
-
-                        if(tmpInfo) {
-                            if(payloadInfo && payloadInfo.application && payloadInfo.application.issued_user_token) {
-                                await db.saveUser(tmpInfo.origin, payloadInfo.application.uuidv4, tmpInfo.frontendId, payloadInfo.application.issued_user_token);
-                                await db.storePayloadForXummId(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.application.issued_user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
-                            }
-
-                            //store payload to XRPL account
-                            if(payloadInfo && payloadInfo.response && payloadInfo.response.account) {
-                                await db.storePayloadForXRPLAccount(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, webhookRequest.userToken.user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
-                            }
-
-                            db.deleteTempInfo(tmpInfo);
-                        }
-                    } catch {
-                        return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+                if(tmpInfo) {
+                    if(payloadInfo && payloadInfo.application && payloadInfo.application.issued_user_token) {
+                        await db.saveUser(tmpInfo.origin, payloadInfo.application.uuidv4, tmpInfo.frontendId, payloadInfo.application.issued_user_token);
+                        await db.storePayloadForXummId(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.application.issued_user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
                     }
-                } catch {
-                    return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+
+                    //store payload to XRPL account
+                    if(payloadInfo && payloadInfo.response && payloadInfo.response.account) {
+                        await db.storePayloadForXRPLAccount(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, webhookRequest.userToken.user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
+                    }
+
+                    db.deleteTempInfo(tmpInfo);
                 }
-            });
+            } catch {
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+            }
+        } catch {
+            return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
-    }
+    });
 
     next()
 }
