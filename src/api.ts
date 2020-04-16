@@ -465,7 +465,11 @@ export async function registerRoutes(fastify, opts, next) {
                         await db.storePayloadForXRPLAccount(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, webhookRequest.userToken.user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
                     }
 
-                    db.deleteTempInfo(tmpInfo);
+                    await db.deleteTempInfo(tmpInfo);
+
+                    return {success: true}
+                } else {
+                    return {success: false}
                 }
             } catch {
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -498,7 +502,11 @@ export async function registerRoutes(fastify, opts, next) {
                         await db.storePayloadForXRPLAccount(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, webhookRequest.userToken.user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
                     }
 
-                    db.deleteTempInfo(tmpInfo);
+                    await db.deleteTempInfo(tmpInfo);
+
+                    return {success: true}
+                } else {
+                    return {success: false}
                 }
             } catch {
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
