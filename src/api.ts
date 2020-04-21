@@ -3,7 +3,7 @@ import * as Db from './db';
 import * as Special from './special';
 import * as config from './util/config';
 import consoleStamp = require("console-stamp");
-import { XummGetPayloadResponse, XummWebhookBody, XummPostPayloadBodyJson } from 'xumm-api';
+import { XummGetPayloadResponse, XummWebhookBody, XummPostPayloadBodyJson, XummPostPayloadResponse } from 'xumm-api';
 import DeviceDetector = require("device-detector-js");
 import { GenericBackendPostRequestOptions } from './util/types';
 
@@ -152,6 +152,46 @@ export async function registerRoutes(fastify, opts, next) {
             return xummBackend.submitPayload(xummPayload, request.headers.origin, request.headers.referer, genericPayloadOptions);
         } catch {
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+        }
+    });
+
+    fastify.get('/api/v1/initiate/simplePaymentRedirect', async (request, reply) => {
+        console.log("simplePayment headers: " + JSON.stringify(request.headers));
+        console.log("simplePayment request.params: " + JSON.stringify(request.params));
+        //console.log("body: " + JSON.stringify(request.body));
+        try {
+            let genericPayloadOptions:GenericBackendPostRequestOptions = {};
+
+            let xummPayload:XummPostPayloadBodyJson = {
+                options: {
+                    expire: 5
+                },
+                txjson: { 
+                    TransactionType: "Payment"
+                }
+            }
+            
+            try {
+                let parseResult = deviceDetector.parse(request.headers['user-agent'])
+                console.log("parsed user agent: " + JSON.stringify(parseResult));
+                if(parseResult && parseResult.device && parseResult.device.type) {
+                    genericPayloadOptions.web = 'desktop' === parseResult.device.type;
+                }
+            } catch(err) {
+                console.log("failed to parse user agent");
+                console.log(JSON.stringify(err));
+            }
+
+            let payload:XummPostPayloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, request.headers.referer, genericPayloadOptions);
+
+            if(payload && payload.next && payload.next.always) {
+                reply.redirect(307, payload.next.always);
+            } else {
+                reply.send({ success : false, error: true, message: 'Something went wrong. Please check your request'});
+            }
+            
+        } catch {
+            reply.send({ success : false, error: true, message: 'Something went wrong. Please check your request'});
         }
     });
 
