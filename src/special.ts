@@ -240,8 +240,8 @@ export class Special {
                             } else {
                                 //amount not a number so it must be a IOU
                                 return ledgerTrx.outcome.deliveredAmount.currency === amount.currency //check currency
-                                    && ledgerTrx.outcome.deliveredAmount.issuer === amount.issuer //check issuer
-                                        && (Number(ledgerTrx.outcome.deliveredAmount.value) == Number(amount.value)); //check value
+                                    && ledgerTrx.outcome.deliveredAmount.counterparty === amount.issuer //check issuer
+                                        && ledgerTrx.outcome.deliveredAmount.value === amount.value; //check value
                             }
 
                 } else if( ledgerTrx && ledgerTrx.outcome  && ledgerTrx.outcome.result === 'tesSUCCESS') {
