@@ -252,7 +252,7 @@ export class DB {
     }
 
     async getPayloadIdsByXrplAccountForApplicationAndReferer(referer:string, applicationId: string, xrplAccount:string, payloadType: string): Promise<string[]> {
-        console.log("[DB]: getPayloadIdsByXrplAccountForApplicationAndReferer: referer: " + referer + "applicationId: " + applicationId +" xrplAccount: " + xrplAccount + "payloadType: " + payloadType);
+        console.log("[DB]: getPayloadIdsByXrplAccountForApplicationAndReferer: referer: " + referer + " applicationId: " + applicationId +" xrplAccount: " + xrplAccount + " payloadType: " + payloadType);
         try {
             let findResult:XrplAccountPayloadCollection = await this.xrplAccountPayloadCollection.findOne({referer:referer, applicationId: applicationId, xrplAccount: xrplAccount});
 
