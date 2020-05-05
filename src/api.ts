@@ -196,7 +196,8 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/check/signinToValidatePayment/:signinPayloadId', async (request, reply) => {
-        //console.log("headers: " + JSON.stringify(request.headers));
+        console.log("headers: " + JSON.stringify(request.headers));
+        console.log("query: " + JSON.stringify(request.query));
         if(!request.params.signinPayloadId) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
