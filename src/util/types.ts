@@ -12,7 +12,8 @@ export interface GenericBackendPostRequestOptions {
     referer?: string,
     xrplAccount?: string,
     signinToValidate?: boolean,
-    issuing?: boolean
+    issuing?: boolean,
+    isRawTrx?: boolean
 }
 
 export interface TransactionValidation {

@@ -199,23 +199,29 @@ export class Xumm {
         //console.log("[XUMM]: originProperties: " + JSON.stringify(originProperties));
 
         //for payments -> set destination account in backend
-        if(payload.txjson && payload.txjson.TransactionType && payload.txjson.TransactionType.trim().toLowerCase() === 'payment' && !options.issuing) {
+        if(payload.txjson && payload.txjson.TransactionType && payload.txjson.TransactionType.trim().toLowerCase() === 'payment' && !options.issuing && !options.isRawTrx) {
 
             if(originProperties.destinationAccount) {
                 if(originProperties.destinationAccount[referer]) {
                     payload.txjson.Destination = originProperties.destinationAccount[referer].account;
                     if(originProperties.destinationAccount[referer].tag && Number.isInteger(originProperties.destinationAccount[referer].tag))
                         payload.txjson.DestinationTag = originProperties.destinationAccount[referer].tag;
+                    else
+                        delete payload.txjson.DestinationTag;
 
                 } else if(originProperties.destinationAccount[origin+'/*']) {
                     payload.txjson.Destination = originProperties.destinationAccount[origin+'/*'].account;
                     if(originProperties.destinationAccount[origin+'/*'].tag && Number.isInteger(originProperties.destinationAccount[origin+'/*'].tag))
                         payload.txjson.DestinationTag = originProperties.destinationAccount[origin+'/*'].tag;
+                    else
+                        delete payload.txjson.DestinationTag;
 
                 } else if(originProperties.destinationAccount['*']) {
                     payload.txjson.Destination = originProperties.destinationAccount['*'].account;
                     if(originProperties.destinationAccount['*'].tag && Number.isInteger(originProperties.destinationAccount['*'].tag))
                         payload.txjson.DestinationTag = originProperties.destinationAccount['*'].tag;
+                    else
+                        delete payload.txjson.DestinationTag;
                 }
             }
             
