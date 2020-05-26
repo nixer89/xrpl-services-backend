@@ -390,7 +390,7 @@ export async function registerRoutes(fastify, opts, next) {
                     return {success: true, account: payloadInfo.response.account }
                 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false}
+                return {success : false, account: payloadInfo.response.account }
 
             } catch {
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -412,7 +412,7 @@ export async function registerRoutes(fastify, opts, next) {
                     return {success: true, account: payloadInfo.response.account }
                 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false}
+                return {success : false, account: payloadInfo.response.account }
 
             } catch {
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -434,7 +434,7 @@ export async function registerRoutes(fastify, opts, next) {
                     return {success: true, account: payloadInfo.response.account }
                 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false}
+                return {success : false, account: payloadInfo.response.account }
 
             } catch {
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -452,14 +452,14 @@ export async function registerRoutes(fastify, opts, next) {
 
                 if(payloadInfo && payloadInfo.response && payloadInfo.response.txid) {
                     let txResult:any = await special.validateXRPLTransaction(payloadInfo.response.txid);
-                    if(txResult && txResult.success)
+                    if(txResult)
                         txResult.account = payloadInfo.response.account;
 
                     return txResult;
                 }
                 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false, testnet: false}
+                return {success : false, testnet: false, account: payloadInfo.response.account }
 
             } catch {
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
