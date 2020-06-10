@@ -1,6 +1,7 @@
 import { MongoClient, Collection } from 'mongodb';
 import consoleStamp = require("console-stamp");
-import { AllowedOrigins, ApplicationApiKeys, UserIdCollection, FrontendIdPayloadCollection, XummIdPayloadCollection, XrplAccountPayloadCollection } from './util/types';
+import { AllowedOrigins, ApplicationApiKeys, UserIdCollection, FrontendIdPayloadCollection, XummIdPayloadCollection, XrplAccountPayloadCollection, MultiSigTransaction } from './util/types';
+import * as rippleCodec from 'ripple-binary-codec';
 
 consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
 
@@ -13,6 +14,7 @@ export class DB {
     frontendIdPayloadCollection:Collection<FrontendIdPayloadCollection> = null;
     xummIdPayloadCollection:Collection<XummIdPayloadCollection> = null;
     xrplAccountPayloadCollection:Collection<XrplAccountPayloadCollection> = null;
+    multiSignCollection:Collection<MultiSigTransaction> = null;
     tmpInfoTable:Collection = null;
 
     allowedOriginCache:AllowedOrigins[] = null;
@@ -27,6 +29,7 @@ export class DB {
         this.frontendIdPayloadCollection = await this.getNewDbModel("FrontendIdPayloadCollection");
         this.xummIdPayloadCollection = await this.getNewDbModel("XummIdPayloadCollection");
         this.xrplAccountPayloadCollection = await this.getNewDbModel("XrplAccountPayloadCollection");
+        this.multiSignCollection = await this.getNewDbModel("MultiSignCollection");
         this.tmpInfoTable = await this.getNewDbModel("TmpInfoTable");
         
         return Promise.resolve();
@@ -168,6 +171,28 @@ export class DB {
             return [];
         }
     }
+
+    async storeMultiSignTransaction(origin:string, referer:string, applicationId: string, multiSignAccount:string, trxBlob:string): Promise<any> {
+        console.log("[DB]: storeMultiSigTransaction:" + " origin: " + origin + " multiSignAccount: " + multiSignAccount + " trxBlob: " + trxBlob);
+        try {
+
+            let trxJson:any = rippleCodec.decode(trxBlob);
+
+            return this.multiSignCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, multiSignAccount: multiSignAccount}, {
+                $set: {
+                    xummId: xummId
+                },
+                $addToSet: this.getSetToUpdate(payloadType, payloadId),
+                $currentDate: {
+                   "updated": { $type: "timestamp" }
+                }                
+              }, {upsert: true});
+        } catch(err) {
+            console.log("[DB]: error storeMultiSigTransaction");
+            console.log(JSON.stringify(err));
+        }
+    }
+
 
     async storePayloadForXRPLAccount(origin:string, referer:string, applicationId: string, xrplAccount:string, xummId:string, payloadId: string, payloadType: string): Promise<any> {
         console.log("[DB]: storePayloadForXRPLAccount:" + " origin: " + origin + " xrplAccount: " + xrplAccount + " xummId: " + xummId + " payloadId: " + payloadId + " payloadType: " + payloadType);

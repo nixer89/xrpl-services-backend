@@ -1,4 +1,4 @@
-import { XummPostPayloadBodyJson } from 'xumm-api';
+import { XummPostPayloadBodyJson, XummJsonTransaction } from 'xumm-api';
 
 export interface GenericBackendPostRequest {
     options?: GenericBackendPostRequestOptions,
@@ -77,4 +77,19 @@ export interface XrplAccountPayloadCollection {
     xummId?: string,
     [key: string]: any,
     updated: Date
+}
+
+export interface Signature {
+    Signer: {
+        Account: string,
+        SigningPubKey: string,
+        TxnSignature: string
+    }
+}
+
+export interface MultiSignTransaction {
+    multiSignAccount: string
+    txJson: XummJsonTransaction,
+    signerList: Signature[]
+
 }

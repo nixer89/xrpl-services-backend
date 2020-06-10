@@ -543,6 +543,10 @@ export async function registerRoutes(fastify, opts, next) {
                         await db.storePayloadForXRPLAccount(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, webhookRequest.userToken.user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
                     }
 
+                    if(payloadInfo.meta.multisign) {
+                        await db.storeMultiSignTransaction(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.multisign_account, payloadInfo.response.hex);
+                    }
+
                     await db.deleteTempInfo(tmpInfo);
 
                     return {success: true}
