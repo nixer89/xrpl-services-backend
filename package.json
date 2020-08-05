@@ -28,7 +28,7 @@
   "dependencies": {
     "console-stamp": "^0.2.9",
     "device-detector-js": "^2.2.1",
-    "fastify": "^2.14.1",
+    "fastify": "^2.15.1",
     "fastify-compress": "^2.0.1",
     "fastify-cors": "^3.0.3",
     "fastify-helmet": "^3.0.2",
