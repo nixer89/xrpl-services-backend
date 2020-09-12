@@ -35,7 +35,7 @@
     "fastify-swagger": "^2.5.1",
     "https-proxy-agent": "^4.0.0",
     "mongodb": "^3.5.7",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "node-schedule": "^1.3.2",
     "verify-xrpl-signature": "^0.1.0"
   },
