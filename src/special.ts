@@ -15,7 +15,7 @@ export class Special {
 
     async init() {
         await this.xummBackend.init();
-        await this.db.initDb();
+        await this.db.initDb("special");
     }
 
     resetDBCache() {

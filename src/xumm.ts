@@ -12,7 +12,7 @@ export class Xumm {
     db = new DB.DB();
 
     async init() {
-        await this.db.initDb();
+        await this.db.initDb("xumm");
     }
 
     resetDBCache() {

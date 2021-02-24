@@ -45,7 +45,7 @@ const start = async () => {
     try {
       //init routes
       
-      await mongo.initDb();
+      await mongo.initDb("server");
       await mongo.ensureIndexes()
 
       console.log("adding cors");

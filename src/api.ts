@@ -16,7 +16,7 @@ let deviceDetector = new DeviceDetector();
 
 export async function registerRoutes(fastify, opts, next) {
     await xummBackend.init();
-    await db.initDb();
+    await db.initDb("api");
     await special.init();
     
     fastify.post('/api/v1/platform/payload', async (request, reply) => {

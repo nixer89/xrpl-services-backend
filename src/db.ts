@@ -19,8 +19,8 @@ export class DB {
     applicationApiKeysCache:ApplicationApiKeys[] = null;
 
 
-    async initDb(): Promise<void> {
-        console.log("init mongodb");
+    async initDb(from: string): Promise<void> {
+        console.log("init mongodb from: " + from);
         this.allowedOriginsCollection = await this.getNewDbModel("AllowedOrigins");
         this.applicationApiKeysCollection = await this.getNewDbModel("ApplicationApiKeys");
         this.userIdCollection = await this.getNewDbModel("UserIdCollection");
@@ -459,16 +459,25 @@ export class DB {
     }
 
     async getNewDbModel(collectionName: string): Promise<Collection<any>> {
-        console.log("[DB]: connecting to mongo db with collection: " + collectionName +" and an schema");
-        let connection:MongoClient = await MongoClient.connect('mongodb://'+this.dbIp+':27017', { useNewUrlParser: true, useUnifiedTopology: true });
-        connection.on('error', ()=>{console.log("[DB]: Connection to MongoDB could NOT be established")});
-    
-        if(connection && connection.isConnected()) {
-            await connection.db('XummBackend').createCollection(collectionName);
-            return connection.db('XummBackend').collection(collectionName);
-        }
-        else
+        try {
+            console.log("[DB]: connecting to mongo db with collection: " + collectionName +" and an schema");
+            let connection:MongoClient = await MongoClient.connect('mongodb://'+this.dbIp+':27017', { useNewUrlParser: true, useUnifiedTopology: true });
+            connection.on('error', ()=>{console.log("[DB]: Connection to MongoDB could NOT be established")});
+        
+            if(connection && connection.isConnected()) {
+                let existingCollections:Collection<any>[] = await connection.db('XummBackend').collections();
+                //create collection if not exists
+                if(existingCollections.filter(collection => collection.collectionName === collectionName).length == 0)
+                    await connection.db('XummBackend').createCollection(collectionName);
+
+                return connection.db('XummBackend').collection(collectionName);
+            }
+            else
+                return null;
+        } catch(err) {
+            console.log(err);
             return null;
+        }
     }
 
     async ensureIndexes(): Promise<void> {
