@@ -1,4 +1,4 @@
-import { MongoClient, Collection } from 'mongodb';
+import { MongoClient, Collection, Cursor } from 'mongodb';
 import consoleStamp = require("console-stamp");
 import { AllowedOrigins, ApplicationApiKeys, UserIdCollection, FrontendIdPayloadCollection, XummIdPayloadCollection, XrplAccountPayloadCollection } from './util/types';
 
@@ -49,9 +49,9 @@ export class DB {
     async getXummId(applicationId:string, frontendUserId:string): Promise<string> {
         try {
             console.log("[DB]: getXummId: applicationId: " + applicationId +" frontendUserId: " + frontendUserId);
-            let mongoResult:UserIdCollection = await this.userIdCollection.findOne({applicationId: applicationId, frontendUserId: frontendUserId});
+            let mongoResult:UserIdCollection[] = await this.userIdCollection.find({applicationId: applicationId, frontendUserId: frontendUserId}).sort({created: -1}).limit(1).toArray();
 
-            if(mongoResult)
+            if(mongoResult && mongoResult[0])
                 return mongoResult[0].xummUserId;
             else
                 return null;
@@ -193,10 +193,10 @@ export class DB {
     async getXummIdForXRPLAccount(applicationId: string, xrplAccount:string): Promise<string> {
         console.log("[DB]: getXummIdForXRPLAccount:" + " applicationId: " + applicationId + " xrplAccount: " + xrplAccount);
         try {
-            let findResult:XrplAccountPayloadCollection = await this.xrplAccountPayloadCollection.findOne({applicationId: applicationId, xrplAccount: xrplAccount, xummId: { $ne: null}});
+            let findResult:XrplAccountPayloadCollection[] = await this.xrplAccountPayloadCollection.find({applicationId: applicationId, xrplAccount: xrplAccount, xummId: { $ne: null}}).sort({updated: -1}).limit(1).toArray();
 
-            if(findResult && findResult.xummId) {
-                return findResult.xummId;
+            if(findResult && findResult[0] && findResult[0].xummId) {
+                return findResult[0].xummId;
             } else
                 return "";
 
@@ -210,7 +210,7 @@ export class DB {
     async getPayloadIdsByXrplAccountForApplicationBySignin(applicationId: string, xrplAccount:string) {
         console.log("[DB]: getPayloadIdsByXrplAccountForApplicationBySignin:" + " applicationId: " + applicationId + " xrplAccount: " + xrplAccount);
         try {
-            let findResult:XrplAccountPayloadCollection[] = await this.xrplAccountPayloadCollection.find({applicationId: applicationId, xrplAccount: xrplAccount, signin: {$ne: null}}).toArray();
+            let findResult:XrplAccountPayloadCollection[] = await this.xrplAccountPayloadCollection.find({applicationId: applicationId, xrplAccount: xrplAccount, signin: {$ne: null}}).sort({updated: 1}).toArray();
 
             if(findResult && findResult.length > 0) {
                 let payloadsForUserAndOrigin:string[] = [];
@@ -232,7 +232,7 @@ export class DB {
     async getPayloadIdsByXrplAccountForApplicationAndType(applicationId: string, xrplAccount:string, payloadType: string): Promise<string[]> {
         console.log("[DB]: getPayloadIdsByXrplAccountForApplicationAndType:" + " applicationId: " + applicationId + " xrplAccount: " + xrplAccount + " payloadType: " + payloadType);
         try {
-            let findResult:XrplAccountPayloadCollection[] = await this.xrplAccountPayloadCollection.find({applicationId: applicationId, xrplAccount: xrplAccount}).toArray();
+            let findResult:XrplAccountPayloadCollection[] = await this.xrplAccountPayloadCollection.find({applicationId: applicationId, xrplAccount: xrplAccount}).sort({updated: 1}).toArray();
 
             if(findResult && findResult.length > 0) {
                 let payloadsForUserAndOrigin:string[] = [];

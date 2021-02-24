@@ -1,8 +1,8 @@
-import { XummPostPayloadBodyJson } from 'xumm-api';
+import { XummTypes } from 'xumm-sdk';
 
 export interface GenericBackendPostRequest {
     options?: GenericBackendPostRequestOptions,
-    payload: XummPostPayloadBodyJson
+    payload: XummTypes.XummPostPayloadBodyJson
 }
 
 export interface GenericBackendPostRequestOptions {

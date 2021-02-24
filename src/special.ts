@@ -4,7 +4,7 @@ import * as config from './util/config'
 import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as fetch from 'node-fetch';
 import {verifySignature} from 'verify-xrpl-signature'
-import { XummGetPayloadResponse } from 'xumm-api';
+import { XummTypes } from 'xumm-sdk';
 import { TransactionValidation } from './util/types';
 
 export class Special {
@@ -33,7 +33,7 @@ export class Special {
             return false;
     }
     
-    async getPayloadInfoForFrontendId(origin: string, requestParams:any, payloadType: string, referer?: string): Promise<XummGetPayloadResponse> {
+    async getPayloadInfoForFrontendId(origin: string, requestParams:any, payloadType: string, referer?: string): Promise<XummTypes.XummGetPayloadResponse> {
         if(await this.validFrontendUserIdToPayload(origin, requestParams,payloadType, referer)) {
             return this.xummBackend.getPayloadInfoByOrigin(origin, requestParams.payloadId)
         } else {
@@ -41,12 +41,12 @@ export class Special {
         }
     }
     
-    basicPayloadInfoValidation(payloadInfo: XummGetPayloadResponse): boolean {
+    basicPayloadInfoValidation(payloadInfo: XummTypes.XummGetPayloadResponse): boolean {
         return payloadInfo && payloadInfo.meta && payloadInfo.payload && payloadInfo.response
             && payloadInfo.meta.exists && payloadInfo.meta.resolved && payloadInfo.meta.signed;
     }
     
-    successfullPaymentPayloadValidation(payloadInfo: XummGetPayloadResponse): boolean {
+    successfullPaymentPayloadValidation(payloadInfo: XummTypes.XummGetPayloadResponse): boolean {
         if(this.basicPayloadInfoValidation(payloadInfo) && 'payment' === payloadInfo.payload.tx_type.toLowerCase() && payloadInfo.meta.submit && payloadInfo.response.dispatched_result === 'tesSUCCESS') {
             //validate signature
             return verifySignature(payloadInfo.response.hex).signatureValid
@@ -55,7 +55,7 @@ export class Special {
         }
     }
     
-    successfullSignInPayloadValidation(payloadInfo: XummGetPayloadResponse): boolean {
+    successfullSignInPayloadValidation(payloadInfo: XummTypes.XummGetPayloadResponse): boolean {
         if(this.basicPayloadInfoValidation(payloadInfo) && 'signin' === payloadInfo.payload.tx_type.toLowerCase() && payloadInfo.response.txid && payloadInfo.response.hex && payloadInfo.response.account) {
             //validate signature
             return verifySignature(payloadInfo.response.hex).signatureValid;
@@ -68,7 +68,7 @@ export class Special {
         console.log("signInToValidate: siginPayloadId: " + siginPayloadId + " origin: " + origin + " referer: " + referer);
         try {
             if(siginPayloadId) {
-                let payloadInfo:XummGetPayloadResponse = await this.xummBackend.getPayloadInfoByOrigin(origin, siginPayloadId);
+                let payloadInfo:XummTypes.XummGetPayloadResponse = await this.xummBackend.getPayloadInfoByOrigin(origin, siginPayloadId);
 
                 //console.log("signInPayloadInfo:" + JSON.stringify(payloadInfo));
                 if(payloadInfo && this.successfullSignInPayloadValidation(payloadInfo)) {
@@ -104,7 +104,7 @@ export class Special {
         }
     }
 
-    async validateTimedPaymentPayload(origin: string, referer:string, payloadInfo: XummGetPayloadResponse): Promise<TransactionValidation> {
+    async validateTimedPaymentPayload(origin: string, referer:string, payloadInfo: XummTypes.XummGetPayloadResponse): Promise<TransactionValidation> {
         let transactionDate:Date;
         if(this.successfullPaymentPayloadValidation(payloadInfo)) {
             transactionDate = new Date(payloadInfo.response.resolved_at)
@@ -177,7 +177,7 @@ export class Special {
         }
     }
 
-    async validatePaymentOnLedger(trxHash:string, payloadInfo: XummGetPayloadResponse): Promise<TransactionValidation> {
+    async validatePaymentOnLedger(trxHash:string, payloadInfo: XummTypes.XummGetPayloadResponse): Promise<TransactionValidation> {
         let destinationAccount:any = {
             account: payloadInfo.payload.request_json.Destination,
             tag: payloadInfo.payload.request_json.DestinationTag,
