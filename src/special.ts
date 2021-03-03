@@ -258,4 +258,41 @@ export class Special {
             console.log(JSON.stringify(err));
         }
     }
+
+    async addEscrow(escrow: any): Promise<any> {
+        console.log("add escrow: account: " + escrow.account + " sequence: " + escrow.sequence + " on " + (escrow.testnet ? "Testnet" : "Mainnet"));
+        
+        let escrowListResponse:fetch.Response = await fetch.default("http://localhost:4011/api/v1/escrowFinish", {method: "post", body: JSON.stringify(escrow)});
+
+        if(escrowListResponse && escrowListResponse.ok) {
+            return escrowListResponse.json();
+        } else {
+            throw "error calling escrow add api";
+        }
+    }
+
+    async deleteEscrow(escrow: any): Promise<any> {
+        console.log("delete escrow: account: " + escrow.account + " sequence: " + escrow.sequence + " on " + (escrow.testnet ? "Testnet" : "Mainnet"));
+        
+        let escrowListResponse:fetch.Response = await fetch.default("http://localhost:4011/api/v1/escrowFinish/"+escrow.account+"/"+escrow.sequence+"/"+escrow.testnet, {method: "delete"});
+
+        if(escrowListResponse && escrowListResponse.ok) {
+            return escrowListResponse.json();
+        } else {
+            console.log("NOT OKAY")
+            throw "error calling escrow delete api";
+        }
+    }
+
+    async loadEscrowsForAccount(accountInfo: any) {
+        console.log("loading escrows for account: " + accountInfo.account + " on " + (accountInfo.testnet ? "Testnet" : "Mainnet"));
+        
+        let escrowListResponse:fetch.Response = await fetch.default("http://localhost:4011/api/v1/escrows", {method: "post", body: JSON.stringify(accountInfo)});
+
+        if(escrowListResponse && escrowListResponse.ok) {
+            return escrowListResponse.json();
+        } else {
+            throw "error calling escrow list api";
+        }
+    }
 }

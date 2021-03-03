@@ -5,7 +5,7 @@ import * as config from './util/config';
 import consoleStamp = require("console-stamp");
 import { XummTypes } from 'xumm-sdk';
 import DeviceDetector = require("device-detector-js");
-import { GenericBackendPostRequestOptions } from './util/types';
+import { GenericBackendPostRequestOptions, TransactionValidation } from './util/types';
 
 consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
 
@@ -387,7 +387,7 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId);
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo))
-                    return {success: true, account: payloadInfo.response.account }
+                    return {success: true, account: payloadInfo.response.account}
                 
                 //we didn't go into the success:true -> so return false :)
                 return {success : false, account: payloadInfo.response.account }
@@ -461,6 +461,94 @@ export async function registerRoutes(fastify, opts, next) {
                 //we didn't go into the success:true -> so return false :)
                 return {success : false, testnet: false, account: payloadInfo.response.account }
 
+            } catch {
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+            }
+        }
+    });
+
+    fastify.get('/api/v1/escrow/validatepayment/:payloadId', async (request, reply) => {
+        //console.log("request params: " + JSON.stringify(request.params));
+        if(!request.params.payloadId) {
+            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+        } else {
+            try {
+                let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId)
+
+                console.log("PAYLOAD PAYMENT: " + JSON.stringify(payloadInfo));
+
+                if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
+                    let txResult:TransactionValidation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+
+                    if(txResult) {
+                        if(payloadInfo.custom_meta.blob) {
+                            txResult.account = payloadInfo.response.account;
+                            let escrow:any = payloadInfo.custom_meta.blob;
+
+                            if(escrow && txResult.success && txResult.account == escrow.account && ((txResult.testnet == escrow.testnet) || (escrow.testnet && !txResult.testnet))) {
+                                //insert escrow
+                                let addEscrow:any = await special.addEscrow(escrow);
+
+                                console.log("Add escrow: " + JSON.stringify(addEscrow));
+
+                                if(addEscrow && addEscrow.success)
+                                    return txResult;
+                                else
+                                    return {success : false, testnet: txResult.testnet, account: payloadInfo.response.account, error: true, message: "Escrow could not be stored. Please contact the website owner!" }
+                            } else {
+                                return {success : false, testnet: txResult.testnet, account: payloadInfo.response.account, error: true, message: "The escrow account does not equal the payment account or you submitted the transaction on a different network (Main/Test)." }
+                            }
+                        } else {
+                            return {success : false, testnet: txResult.testnet, account: payloadInfo.response.account, error: true, message: "The transaction could not be matched to an escrow. Please contact the website owner if you think that is wrong!" }
+                        }
+
+                    } else {
+                        return {success : false, testnet: false, account: payloadInfo.response.account, error: true, message: "Your transaction could not be verfied!" }
+                    }
+                }
+                
+                //we didn't go into the success:true -> so return false :)
+                return {success : false, testnet: false, account: payloadInfo.response.account }
+
+            } catch {
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+            }
+        }
+    });
+
+    fastify.get('/api/v1/escrow/signinToDeleteEscrow/:payloadId', async (request, reply) => {
+        //console.log("request params: " + JSON.stringify(request.params));
+        if(!request.params.payloadId)
+            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+        else {
+            try {
+                let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId);
+
+                console.log("PAYLOAD SIGNIN: " + JSON.stringify(payloadInfo));
+
+                if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo) && payloadInfo.custom_meta && payloadInfo.custom_meta.blob) {
+                    let deleteSuccess = await special.deleteEscrow(payloadInfo.custom_meta.blob);
+                    console.log("deleteSuccess: " + JSON.stringify(deleteSuccess));
+                    deleteSuccess.account = payloadInfo.response.account;
+                    return deleteSuccess;
+                } else {
+                    //we didn't go into the success:true -> so return false :)
+                    return {success : false, account: payloadInfo.response.account }
+                }
+            } catch {
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+            }
+        }
+    });
+
+    fastify.post('/api/v1/escrows', async (request, reply) => {
+        console.log("body params escrow: " + JSON.stringify(request.body));
+        if(!request.body || !request.body.account) {
+            reply.code(500).send('Please provide an XRPL account as body param. Calls without account are not allowed');
+        } else {
+            try {
+                let loadEscrowResponse:any = await special.loadEscrowsForAccount(request.body);
+                return loadEscrowResponse;                
             } catch {
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
