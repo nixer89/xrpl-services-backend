@@ -543,7 +543,7 @@ export async function registerRoutes(fastify, opts, next) {
 
                 console.log("PAYLOAD SIGNIN: " + JSON.stringify(payloadInfo));
 
-                if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo) && payloadInfo.response.account === payloadInfo.custom_meta.blob.account && payloadInfo.custom_meta && payloadInfo.custom_meta.blob) {
+                if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo) && payloadInfo.custom_meta && payloadInfo.custom_meta.blob && payloadInfo.response.account === payloadInfo.custom_meta.blob.account ) {
                     let deleteSuccess = await special.deleteEscrow(payloadInfo.custom_meta.blob);
                     console.log("deleteSuccess: " + JSON.stringify(deleteSuccess));
                     deleteSuccess.account = payloadInfo.response.account;
