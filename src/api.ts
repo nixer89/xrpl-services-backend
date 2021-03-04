@@ -39,10 +39,15 @@ export async function registerRoutes(fastify, opts, next) {
                     console.log(JSON.stringify(err));
                 }
 
-                return xummBackend.submitPayload(request.body.payload, request.headers.origin, request.headers.referer, request.body.options);
-            } catch {
-                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
-            }
+                let payloadResponse = await xummBackend.submitPayload(request.body.payload, request.headers.origin, request.headers.referer, request.body.options);
+                return payloadResponse;
+            } catch (err) {
+                if('bithomp' == err) {
+                    return { success : false, error: true, message: "We can not contact our XRP Ledger service provider and therefore won't be able to to verify your transaction. Please try again later!"};
+                }
+                else
+                    return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+                }
         }
     });
 
@@ -112,9 +117,14 @@ export async function registerRoutes(fastify, opts, next) {
                 console.log(JSON.stringify(err));
             }
 
-            return xummBackend.submitPayload(xummPayload, request.headers.origin, request.headers.referer, genericPayloadOptions);
-        } catch {
-            return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+            let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, request.headers.referer, genericPayloadOptions);
+            return payloadResponse;
+        } catch(err) {
+            if('bithomp' == err) {
+                return { success : false, error: true, message: "We can not contact our XRP Ledger service provider and therefore won't be able to to verify your transaction. Please try again later!"};
+            }
+            else
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
     });
 
@@ -149,9 +159,13 @@ export async function registerRoutes(fastify, opts, next) {
                 }
             }
 
-            return xummBackend.submitPayload(xummPayload, request.headers.origin, request.headers.referer, genericPayloadOptions);
-        } catch {
-            return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+            let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, request.headers.referer, genericPayloadOptions);
+            return payloadResponse;
+        } catch(err) {
+            if('bithomp' == err)
+                return { success : false, error: true, message: "We can not contact our XRP Ledger service provider and therefore won't be able to to verify your transaction. Please try again later!"};
+            else
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
     });
 
@@ -190,8 +204,11 @@ export async function registerRoutes(fastify, opts, next) {
                 reply.send({ success : false, error: true, message: 'Something went wrong. Please check your request'});
             }
             
-        } catch {
-            reply.send({ success : false, error: true, message: 'Something went wrong. Please check your request'});
+        } catch(err) {
+            if('bithomp' == err)
+                return { success : false, error: true, message: "We can not contact our XRP Ledger service provider and therefore won't be able to to verify your transaction. Please try again later!"};
+            else
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
     });
 
