@@ -260,7 +260,7 @@ export class Special {
     }
 
     async addEscrow(escrow: any): Promise<any> {
-        console.log("add escrow: account: " + escrow.account + " sequence: " + escrow.sequence + " on " + (escrow.testnet ? "Testnet" : "Mainnet"));
+        console.log("add escrow: account: " + JSON.stringify(escrow));
         
         let escrowListResponse:fetch.Response = await fetch.default("http://localhost:4011/api/v1/escrowFinish", {method: "post", body: JSON.stringify(escrow)});
 
@@ -272,7 +272,7 @@ export class Special {
     }
 
     async deleteEscrow(escrow: any): Promise<any> {
-        console.log("delete escrow: account: " + escrow.account + " sequence: " + escrow.sequence + " on " + (escrow.testnet ? "Testnet" : "Mainnet"));
+        console.log("delete escrow: account: " + JSON.stringify(escrow));
         
         let escrowListResponse:fetch.Response = await fetch.default("http://localhost:4011/api/v1/escrowFinish/"+escrow.account+"/"+escrow.sequence+"/"+escrow.testnet, {method: "delete"});
 
