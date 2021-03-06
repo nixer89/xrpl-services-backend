@@ -492,15 +492,19 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId)
 
-                console.log("PAYLOAD PAYMENT: " + JSON.stringify(payloadInfo));
+                console.log("escrow/validatepayment PAYLOAD: " + JSON.stringify(payloadInfo));
 
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
                     let txResult:TransactionValidation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+
+                    console.log("escrow/validatepayment TXRESULT: " + JSON.stringify(txResult));
 
                     if(txResult) {
                         if(payloadInfo.custom_meta.blob) {
                             txResult.account = payloadInfo.response.account;
                             let escrow:any = payloadInfo.custom_meta.blob;
+
+                            console.log("escrow/validatepayment ESCROW: " + JSON.stringify(escrow));
 
                             if(escrow && txResult.success && txResult.account == escrow.account && ((txResult.testnet == escrow.testnet) || (escrow.testnet && !txResult.testnet))) {
                                 //insert escrow
@@ -541,11 +545,11 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId);
 
-                console.log("PAYLOAD SIGNIN: " + JSON.stringify(payloadInfo));
+                console.log("escrow/signinToDeleteEscrow PAYLOAD: " + JSON.stringify(payloadInfo));
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo) && payloadInfo.custom_meta && payloadInfo.custom_meta.blob && payloadInfo.response.account === payloadInfo.custom_meta.blob.account ) {
                     let deleteSuccess = await special.deleteEscrow(payloadInfo.custom_meta.blob);
-                    console.log("deleteSuccess: " + JSON.stringify(deleteSuccess));
+                    console.log("escrow/signinToDeleteEscrow deleteSuccess: " + JSON.stringify(deleteSuccess));
                     deleteSuccess.account = payloadInfo.response.account;
                     return deleteSuccess;
                 } else {
