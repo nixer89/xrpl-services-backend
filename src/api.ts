@@ -508,23 +508,31 @@ export async function registerRoutes(fastify, opts, next) {
 
                             if(escrow && txResult.success && txResult.account == escrow.account && ((txResult.testnet == escrow.testnet) || (escrow.testnet && !txResult.testnet))) {
                                 //insert escrow
-                                let addEscrow:any = await special.addEscrow(escrow);
+                                let escrowsExists:any = await special.escrowExists(escrow);
 
-                                console.log("Add escrow: " + JSON.stringify(addEscrow));
+                                console.log("escrowsExists: " + JSON.stringify(escrowsExists));
 
-                                if(addEscrow && addEscrow.success)
+                                if(escrowsExists && escrowsExists.success)
                                     return txResult;
-                                else
-                                    return {success : false, testnet: txResult.testnet, account: payloadInfo.response.account, error: true, message: "Escrow could not be stored. Please contact the website owner!" }
+                                else {
+                                    //try to add again maybe?
+                                    let addEscrow:any = await special.addEscrow(escrow);
+
+                                    console.log("Add escrow: " + JSON.stringify(addEscrow));
+
+                                    if(addEscrow && addEscrow.success)
+                                        return txResult;
+                                    else
+                                        return {success : false, testnet: txResult.testnet, account: payloadInfo.response.account, error: true, message: "Escrow could not be stored. Please contact the website owner!" }
+                                }
                             } else {
                                 return {success : false, testnet: txResult.testnet, account: payloadInfo.response.account, error: true, message: "The escrow account does not equal the payment account or you submitted the transaction on a different network (Main/Test)." }
                             }
                         } else {
                             return {success : false, testnet: txResult.testnet, account: payloadInfo.response.account, error: true, message: "The transaction could not be matched to an escrow. Please contact the website owner if you think that is wrong!" }
                         }
-
                     } else {
-                        return {success : false, testnet: false, account: payloadInfo.response.account, error: true, message: "Your transaction could not be verfied!" }
+                        return {success : false, testnet: false, account: payloadInfo.response.account, error: true, message: "Your transaction could not be verified!" }
                     }
                 }
                 
@@ -593,79 +601,92 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.post('/api/v1/webhook', async (request, reply) => {
-        console.log("webhook headers: " + JSON.stringify(request.headers));
-        //console.log("webhook body: " + JSON.stringify(request.body));
-       
-        try {
-            let webhookRequest:XummTypes.XummWebhookBody = request.body;
-            let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByAppId(webhookRequest.meta.application_uuidv4, webhookRequest.meta.payload_uuidv4);
-            
-            //check if we have to store the user
-            try {
-                let tmpInfo:any = await db.getTempInfo({payloadId: payloadInfo.meta.uuid, applicationId: payloadInfo.application.uuidv4});
-
-                if(tmpInfo) {
-                    if(payloadInfo && payloadInfo.application && payloadInfo.application.issued_user_token) {
-                        await db.saveUser(tmpInfo.origin, payloadInfo.application.uuidv4, tmpInfo.frontendId, payloadInfo.application.issued_user_token);
-                        await db.storePayloadForXummId(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.application.issued_user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
-                    }
-
-                    //store payload to XRPL account
-                    if(payloadInfo && payloadInfo.response && payloadInfo.response.account) {
-                        await db.storePayloadForXRPLAccount(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, webhookRequest.userToken.user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
-                    }
-
-                    await db.deleteTempInfo(tmpInfo);
-
-                    return {success: true}
-                } else {
-                    return {success: false}
-                }
-            } catch {
-                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
-            }
-        } catch {
-            return { success : false, error: true, message: 'Something went wrong. Please check your request'};
-        }
+        return handleWebhookRequest(request);
     });
 
     fastify.post('/api/v1/webhook/*', async (request, reply) => {
-        console.log("webhook/* headers: " + JSON.stringify(request.headers));
-        //console.log("webhook body: " + JSON.stringify(request.body));
-       
+        return handleWebhookRequest(request);
+    });
+
+    next()
+}
+
+async function handleWebhookRequest(request:any): Promise<any> {
+    console.log("webhook headers: " + JSON.stringify(request.headers));
+    //console.log("webhook body: " + JSON.stringify(request.body));
+    
+    try {
+        let webhookRequest:XummTypes.XummWebhookBody = request.body;
+        let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByAppId(webhookRequest.meta.application_uuidv4, webhookRequest.meta.payload_uuidv4);
+        
+        //check if we have to store the user
         try {
-            let webhookRequest:XummTypes.XummWebhookBody = request.body;
-            let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByAppId(webhookRequest.meta.application_uuidv4, webhookRequest.meta.payload_uuidv4);
-            
-            //check if we have to store the user
-            try {
-                let tmpInfo:any = await db.getTempInfo({payloadId: payloadInfo.meta.uuid, applicationId: payloadInfo.application.uuidv4});
+            //check escrow payment
+            if(payloadInfo && payloadInfo.custom_meta && payloadInfo.custom_meta.blob)
+                handleEscrowPayment(payloadInfo);
 
-                if(tmpInfo) {
-                    if(payloadInfo && payloadInfo.application && payloadInfo.application.issued_user_token) {
-                        await db.saveUser(tmpInfo.origin, payloadInfo.application.uuidv4, tmpInfo.frontendId, payloadInfo.application.issued_user_token);
-                        await db.storePayloadForXummId(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.application.issued_user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
-                    }
+            let tmpInfo:any = await db.getTempInfo({payloadId: payloadInfo.meta.uuid, applicationId: payloadInfo.application.uuidv4});
 
-                    //store payload to XRPL account
-                    if(payloadInfo && payloadInfo.response && payloadInfo.response.account) {
-                        await db.storePayloadForXRPLAccount(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, webhookRequest.userToken.user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
-                    }
-
-                    await db.deleteTempInfo(tmpInfo);
-
-                    return {success: true}
-                } else {
-                    return {success: false}
+            if(tmpInfo) {
+                if(payloadInfo && payloadInfo.application && payloadInfo.application.issued_user_token) {
+                    await db.saveUser(tmpInfo.origin, payloadInfo.application.uuidv4, tmpInfo.frontendId, payloadInfo.application.issued_user_token);
+                    await db.storePayloadForXummId(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.application.issued_user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
                 }
-            } catch {
-                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+
+                //store payload to XRPL account
+                if(payloadInfo && payloadInfo.response && payloadInfo.response.account) {
+                    await db.storePayloadForXRPLAccount(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, webhookRequest.userToken.user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
+                }
+
+                await db.deleteTempInfo(tmpInfo);
+
+                return {success: true}
+            } else {
+                return {success: false}
             }
         } catch {
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
-    });
+    } catch {
+        return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+    }
+}
 
-    next()
+async function handleEscrowPayment(payloadInfo: XummTypes.XummGetPayloadResponse) {
+    console.log("escrow/validatepayment PAYLOAD: " + JSON.stringify(payloadInfo));
+
+    if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
+        let txResult:TransactionValidation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+
+        console.log("escrow/validatepayment TXRESULT: " + JSON.stringify(txResult));
+
+        if(txResult) {
+            if(payloadInfo.custom_meta.blob) {
+                txResult.account = payloadInfo.response.account;
+                let escrow:any = payloadInfo.custom_meta.blob;
+
+                console.log("escrow/validatepayment ESCROW: " + JSON.stringify(escrow));
+
+                if(escrow && txResult.success && txResult.account == escrow.account && ((txResult.testnet == escrow.testnet) || (escrow.testnet && !txResult.testnet))) {
+                    //insert escrow
+                    let addEscrow:any = await special.addEscrow(escrow);
+
+                    console.log("Add escrow: " + JSON.stringify(addEscrow));
+
+                    if(addEscrow && addEscrow.success)
+                        console.log("Escrow stored!");
+                    else
+                        console.log("Escrow could not be stored. Please contact the website owner!");
+                } else {
+                    console.log("The escrow account does not equal the payment account or you submitted the transaction on a different network (Main/Test).");
+                }
+            } else {
+                console.log("The transaction could not be matched to an escrow. Please contact the website owner if you think that is wrong!")
+            }
+
+        } else {
+            console.log("Transaction could not be verified!");
+        }
+    }
 }
 

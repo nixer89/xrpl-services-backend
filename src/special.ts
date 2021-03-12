@@ -272,7 +272,7 @@ export class Special {
     }
 
     async deleteEscrow(escrow: any): Promise<any> {
-        console.log("delete escrow: account: " + JSON.stringify(escrow));
+        console.log("delete escrow: " + JSON.stringify(escrow));
         
         let escrowListResponse:fetch.Response = await fetch.default("http://localhost:4011/api/v1/escrowFinish/"+escrow.account+"/"+escrow.sequence+"/"+escrow.testnet, {method: "delete"});
 
@@ -281,6 +281,19 @@ export class Special {
         } else {
             console.log("NOT OKAY")
             throw "error calling escrow delete api";
+        }
+    }
+
+    async escrowExists(escrow: any): Promise<any> {
+        console.log("escrowExists: " + JSON.stringify(escrow));
+        
+        let escrowListResponse:fetch.Response = await fetch.default("http://localhost:4011/api/v1/escrowFinish/exists/"+escrow.account+"/"+escrow.sequence+"/"+escrow.testnet);
+
+        if(escrowListResponse && escrowListResponse.ok) {
+            return escrowListResponse.json();
+        } else {
+            console.log("NOT OKAY")
+            throw "error calling escrowExists api";
         }
     }
 
