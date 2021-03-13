@@ -189,6 +189,36 @@ export class Xumm {
         return payloadResponse;
     }
 
+    async getxAppOTT(origin: string, token: string): Promise<any> {
+        let appId:string = await this.db.getAppIdForOrigin(origin);
+        if(!appId)
+            return null;
+
+        let ottData = await this.callXumm(appId, "xapp/ott/"+token, "GET");
+        console.log("getxAppOTT response: " + JSON.stringify(ottData))
+        return ottData;
+    }
+
+    async sendxAppEvent(origin: string, data: any): Promise<any> {
+        let appId:string = await this.db.getAppIdForOrigin(origin);
+        if(!appId)
+            return null;
+
+        let xappEventResponse = await this.callXumm(appId, "xapp/event", "POST", data);
+        console.log("sendxAppEvent response: " + JSON.stringify(xappEventResponse))
+        return xappEventResponse;
+    }
+
+    async sendxAppPush(origin: string, data: any): Promise<any> {
+        let appId:string = await this.db.getAppIdForOrigin(origin);
+        if(!appId)
+            return null;
+
+        let xappPushResponse = await this.callXumm(appId, "xapp/push", "POST", data);
+        console.log("sendxAppPush response: " + JSON.stringify(xappPushResponse))
+        return xappPushResponse;
+    }
+
     async callXumm(applicationId:string, path:string, method:string, body?:any): Promise<any> {
         try {
             let appSecret:string = await this.db.getApiSecretForAppId(applicationId);

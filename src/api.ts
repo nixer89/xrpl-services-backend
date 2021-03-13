@@ -90,6 +90,51 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
+    fastify.get('/api/v1/platform/xapp/ott/:token', async (request, reply) => {
+        //console.log("request params: " + JSON.stringify(request.params));
+        if(!request.params.token) {
+            reply.code(500).send('Please provide a token. Calls without token are not allowed');
+        } else {
+            try {
+                return xummBackend.getPayloadForCustomIdentifierByOrigin(request.headers.origin, request.params.custom_identifier);
+            } catch {
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+            }
+        }
+    });
+
+    fastify.post('/api/v1/platform/xapp/event', async (request, reply) => {
+        console.log("post xApp event headers: " + JSON.stringify(request.headers));
+        //console.log("body: " + JSON.stringify(request.body));
+        if(!request.body.user_token || !request.body.subtitle)
+            reply.code(500).send('Please provide a xumm user_token and subtitle. Calls without xumm user_token and subtitle are not allowed');
+        else {
+            //try parsing the user agent when unknown to determine if web or app
+            try {
+                let payloadResponse = await xummBackend.sendxAppEvent(request.headers.origin, request.body);
+                return payloadResponse;
+            } catch (err) {
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+            }
+        }
+    });
+
+    fastify.post('/api/v1/platform/xapp/push', async (request, reply) => {
+        console.log("post xApp push headers: " + JSON.stringify(request.headers));
+        //console.log("body: " + JSON.stringify(request.body));
+        if(!request.body.user_token || !request.body.subtitle)
+            reply.code(500).send('Please provide a xumm user_token and subtitle. Calls without xumm user_token and subtitle are not allowed');
+        else {
+            //try parsing the user agent when unknown to determine if web or app
+            try {
+                let payloadResponse = await xummBackend.sendxAppPush(request.headers.origin, request.body);
+                return payloadResponse;
+            } catch (err) {
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+            }
+        }
+    });
+
     fastify.get('/api/v1/initiate/simplePayment', async (request, reply) => {
         console.log("simplePayment headers: " + JSON.stringify(request.headers));
         console.log("simplePayment request.params: " + JSON.stringify(request.params));
