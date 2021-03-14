@@ -96,7 +96,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(500).send('Please provide a token. Calls without token are not allowed');
         } else {
             try {
-                return xummBackend.getPayloadForCustomIdentifierByOrigin(request.headers.origin, request.params.custom_identifier);
+                return xummBackend.getxAppOTT(request.headers.origin, request.params.token);
             } catch {
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
