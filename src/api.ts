@@ -667,7 +667,7 @@ async function handleWebhookRequest(request:any): Promise<any> {
         //check if we have to store the user
         try {
             //check escrow payment
-            if(payloadInfo && payloadInfo.custom_meta && payloadInfo.custom_meta.blob)
+            if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == 'payment' && payloadInfo.custom_meta && payloadInfo.custom_meta.blob)
                 handleEscrowPayment(payloadInfo);
 
             let tmpInfo:any = await db.getTempInfo({payloadId: payloadInfo.meta.uuid, applicationId: payloadInfo.application.uuidv4});
