@@ -78,3 +78,10 @@ export interface XrplAccountPayloadCollection {
     [key: string]: any,
     updated: Date
 }
+
+export interface StatisticsCollection {
+    applicationId: string,
+    origin: string,
+    stats: any,
+    updated: Date
+}

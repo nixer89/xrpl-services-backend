@@ -279,8 +279,14 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
 
-                if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo))
-                    return special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+                if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
+                    let validation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+                    
+                    if(validation && validation.success)
+                        db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
+
+                    return validation;
+                }
 
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
@@ -301,8 +307,14 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment');
 
-                if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo))
-                    return special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+                if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
+                    let validation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+                    
+                    if(validation && validation.success)
+                        db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
+
+                    return validation;
+                }
 
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
@@ -321,8 +333,14 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
 
-                if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo))
-                    return special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+                if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
+                    let validation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+                    
+                    if(validation && validation.success)
+                        db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
+
+                    return validation;
+                }
 
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
@@ -343,8 +361,14 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', request.query.referer ? request.query.referer : request.headers.referer);
 
-                if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo))
-                    return special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+                if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
+                    let validation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+                    
+                    if(validation && validation.success)
+                        db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
+
+                    return validation;
+                }
 
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
@@ -363,8 +387,14 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
 
-                if(payloadInfo)
-                    return special.validateTimedPaymentPayload(request.headers.origin, request.headers.referer, payloadInfo);
+                if(payloadInfo) {
+                    let validation = await special.validateTimedPaymentPayload(request.headers.origin, request.headers.referer, payloadInfo);
+                    
+                    if(validation && validation.success)
+                        db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
+
+                    return validation;
+                }
                 
                 //we didn't go into the success:true -> so return false :)
                 return {success : false }
@@ -384,8 +414,14 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment');
 
-                if(payloadInfo)
-                    return special.validateTimedPaymentPayload(request.headers.origin, request.headers.referer, payloadInfo);
+                if(payloadInfo) {
+                    let validation = await special.validateTimedPaymentPayload(request.headers.origin, request.headers.referer, payloadInfo);
+                    
+                    if(validation && validation.success)
+                        db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
+
+                    return validation;
+                }
                 
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
@@ -405,9 +441,15 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
 
-                if(payloadInfo)
-                    return special.validateTimedPaymentPayload(request.headers.origin, request.query.referer ? request.query.referer : request.headers.referer, payloadInfo);
-                
+                if(payloadInfo) {
+                    let validation = await special.validateTimedPaymentPayload(request.headers.origin, request.query.referer ? request.query.referer : request.headers.referer, payloadInfo);
+                    
+                    if(validation && validation.success)
+                        db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
+
+                    return validation;
+                }
+
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
 
@@ -428,9 +470,15 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', request.query.referer ? request.query.referer : request.headers.referer);
 
-                if(payloadInfo)
-                    return special.validateTimedPaymentPayload(request.headers.origin, request.query.referer ? request.query.referer : request.headers.referer, payloadInfo);
-                
+                if(payloadInfo) {
+                    let validation = await special.validateTimedPaymentPayload(request.headers.origin, request.query.referer ? request.query.referer : request.headers.referer, payloadInfo);
+                    
+                    if(validation && validation.success)
+                        db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
+
+                    return validation;
+                }
+
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
 
@@ -512,10 +560,14 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId)
 
+                console.log(JSON.stringify(payloadInfo));
                 if(payloadInfo && payloadInfo.response && payloadInfo.response.txid) {
-                    let txResult:any = await special.validateXRPLTransaction(payloadInfo.response.txid);
+                    let txResult = await special.validateXRPLTransaction(payloadInfo.response.txid);
                     if(txResult)
                         txResult.account = payloadInfo.response.account;
+
+                    if(txResult && txResult.success)
+                        db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
 
                     return txResult;
                 }
@@ -545,6 +597,9 @@ export async function registerRoutes(fastify, opts, next) {
                     console.log("escrow/validatepayment TXRESULT: " + JSON.stringify(txResult));
 
                     if(txResult) {
+                        if(txResult.success)
+                            db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
+
                         if(payloadInfo.custom_meta.blob) {
                             txResult.account = payloadInfo.response.account;
                             let escrow:any = payloadInfo.custom_meta.blob;
@@ -629,6 +684,17 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
+    fastify.get('/api/v1/statistics/transactions', async (request, reply) => {
+        
+        try {
+            let appId = await db.getAppIdForOrigin(request.headers.origin);
+            let transactionStats:any = await db.getTransactions(request.headers.origin, appId);
+            return transactionStats;                
+        } catch {
+            return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+        }
+    });
+
     fastify.get('/api/resetCache/:token', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
         try {
@@ -666,21 +732,22 @@ async function handleWebhookRequest(request:any): Promise<any> {
         
         //check if we have to store the user
         try {
+            let tmpInfo:any = await db.getTempInfo({payloadId: payloadInfo.meta.uuid, applicationId: payloadInfo.application.uuidv4});
+            let origin:string = tmpInfo ? tmpInfo.origin : null;
+
             //check escrow payment
             if(payloadInfo && payloadInfo.custom_meta && payloadInfo.custom_meta.blob)
-                handleEscrowPayment(payloadInfo);
-
-            let tmpInfo:any = await db.getTempInfo({payloadId: payloadInfo.meta.uuid, applicationId: payloadInfo.application.uuidv4});
+                handleEscrowPayment(payloadInfo, origin);            
 
             if(tmpInfo) {
                 if(payloadInfo && payloadInfo.application && payloadInfo.application.issued_user_token) {
-                    await db.saveUser(tmpInfo.origin, payloadInfo.application.uuidv4, tmpInfo.frontendId, payloadInfo.application.issued_user_token);
-                    await db.storePayloadForXummId(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.application.issued_user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
+                    await db.saveUser(origin, payloadInfo.application.uuidv4, tmpInfo.frontendId, payloadInfo.application.issued_user_token);
+                    await db.storePayloadForXummId(origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.application.issued_user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
                 }
 
                 //store payload to XRPL account
                 if(payloadInfo && payloadInfo.response && payloadInfo.response.account) {
-                    await db.storePayloadForXRPLAccount(tmpInfo.origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, webhookRequest.userToken.user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
+                    await db.storePayloadForXRPLAccount(origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, webhookRequest.userToken.user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
                 }
 
                 await db.deleteTempInfo(tmpInfo);
@@ -697,7 +764,7 @@ async function handleWebhookRequest(request:any): Promise<any> {
     }
 }
 
-async function handleEscrowPayment(payloadInfo: XummTypes.XummGetPayloadResponse) {
+async function handleEscrowPayment(payloadInfo: XummTypes.XummGetPayloadResponse, origin?: string) {
     console.log("escrow/validatepayment PAYLOAD: " + JSON.stringify(payloadInfo));
 
     if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
@@ -729,6 +796,8 @@ async function handleEscrowPayment(payloadInfo: XummTypes.XummGetPayloadResponse
                 console.log("The transaction could not be matched to an escrow. Please contact the website owner if you think that is wrong!")
             }
 
+            if(txResult.success && origin)
+                db.saveTransactionInStatistic(origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
         } else {
             console.log("Transaction could not be verified!");
         }

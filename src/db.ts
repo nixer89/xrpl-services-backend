@@ -1,6 +1,6 @@
 import { MongoClient, Collection, Cursor } from 'mongodb';
 import consoleStamp = require("console-stamp");
-import { AllowedOrigins, ApplicationApiKeys, UserIdCollection, FrontendIdPayloadCollection, XummIdPayloadCollection, XrplAccountPayloadCollection } from './util/types';
+import { AllowedOrigins, ApplicationApiKeys, UserIdCollection, FrontendIdPayloadCollection, XummIdPayloadCollection, XrplAccountPayloadCollection, StatisticsCollection } from './util/types';
 
 consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
 
@@ -14,6 +14,7 @@ export class DB {
     xummIdPayloadCollection:Collection<XummIdPayloadCollection> = null;
     xrplAccountPayloadCollection:Collection<XrplAccountPayloadCollection> = null;
     tmpInfoTable:Collection = null;
+    statisticsCollection:Collection<StatisticsCollection> = null;
 
     allowedOriginCache:AllowedOrigins[] = null;
     applicationApiKeysCache:ApplicationApiKeys[] = null;
@@ -28,6 +29,7 @@ export class DB {
         this.xummIdPayloadCollection = await this.getNewDbModel("XummIdPayloadCollection");
         this.xrplAccountPayloadCollection = await this.getNewDbModel("XrplAccountPayloadCollection");
         this.tmpInfoTable = await this.getNewDbModel("TmpInfoTable");
+        this.statisticsCollection = await this.getNewDbModel("StatisticsCollection");
         
         return Promise.resolve();
     }
@@ -436,6 +438,40 @@ export class DB {
             return this.tmpInfoTable.deleteOne(anyFilter);
         } catch(err) {
             console.log("[DB]: error deleteTempInfo");
+            console.log(JSON.stringify(err));
+        }
+    }
+
+    async saveTransactionInStatistic(origin:string, appId: string, transactionType: string) {
+        console.log("[DB]: saveTransactionInStatistic: [ " +origin + " , "+ appId + " , " + transactionType + " ]");
+        try {
+            let key = "stats."+transactionType.toLowerCase();
+            let toIncrement = {};
+            toIncrement[key] = 1;
+
+
+            return this.statisticsCollection.updateOne({origin: origin, applicationId: appId, type: "transactions"}, {
+                $inc: toIncrement,
+                $currentDate: {
+                   "updated": { $type: "timestamp" }
+                }                
+              }, {upsert: true});
+        } catch(err) {
+            console.log("[DB]: error saveTransactionInStatistic");
+            console.log(JSON.stringify(err));
+        }
+    }
+
+    async getTransactions(origin:string, appId: string): Promise<any> {
+        console.log("[DB]: getTransactions: [ " + origin + " , "  + appId + " ]");
+        try {
+            let transactions:any[] = await this.statisticsCollection.find({origin: origin, applicationId: appId, type: "transactions"}).toArray();
+            if(transactions && transactions.length >= 1)
+                return transactions[0].stats
+            else
+                return {};
+        } catch(err) {
+            console.log("[DB]: error getTransactions");
             console.log(JSON.stringify(err));
         }
     }
