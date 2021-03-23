@@ -736,8 +736,9 @@ async function handleWebhookRequest(request:any): Promise<any> {
             let origin:string = tmpInfo ? tmpInfo.origin : null;
 
             //check escrow payment
-            if(payloadInfo && payloadInfo.custom_meta && payloadInfo.custom_meta.blob)
-                handleEscrowPayment(payloadInfo, origin);            
+            if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == 'payment' && payloadInfo.custom_meta && payloadInfo.custom_meta.blob)
+                handleEscrowPayment(payloadInfo,origin);
+
 
             if(tmpInfo) {
                 if(payloadInfo && payloadInfo.application && payloadInfo.application.issued_user_token) {
