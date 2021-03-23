@@ -496,8 +496,10 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId);
 
-                if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo))
+                if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
+                    db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
                     return {success: true, account: payloadInfo.response.account}
+                }
                 
                 //we didn't go into the success:true -> so return false :)
                 return {success : false, account: payloadInfo.response.account }
@@ -518,8 +520,10 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin');
 
-                if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo))
+                if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
+                    db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
                     return {success: true, account: payloadInfo.response.account }
+                }
                 
                 //we didn't go into the success:true -> so return false :)
                 return {success : false, account: payloadInfo.response.account }
@@ -540,8 +544,10 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin', request.query.referer ? request.query.referer : request.headers.referer);
 
-                if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo))
+                if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
+                    db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
                     return {success: true, account: payloadInfo.response.account }
+                }
                 
                 //we didn't go into the success:true -> so return false :)
                 return {success : false, account: payloadInfo.response.account }
@@ -656,6 +662,7 @@ export async function registerRoutes(fastify, opts, next) {
                 console.log("escrow/signinToDeleteEscrow PAYLOAD: " + JSON.stringify(payloadInfo));
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo) && payloadInfo.custom_meta && payloadInfo.custom_meta.blob && payloadInfo.response.account === payloadInfo.custom_meta.blob.account ) {
+                    db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
                     let deleteSuccess = await special.deleteEscrow(payloadInfo.custom_meta.blob);
                     console.log("escrow/signinToDeleteEscrow deleteSuccess: " + JSON.stringify(deleteSuccess));
                     deleteSuccess.account = payloadInfo.response.account;
