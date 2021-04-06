@@ -39,7 +39,12 @@ export async function registerRoutes(fastify, opts, next) {
                     console.log(JSON.stringify(err));
                 }
 
-                let payloadResponse = await xummBackend.submitPayload(request.body.payload, request.headers.origin, request.headers.referer, request.body.options);
+                let refererURL:string = request.headers.referer;
+                if(refererURL && refererURL.includes('?')) {
+                    refererURL = refererURL.substring(0, refererURL.indexOf('?'));
+                }
+
+                let payloadResponse = await xummBackend.submitPayload(request.body.payload, request.headers.origin, refererURL, request.body.options);
                 return payloadResponse;
             } catch (err) {
                 if('bithomp' == err) {
@@ -162,7 +167,12 @@ export async function registerRoutes(fastify, opts, next) {
                 console.log(JSON.stringify(err));
             }
 
-            let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, request.headers.referer, genericPayloadOptions);
+            let refererURL:string = request.headers.referer;
+            if(refererURL && refererURL.includes('?')) {
+                refererURL = refererURL.substring(0, refererURL.indexOf('?'));
+            }
+
+            let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, genericPayloadOptions);
             return payloadResponse;
         } catch(err) {
             if('bithomp' == err) {
@@ -204,7 +214,12 @@ export async function registerRoutes(fastify, opts, next) {
                 }
             }
 
-            let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, request.headers.referer, genericPayloadOptions);
+            let refererURL:string = request.headers.referer;
+            if(refererURL && refererURL.includes('?')) {
+                refererURL = refererURL.substring(0, refererURL.indexOf('?'));
+            }
+
+            let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, genericPayloadOptions);
             return payloadResponse;
         } catch(err) {
             if('bithomp' == err)
@@ -241,7 +256,12 @@ export async function registerRoutes(fastify, opts, next) {
                 console.log(JSON.stringify(err));
             }
 
-            let payload:XummTypes.XummPostPayloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, request.headers.referer, genericPayloadOptions);
+            let refererURL:string = request.headers.referer;
+            if(refererURL && refererURL.includes('?')) {
+                refererURL = refererURL.substring(0, refererURL.indexOf('?'));
+            }
+
+            let payload:XummTypes.XummPostPayloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, genericPayloadOptions);
 
             if(payload && payload.next && payload.next.always) {
                 reply.redirect(307, payload.next.always);
@@ -264,7 +284,13 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
-                return special.checkSignInToValidatePayment(request.params.signinPayloadId, request.headers.origin, request.query.referer ? request.query.referer : request.headers.referer);
+                let refererURL:string = request.query.referer ? request.query.referer : request.headers.referer;
+
+                if(refererURL && refererURL.includes('?')) {
+                    refererURL = refererURL.substring(0, refererURL.indexOf('?'));
+                }
+                
+                return special.checkSignInToValidatePayment(request.params.signinPayloadId, request.headers.origin, refererURL);
             } catch {
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
@@ -359,7 +385,13 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
-                let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', request.query.referer ? request.query.referer : request.headers.referer);
+                let refererURL:string = request.query.referer ? request.query.referer : request.headers.referer;
+
+                if(refererURL && refererURL.includes('?')) {
+                    refererURL = refererURL.substring(0, refererURL.indexOf('?'));
+                }
+
+                let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', refererURL);
 
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
                     let validation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
@@ -388,7 +420,13 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
 
                 if(payloadInfo) {
-                    let validation = await special.validateTimedPaymentPayload(request.headers.origin, request.headers.referer, payloadInfo);
+                    let refererURL:string = request.headers.referer;
+
+                    if(refererURL && refererURL.includes('?')) {
+                        refererURL = refererURL.substring(0, refererURL.indexOf('?'));
+                    }
+
+                    let validation = await special.validateTimedPaymentPayload(request.headers.origin, refererURL, payloadInfo);
                     
                     if(validation && validation.success)
                         db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
@@ -415,7 +453,13 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment');
 
                 if(payloadInfo) {
-                    let validation = await special.validateTimedPaymentPayload(request.headers.origin, request.headers.referer, payloadInfo);
+                    let refererURL:string = request.headers.referer;
+
+                    if(refererURL && refererURL.includes('?')) {
+                        refererURL = refererURL.substring(0, refererURL.indexOf('?'));
+                    }
+
+                    let validation = await special.validateTimedPaymentPayload(request.headers.origin, refererURL, payloadInfo);
                     
                     if(validation && validation.success)
                         db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
@@ -442,7 +486,13 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
 
                 if(payloadInfo) {
-                    let validation = await special.validateTimedPaymentPayload(request.headers.origin, request.query.referer ? request.query.referer : request.headers.referer, payloadInfo);
+                    let refererURL:string = request.query.referer ? request.query.referer : request.headers.referer;
+
+                    if(refererURL && refererURL.includes('?')) {
+                        refererURL = refererURL.substring(0, refererURL.indexOf('?'));
+                    }
+
+                    let validation = await special.validateTimedPaymentPayload(request.headers.origin, refererURL, payloadInfo);
                     
                     if(validation && validation.success)
                         db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
@@ -468,10 +518,16 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
-                let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', request.query.referer ? request.query.referer : request.headers.referer);
+                let refererURL:string = request.query.referer ? request.query.referer : request.headers.referer;
+
+                if(refererURL && refererURL.includes('?')) {
+                    refererURL = refererURL.substring(0, refererURL.indexOf('?'));
+                }
+
+                let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', refererURL);
 
                 if(payloadInfo) {
-                    let validation = await special.validateTimedPaymentPayload(request.headers.origin, request.query.referer ? request.query.referer : request.headers.referer, payloadInfo);
+                    let validation = await special.validateTimedPaymentPayload(request.headers.origin, refererURL, payloadInfo);
                     
                     if(validation && validation.success)
                         db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
@@ -542,7 +598,12 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
-                let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin', request.query.referer ? request.query.referer : request.headers.referer);
+                let refererURL:string = request.query.referer ? request.query.referer : request.headers.referer;
+                if(refererURL && refererURL.includes('?')) {
+                    refererURL = refererURL.substring(0, refererURL.indexOf('?'));
+                }
+
+                let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin', refererURL);
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
                     db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
