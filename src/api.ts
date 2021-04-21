@@ -755,8 +755,9 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/statistics/transactions', async (request, reply) => {
         
         try {
-            let appId = await db.getAppIdForOrigin(request.headers.origin);
-            let transactionStats:any = await db.getTransactions(request.headers.origin, appId);
+            let origin = request && request.query && request.query.origin ? request.query.origin : request.headers.origin;
+            let appId = await db.getAppIdForOrigin(origin);
+            let transactionStats:any = await db.getTransactions(origin, appId);
             return transactionStats;                
         } catch {
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
