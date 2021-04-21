@@ -308,9 +308,6 @@ export async function registerRoutes(fastify, opts, next) {
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
                     let validation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
                     
-                    if(validation && validation.success)
-                        db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
-
                     return validation;
                 }
 
@@ -335,9 +332,6 @@ export async function registerRoutes(fastify, opts, next) {
 
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
                     let validation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
-                    
-                    if(validation && validation.success)
-                        db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
 
                     return validation;
                 }
@@ -361,9 +355,6 @@ export async function registerRoutes(fastify, opts, next) {
 
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
                     let validation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
-                    
-                    if(validation && validation.success)
-                        db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
 
                     return validation;
                 }
@@ -395,9 +386,6 @@ export async function registerRoutes(fastify, opts, next) {
 
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
                     let validation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
-                    
-                    if(validation && validation.success)
-                        db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
 
                     return validation;
                 }
@@ -427,9 +415,6 @@ export async function registerRoutes(fastify, opts, next) {
                     }
 
                     let validation = await special.validateTimedPaymentPayload(request.headers.origin, refererURL, payloadInfo);
-                    
-                    if(validation && validation.success)
-                        db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
 
                     return validation;
                 }
@@ -460,9 +445,6 @@ export async function registerRoutes(fastify, opts, next) {
                     }
 
                     let validation = await special.validateTimedPaymentPayload(request.headers.origin, refererURL, payloadInfo);
-                    
-                    if(validation && validation.success)
-                        db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
 
                     return validation;
                 }
@@ -493,9 +475,6 @@ export async function registerRoutes(fastify, opts, next) {
                     }
 
                     let validation = await special.validateTimedPaymentPayload(request.headers.origin, refererURL, payloadInfo);
-                    
-                    if(validation && validation.success)
-                        db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
 
                     return validation;
                 }
@@ -528,9 +507,6 @@ export async function registerRoutes(fastify, opts, next) {
 
                 if(payloadInfo) {
                     let validation = await special.validateTimedPaymentPayload(request.headers.origin, refererURL, payloadInfo);
-                    
-                    if(validation && validation.success)
-                        db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
 
                     return validation;
                 }
@@ -553,7 +529,6 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId);
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
-                    db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
                     return {success: true, account: payloadInfo.response.account}
                 }
                 
@@ -577,7 +552,6 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin');
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
-                    db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
                     return {success: true, account: payloadInfo.response.account }
                 }
                 
@@ -606,7 +580,6 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin', refererURL);
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
-                    db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
                     return {success: true, account: payloadInfo.response.account }
                 }
                 
@@ -632,9 +605,6 @@ export async function registerRoutes(fastify, opts, next) {
                     let txResult = await special.validateXRPLTransaction(payloadInfo.response.txid);
                     if(txResult)
                         txResult.account = payloadInfo.response.account;
-
-                    if(txResult && txResult.success)
-                        db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
 
                     return txResult;
                 }
@@ -664,9 +634,6 @@ export async function registerRoutes(fastify, opts, next) {
                     console.log("escrow/validatepayment TXRESULT: " + JSON.stringify(txResult));
 
                     if(txResult) {
-                        if(txResult.success)
-                            db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
-
                         if(payloadInfo.custom_meta.blob) {
                             txResult.account = payloadInfo.response.account;
                             let escrow:any = payloadInfo.custom_meta.blob;
@@ -723,7 +690,6 @@ export async function registerRoutes(fastify, opts, next) {
                 console.log("escrow/signinToDeleteEscrow PAYLOAD: " + JSON.stringify(payloadInfo));
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo) && payloadInfo.custom_meta && payloadInfo.custom_meta.blob && payloadInfo.response.account === payloadInfo.custom_meta.blob.account ) {
-                    db.saveTransactionInStatistic(request.headers.origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
                     let deleteSuccess = await special.deleteEscrow(payloadInfo.custom_meta.blob);
                     console.log("escrow/signinToDeleteEscrow deleteSuccess: " + JSON.stringify(deleteSuccess));
                     deleteSuccess.account = payloadInfo.response.account;
@@ -804,10 +770,15 @@ async function handleWebhookRequest(request:any): Promise<any> {
             let tmpInfo:any = await db.getTempInfo({payloadId: payloadInfo.meta.uuid, applicationId: payloadInfo.application.uuidv4});
             let origin:string = tmpInfo ? tmpInfo.origin : null;
 
+            //store transaction statistic
+            //check if payload was signed and submitted successfully (or is a SignIn request which is not submitted)
+            if(payloadInfo && payloadInfo.meta.signed && origin && ((payloadInfo.response && payloadInfo.response.dispatched_result && payloadInfo.response.dispatched_result == "tesSUCCESS") || ( payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == "signin" ))) {
+                db.saveTransactionInStatistic(origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
+            }
+
             //check escrow payment
             if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == 'payment' && payloadInfo.custom_meta && payloadInfo.custom_meta.blob)
                 handleEscrowPayment(payloadInfo,origin);
-
 
             if(tmpInfo) {
                 if(payloadInfo && payloadInfo.application && payloadInfo.application.issued_user_token) {
@@ -865,9 +836,6 @@ async function handleEscrowPayment(payloadInfo: XummTypes.XummGetPayloadResponse
             } else {
                 console.log("The transaction could not be matched to an escrow. Please contact the website owner if you think that is wrong!")
             }
-
-            if(txResult.success && origin)
-                db.saveTransactionInStatistic(origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
         } else {
             console.log("Transaction could not be verified!");
         }
