@@ -730,6 +730,24 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
+    fastify.get('/api/v1/statistics/escrows/nextRelease', async (request, reply) => {
+        
+        try {
+            return special.getEscrowNextRelease();
+        } catch {
+            return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+        }
+    });
+
+    fastify.get('/api/v1/statistics/escrows/currentCount', async (request, reply) => {
+        
+        try {
+            return special.getEscrowCurrentCount();              
+        } catch {
+            return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+        }
+    });
+
     fastify.get('/api/resetCache/:token', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
         try {

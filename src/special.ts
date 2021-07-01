@@ -309,4 +309,28 @@ export class Special {
             throw "error calling escrow list api";
         }
     }
+
+    async getEscrowNextRelease(): Promise<number> {
+        console.log("loading getEscrowNextRelease");
+        
+        let escrowCountStats:fetch.Response = await fetch.default("http://localhost:4011/api/v1/stats/nextRelease");
+
+        if(escrowCountStats && escrowCountStats.ok) {
+            return escrowCountStats.json();
+        } else {
+            throw "error calling getEscrowNextRelease";
+        }
+    }
+
+    async getEscrowCurrentCount(): Promise<number> {
+        console.log("loading getEscrowCurrentCount");
+        
+        let escrowCountStats:fetch.Response = await fetch.default("http://localhost:4011/api/v1/stats/currentCount");
+
+        if(escrowCountStats && escrowCountStats.ok) {
+            return escrowCountStats.json();
+        } else {
+            throw "error calling getEscrowCurrentCount";
+        }
+    }
 }
