@@ -733,7 +733,16 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/statistics/escrows/nextRelease', async (request, reply) => {
         
         try {
-            return special.getEscrowNextRelease();
+            return special.getEscrowNextOrLastRelease(true);
+        } catch {
+            return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+        }
+    });
+
+    fastify.get('/api/v1/statistics/escrows/lastRelease', async (request, reply) => {
+        
+        try {
+            return special.getEscrowNextOrLastRelease(false);
         } catch {
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }

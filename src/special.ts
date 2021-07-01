@@ -310,15 +310,19 @@ export class Special {
         }
     }
 
-    async getEscrowNextRelease(): Promise<number> {
-        console.log("loading getEscrowNextRelease");
-        
-        let escrowCountStats:fetch.Response = await fetch.default("http://localhost:4011/api/v1/stats/nextRelease");
+    async getEscrowNextOrLastRelease(next:boolean): Promise<number> {
+        console.log("loading getEscrowNextOrLastRelease");
+        let escrowCountStats:fetch.Response = null;
+
+        if(next)
+            escrowCountStats = await fetch.default("http://localhost:4011/api/v1/stats/nextRelease");
+        else
+            escrowCountStats = await fetch.default("http://localhost:4011/api/v1/stats/lastRelease");
 
         if(escrowCountStats && escrowCountStats.ok) {
             return escrowCountStats.json();
         } else {
-            throw "error calling getEscrowNextRelease";
+            throw "error calling getEscrowNextOrLastRelease";
         }
     }
 
