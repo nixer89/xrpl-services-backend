@@ -42,8 +42,8 @@ export class Xumm {
 
     async submitPayload(payload:XummTypes.XummPostPayloadBodyJson, origin:string, referer: string, options?:GenericBackendPostRequestOptions): Promise<XummTypes.XummPostPayloadResponse> {
         //trying to resolve xumm user if from given frontendId:
-        console.log("received payload: " + JSON.stringify(payload));
-        console.log("received options: " + JSON.stringify(options));
+        //console.log("received payload: " + JSON.stringify(payload));
+        //console.log("received options: " + JSON.stringify(options));
 
         //check bithomp api in case of payment and do not proceed if inaccessible
         try {
@@ -88,14 +88,14 @@ export class Xumm {
                 
                 if(!payload.user_token) {
                     //resolve xummId by latest sign in payload
-                    console.log("getting xummId by xplAccount: " + xrplAccount);
+                    //console.log("getting xummId by xplAccount: " + xrplAccount);
                     let appId:string = await this.db.getAppIdForOrigin(origin)
                     let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccountForApplicationBySignin(appId, xrplAccount);
-                    console.log("payloadIds: " + JSON.stringify(payloadIds));
+                    //console.log("payloadIds: " + JSON.stringify(payloadIds));
 
                     if(payloadIds && payloadIds.length > 0) {
                         let latestPayloadInfo:XummTypes.XummGetPayloadResponse = await this.getPayloadInfoByAppId(appId, payloadIds[payloadIds.length-1]);
-                        console.log("latestPayloadInfo: " + JSON.stringify(latestPayloadInfo));
+                        //console.log("latestPayloadInfo: " + JSON.stringify(latestPayloadInfo));
                         if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token)
                             payload.user_token = latestPayloadInfo.application.issued_user_token;
                     }
@@ -195,7 +195,7 @@ export class Xumm {
             return null;
 
         let ottData = await this.callXumm(appId, "xapp/ott/"+token, "GET");
-        console.log("getxAppOTT response: " + JSON.stringify(ottData))
+        //console.log("getxAppOTT response: " + JSON.stringify(ottData))
         return ottData;
     }
 
@@ -205,7 +205,7 @@ export class Xumm {
             return null;
 
         let xappEventResponse = await this.callXumm(appId, "xapp/event", "POST", data);
-        console.log("sendxAppEvent response: " + JSON.stringify(xappEventResponse))
+        //console.log("sendxAppEvent response: " + JSON.stringify(xappEventResponse))
         return xappEventResponse;
     }
 
@@ -215,7 +215,7 @@ export class Xumm {
             return null;
 
         let xappPushResponse = await this.callXumm(appId, "xapp/push", "POST", data);
-        console.log("sendxAppPush response: " + JSON.stringify(xappPushResponse))
+        //console.log("sendxAppPush response: " + JSON.stringify(xappPushResponse))
         return xappPushResponse;
     }
 
@@ -319,9 +319,9 @@ export class Xumm {
 
             //check if there is a default return path: 'origin/*'
             if(!foundReturnUrls && originProperties.return_urls.length > 0) {
-                console.log("checking for wildcard");
+                //console.log("checking for wildcard");
                 let filtered:any[] = originProperties.return_urls.filter(url => url.from === (origin+'/*'));
-                console.log("found: " + JSON.stringify(filtered));
+                //console.log("found: " + JSON.stringify(filtered));
 
                 if(filtered.length > 0) {
                     foundReturnUrls = true;
@@ -335,9 +335,9 @@ export class Xumm {
 
             //check if there is a default return path: '*'
             if(!foundReturnUrls && originProperties.return_urls.length > 0) {
-                console.log("checking for wildcard");
+                //console.log("checking for wildcard");
                 let filtered:any[] = originProperties.return_urls.filter(url => url.from === ('*'));
-                console.log("found: " + JSON.stringify(filtered));
+                //console.log("found: " + JSON.stringify(filtered));
 
                 if(filtered.length > 0) {
                     foundReturnUrls = true;

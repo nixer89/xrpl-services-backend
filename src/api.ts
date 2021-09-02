@@ -20,7 +20,7 @@ export async function registerRoutes(fastify, opts, next) {
     await special.init();
     
     fastify.post('/api/v1/platform/payload', async (request, reply) => {
-        console.log("post payload headers: " + JSON.stringify(request.headers));
+        //console.log("post payload headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
         if(!request.body.payload)
             reply.code(500).send('Please provide a xumm payload. Calls without xumm payload are not allowed');
@@ -109,7 +109,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.post('/api/v1/platform/xapp/event', async (request, reply) => {
-        console.log("post xApp event headers: " + JSON.stringify(request.headers));
+        //console.log("post xApp event headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
         if(!request.body.user_token || !request.body.subtitle)
             reply.code(500).send('Please provide a xumm user_token and subtitle. Calls without xumm user_token and subtitle are not allowed');
@@ -125,7 +125,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.post('/api/v1/platform/xapp/push', async (request, reply) => {
-        console.log("post xApp push headers: " + JSON.stringify(request.headers));
+        //console.log("post xApp push headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
         if(!request.body.user_token || !request.body.subtitle)
             reply.code(500).send('Please provide a xumm user_token and subtitle. Calls without xumm user_token and subtitle are not allowed');
@@ -141,8 +141,8 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/initiate/simplePayment', async (request, reply) => {
-        console.log("simplePayment headers: " + JSON.stringify(request.headers));
-        console.log("simplePayment request.params: " + JSON.stringify(request.params));
+        //console.log("simplePayment headers: " + JSON.stringify(request.headers));
+        //console.log("simplePayment request.params: " + JSON.stringify(request.params));
         //console.log("body: " + JSON.stringify(request.body));
         try {
             let genericPayloadOptions:GenericBackendPostRequestOptions = {};
@@ -158,7 +158,7 @@ export async function registerRoutes(fastify, opts, next) {
             
             try {
                 let parseResult = deviceDetector.parse(request.headers['user-agent'])
-                console.log("parsed user agent: " + JSON.stringify(parseResult));
+                //console.log("parsed user agent: " + JSON.stringify(parseResult));
                 if(parseResult && parseResult.device && parseResult.device.type) {
                     genericPayloadOptions.web = 'desktop' === parseResult.device.type;
                 }
@@ -184,8 +184,8 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/initiate/simplePayment/:deviceType', async (request, reply) => {
-        console.log("simplePayment/ headers: " + JSON.stringify(request.headers));
-        console.log("simplePayment/ request.params: " + JSON.stringify(request.params));
+        //console.log("simplePayment/ headers: " + JSON.stringify(request.headers));
+        //console.log("simplePayment/ request.params: " + JSON.stringify(request.params));
         //console.log("body: " + JSON.stringify(request.body));
         try {
             let genericPayloadOptions:GenericBackendPostRequestOptions = {};
@@ -204,7 +204,7 @@ export async function registerRoutes(fastify, opts, next) {
             } else {
                 try {
                     let parseResult = deviceDetector.parse(request.headers['user-agent'])
-                    console.log("parsed user agent: " + JSON.stringify(parseResult));
+                    //console.log("parsed user agent: " + JSON.stringify(parseResult));
                     if(parseResult && parseResult.device && parseResult.device.type) {
                         genericPayloadOptions.web = 'desktop' === parseResult.device.type;
                     }
@@ -230,8 +230,8 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/initiate/simplePaymentRedirect', async (request, reply) => {
-        console.log("simplePayment headers: " + JSON.stringify(request.headers));
-        console.log("simplePayment request.params: " + JSON.stringify(request.params));
+        //console.log("simplePayment headers: " + JSON.stringify(request.headers));
+        //console.log("simplePayment request.params: " + JSON.stringify(request.params));
         //console.log("body: " + JSON.stringify(request.body));
         try {
             let genericPayloadOptions:GenericBackendPostRequestOptions = {};
@@ -247,7 +247,7 @@ export async function registerRoutes(fastify, opts, next) {
             
             try {
                 let parseResult = deviceDetector.parse(request.headers['user-agent'])
-                console.log("parsed user agent: " + JSON.stringify(parseResult));
+                //console.log("parsed user agent: " + JSON.stringify(parseResult));
                 if(parseResult && parseResult.device && parseResult.device.type) {
                     genericPayloadOptions.web = 'desktop' === parseResult.device.type;
                 }
@@ -278,8 +278,8 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/check/signinToValidatePayment/:signinPayloadId', async (request, reply) => {
-        console.log("headers: " + JSON.stringify(request.headers));
-        console.log("query: " + JSON.stringify(request.query));
+        //console.log("headers: " + JSON.stringify(request.headers));
+        //console.log("query: " + JSON.stringify(request.query));
         if(!request.params.signinPayloadId) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
@@ -600,7 +600,7 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId)
 
-                console.log(JSON.stringify(payloadInfo));
+                //console.log(JSON.stringify(payloadInfo));
                 if(payloadInfo && payloadInfo.response && payloadInfo.response.txid) {
                     let txResult = await special.validateXRPLTransaction(payloadInfo.response.txid);
                     if(txResult)
@@ -626,25 +626,25 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId)
 
-                console.log("escrow/validatepayment PAYLOAD: " + JSON.stringify(payloadInfo));
+                //console.log("escrow/validatepayment PAYLOAD: " + JSON.stringify(payloadInfo));
 
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
                     let txResult:TransactionValidation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
 
-                    console.log("escrow/validatepayment TXRESULT: " + JSON.stringify(txResult));
+                    //console.log("escrow/validatepayment TXRESULT: " + JSON.stringify(txResult));
 
                     if(txResult) {
                         if(payloadInfo.custom_meta.blob) {
                             txResult.account = payloadInfo.response.account;
                             let escrow:any = payloadInfo.custom_meta.blob;
 
-                            console.log("escrow/validatepayment ESCROW: " + JSON.stringify(escrow));
+                            //console.log("escrow/validatepayment ESCROW: " + JSON.stringify(escrow));
 
                             if(escrow && txResult.success && txResult.account == escrow.account && ((txResult.testnet == escrow.testnet) || (escrow.testnet && !txResult.testnet))) {
                                 //insert escrow
                                 let escrowsExists:any = await special.escrowExists(escrow);
 
-                                console.log("escrowsExists: " + JSON.stringify(escrowsExists));
+                                //console.log("escrowsExists: " + JSON.stringify(escrowsExists));
 
                                 if(escrowsExists && escrowsExists.success)
                                     return txResult;
@@ -652,7 +652,7 @@ export async function registerRoutes(fastify, opts, next) {
                                     //try to add again maybe?
                                     let addEscrow:any = await special.addEscrow(escrow);
 
-                                    console.log("Add escrow: " + JSON.stringify(addEscrow));
+                                    //console.log("Add escrow: " + JSON.stringify(addEscrow));
 
                                     if(addEscrow && addEscrow.success)
                                         return txResult;
@@ -687,11 +687,11 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId);
 
-                console.log("escrow/signinToDeleteEscrow PAYLOAD: " + JSON.stringify(payloadInfo));
+                //console.log("escrow/signinToDeleteEscrow PAYLOAD: " + JSON.stringify(payloadInfo));
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo) && payloadInfo.custom_meta && payloadInfo.custom_meta.blob && payloadInfo.response.account === payloadInfo.custom_meta.blob.account ) {
                     let deleteSuccess = await special.deleteEscrow(payloadInfo.custom_meta.blob);
-                    console.log("escrow/signinToDeleteEscrow deleteSuccess: " + JSON.stringify(deleteSuccess));
+                    //console.log("escrow/signinToDeleteEscrow deleteSuccess: " + JSON.stringify(deleteSuccess));
                     deleteSuccess.account = payloadInfo.response.account;
                     return deleteSuccess;
                 } else {
@@ -705,7 +705,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.post('/api/v1/escrows', async (request, reply) => {
-        console.log("body params escrow: " + JSON.stringify(request.body));
+        //console.log("body params escrow: " + JSON.stringify(request.body));
         if(!request.body || !request.body.account) {
             reply.code(500).send('Please provide an XRPL account as body param. Calls without account are not allowed');
         } else {
@@ -785,7 +785,7 @@ export async function registerRoutes(fastify, opts, next) {
 }
 
 async function handleWebhookRequest(request:any): Promise<any> {
-    console.log("webhook headers: " + JSON.stringify(request.headers));
+    //console.log("webhook headers: " + JSON.stringify(request.headers));
     //console.log("webhook body: " + JSON.stringify(request.body));
     
     try {
@@ -833,25 +833,25 @@ async function handleWebhookRequest(request:any): Promise<any> {
 }
 
 async function handleEscrowPayment(payloadInfo: XummTypes.XummGetPayloadResponse, origin?: string) {
-    console.log("escrow/validatepayment PAYLOAD: " + JSON.stringify(payloadInfo));
+    //console.log("escrow/validatepayment PAYLOAD: " + JSON.stringify(payloadInfo));
 
     if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
         let txResult:TransactionValidation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
 
-        console.log("escrow/validatepayment TXRESULT: " + JSON.stringify(txResult));
+        //console.log("escrow/validatepayment TXRESULT: " + JSON.stringify(txResult));
 
         if(txResult) {
             if(payloadInfo.custom_meta.blob) {
                 txResult.account = payloadInfo.response.account;
                 let escrow:any = payloadInfo.custom_meta.blob;
 
-                console.log("escrow/validatepayment ESCROW: " + JSON.stringify(escrow));
+                //console.log("escrow/validatepayment ESCROW: " + JSON.stringify(escrow));
 
                 if(escrow && txResult.success && txResult.account == escrow.account && ((txResult.testnet == escrow.testnet) || (escrow.testnet && !txResult.testnet))) {
                     //insert escrow
                     let addEscrow:any = await special.addEscrow(escrow);
 
-                    console.log("Add escrow: " + JSON.stringify(addEscrow));
+                    //console.log("Add escrow: " + JSON.stringify(addEscrow));
 
                     if(addEscrow && addEscrow.success)
                         console.log("Escrow stored!");
