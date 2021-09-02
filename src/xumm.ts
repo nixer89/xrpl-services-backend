@@ -122,9 +122,9 @@ export class Xumm {
             console.log(JSON.stringify(err));
         }
 
-        console.log("[XUMM]: payload to send:" + JSON.stringify(payload));
+        //console.log("[XUMM]: payload to send:" + JSON.stringify(payload));
         let payloadResponse:XummTypes.XummPostPayloadResponse = await this.callXumm(appId, "payload", "POST", payload);
-        console.log("[XUMM]: submitPayload response: " + JSON.stringify(payloadResponse))
+        //console.log("[XUMM]: submitPayload response: " + JSON.stringify(payloadResponse))
 
         //don't block the response
         setTimeout(() => { this.storePayloadInfo(origin, referer, frontendId, appId, payload, payloadResponse) },2000);
@@ -225,7 +225,7 @@ export class Xumm {
             if(appSecret) {
                 //console.log("[XUMM]: applicationId: " + applicationId);
                 //console.log("[XUMM]: appSecret: " + appSecret);
-                console.log("[XUMM]: calling xumm: " + method + " - " + config.XUMM_API_URL+path);
+                //console.log("[XUMM]: calling xumm: " + method + " - " + config.XUMM_API_URL+path);
                 //console.log("[XUMM]: with body: " + JSON.stringify(body));
                 let xummResponse = await fetch.default(config.XUMM_API_URL+path,
                     {
@@ -245,11 +245,11 @@ export class Xumm {
                 else
                     return null;
             } else {
-                console.log("Could not find api keys for applicationId: " + applicationId);
+                console.log("ERROR: Could not find api keys for applicationId: " + applicationId);
                 return null;
             }
         } catch(err) {
-            console.log("err calling xumm");
+            console.log("ERROR: error calling xumm");
             console.log(JSON.stringify(err));
         }
     }

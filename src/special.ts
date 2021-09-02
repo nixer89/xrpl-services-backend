@@ -218,12 +218,12 @@ export class Special {
 
     async callBithompAndValidate(trxHash:string, testnet: boolean, destinationAccount?:any, amount?:any): Promise<boolean> {
         try {
-            console.log("checking bithomp with trxHash: " + trxHash);
-            console.log("checking bithomp with testnet: " + testnet + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount));
+            //console.log("checking bithomp with trxHash: " + trxHash);
+            //console.log("checking bithomp with testnet: " + testnet + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount));
             let bithompResponse:any = await fetch.default("https://"+(testnet?'test.':'')+"bithomp.com/api/v2/transaction/"+trxHash, {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN },agent: this.useProxy ? this.proxy : null});
             if(bithompResponse && bithompResponse.ok) {
                 let ledgerTrx:any = await bithompResponse.json();
-                console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(ledgerTrx));
+                //console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(ledgerTrx));
 
                 //standard validation of successfull transaction
                 if(ledgerTrx && ledgerTrx.type && ledgerTrx.type.toLowerCase() === 'payment'
@@ -280,7 +280,7 @@ export class Special {
         if(escrowListResponse && escrowListResponse.ok) {
             return escrowListResponse.json();
         } else {
-            console.log("NOT OKAY")
+            //console.log("NOT OKAY")
             throw "error calling escrow delete api";
         }
     }
@@ -293,13 +293,13 @@ export class Special {
         if(escrowListResponse && escrowListResponse.ok) {
             return escrowListResponse.json();
         } else {
-            console.log("NOT OKAY")
+            //console.log("NOT OKAY")
             throw "error calling escrowExists api";
         }
     }
 
     async loadEscrowsForAccount(accountInfo: any) {
-        console.log("loading escrows for account: " + accountInfo.account + " on " + (accountInfo.testnet ? "Testnet" : "Mainnet"));
+        //console.log("loading escrows for account: " + accountInfo.account + " on " + (accountInfo.testnet ? "Testnet" : "Mainnet"));
         
         let escrowListResponse:fetch.Response = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/escrows", {method: "post", body: JSON.stringify(accountInfo)});
 
