@@ -7,10 +7,11 @@ import * as scheduler from 'node-schedule';
 const fastify = require('fastify')({
   trustProxy: config.USE_PROXY,
   logger: {
-    //level: 'warn',
-    level: 'info',
+    level: 'warn',
+    //level: 'info',
     file: '/home/ubuntu/fastify-logs/fastify.log' // Will use pino.destination()
-  }})
+  }
+});
 
 import consoleStamp = require("console-stamp");
 consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
@@ -54,6 +55,8 @@ const start = async () => {
       console.log("setting allowed origins: " + allowedOrigins);
       fastify.register(require('fastify-cors'), {
         origin: (origin, cb) => {
+
+          //console.log("checking request with origin: " + origin);
           if(!origin) {
             //  Requests will pass
             cb(null, true);
@@ -75,6 +78,8 @@ const start = async () => {
               }
             }
           }
+
+          
           
           cb(new Error("Origin not allowed"), false);
         },
@@ -111,7 +116,8 @@ const start = async () => {
                 return {success: true }
             } else
                 return {success: false }
-        } catch {
+        } catch(err) {
+            console.log(JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
     });

@@ -47,6 +47,7 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadResponse = await xummBackend.submitPayload(request.body.payload, request.headers.origin, refererURL, request.body.options);
                 return payloadResponse;
             } catch (err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 if('bithomp' == err) {
                     return { success : false, error: true, message: "We can not contact our XRP Ledger service provider and therefore won't be able to to verify your transaction. Please try again later!"};
                 }
@@ -63,7 +64,8 @@ export async function registerRoutes(fastify, opts, next) {
         } else {
             try {
                 return xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.id);
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -76,7 +78,8 @@ export async function registerRoutes(fastify, opts, next) {
         } else {
             try {
                 return xummBackend.getPayloadForCustomIdentifierByOrigin(request.headers.origin, request.params.custom_identifier);
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -89,7 +92,8 @@ export async function registerRoutes(fastify, opts, next) {
         } else {
             try {
                 return xummBackend.deletePayload(request.headers.origin, request.params.id);
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -102,7 +106,8 @@ export async function registerRoutes(fastify, opts, next) {
         } else {
             try {
                 return xummBackend.getxAppOTT(request.headers.origin, request.params.token);
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -119,6 +124,7 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadResponse = await xummBackend.sendxAppEvent(request.headers.origin, request.body);
                 return payloadResponse;
             } catch (err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -135,6 +141,7 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadResponse = await xummBackend.sendxAppPush(request.headers.origin, request.body);
                 return payloadResponse;
             } catch (err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -175,6 +182,7 @@ export async function registerRoutes(fastify, opts, next) {
             let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, genericPayloadOptions);
             return payloadResponse;
         } catch(err) {
+            console.log("ERROR: " + JSON.stringify(err));
             if('bithomp' == err) {
                 return { success : false, error: true, message: "We can not contact our XRP Ledger service provider and therefore won't be able to to verify your transaction. Please try again later!"};
             }
@@ -222,6 +230,7 @@ export async function registerRoutes(fastify, opts, next) {
             let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, genericPayloadOptions);
             return payloadResponse;
         } catch(err) {
+            console.log("ERROR: " + JSON.stringify(err));
             if('bithomp' == err)
                 return { success : false, error: true, message: "We can not contact our XRP Ledger service provider and therefore won't be able to to verify your transaction. Please try again later!"};
             else
@@ -270,6 +279,7 @@ export async function registerRoutes(fastify, opts, next) {
             }
             
         } catch(err) {
+            console.log("ERROR: " + JSON.stringify(err));
             if('bithomp' == err)
                 return { success : false, error: true, message: "We can not contact our XRP Ledger service provider and therefore won't be able to to verify your transaction. Please try again later!"};
             else
@@ -291,7 +301,8 @@ export async function registerRoutes(fastify, opts, next) {
                 }
                 
                 return special.checkSignInToValidatePayment(request.params.signinPayloadId, request.headers.origin, refererURL);
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -314,7 +325,8 @@ export async function registerRoutes(fastify, opts, next) {
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
                 
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -339,7 +351,8 @@ export async function registerRoutes(fastify, opts, next) {
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
                 
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -362,7 +375,8 @@ export async function registerRoutes(fastify, opts, next) {
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
                 
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -393,7 +407,8 @@ export async function registerRoutes(fastify, opts, next) {
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
                 
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -421,7 +436,8 @@ export async function registerRoutes(fastify, opts, next) {
                 
                 //we didn't go into the success:true -> so return false :)
                 return {success : false }
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -452,7 +468,8 @@ export async function registerRoutes(fastify, opts, next) {
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
 
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -482,7 +499,8 @@ export async function registerRoutes(fastify, opts, next) {
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
 
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -514,7 +532,8 @@ export async function registerRoutes(fastify, opts, next) {
                 //we didn't go into the success:true -> so return false :)
                 return {success : false}
 
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -535,7 +554,8 @@ export async function registerRoutes(fastify, opts, next) {
                 //we didn't go into the success:true -> so return false :)
                 return {success : false, account: payloadInfo.response.account }
 
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -558,7 +578,8 @@ export async function registerRoutes(fastify, opts, next) {
                 //we didn't go into the success:true -> so return false :)
                 return {success : false, account: payloadInfo.response.account }
 
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -586,7 +607,8 @@ export async function registerRoutes(fastify, opts, next) {
                 //we didn't go into the success:true -> so return false :)
                 return {success : false, account: payloadInfo.response.account }
 
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -612,7 +634,8 @@ export async function registerRoutes(fastify, opts, next) {
                 //we didn't go into the success:true -> so return false :)
                 return {success : false, testnet: false, account: payloadInfo.response.account }
 
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -673,7 +696,8 @@ export async function registerRoutes(fastify, opts, next) {
                 //we didn't go into the success:true -> so return false :)
                 return {success : false, testnet: false, account: payloadInfo.response.account }
 
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -698,7 +722,8 @@ export async function registerRoutes(fastify, opts, next) {
                     //we didn't go into the success:true -> so return false :)
                     return {success : false, account: payloadInfo.response.account }
                 }
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -712,7 +737,8 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let loadEscrowResponse:any = await special.loadEscrowsForAccount(request.body);
                 return loadEscrowResponse;                
-            } catch {
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
             }
         }
@@ -725,7 +751,8 @@ export async function registerRoutes(fastify, opts, next) {
             let appId = await db.getAppIdForOrigin(origin);
             let transactionStats:any = await db.getTransactions(origin, appId);
             return transactionStats;                
-        } catch {
+        } catch(err) {
+            console.log("ERROR: " + JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
     });
@@ -734,7 +761,8 @@ export async function registerRoutes(fastify, opts, next) {
         
         try {
             return special.getEscrowNextOrLastRelease(true);
-        } catch {
+        } catch(err) {
+            console.log("ERROR: " + JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
     });
@@ -743,7 +771,8 @@ export async function registerRoutes(fastify, opts, next) {
         
         try {
             return special.getEscrowNextOrLastRelease(false);
-        } catch {
+        } catch(err) {
+            console.log("ERROR: " + JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
     });
@@ -752,7 +781,8 @@ export async function registerRoutes(fastify, opts, next) {
         
         try {
             return special.getEscrowCurrentCount();              
-        } catch {
+        } catch(err) {
+            console.log("ERROR: " + JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
     });
@@ -768,7 +798,8 @@ export async function registerRoutes(fastify, opts, next) {
                 return {success: true }
             } else
                 return {success: false }
-        } catch {
+        } catch(err) {
+            console.log("ERROR: " + JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
     });
@@ -824,10 +855,12 @@ async function handleWebhookRequest(request:any): Promise<any> {
             } else {
                 return {success: false}
             }
-        } catch {
+        } catch(err) {
+            console.log("ERROR: " + JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
-    } catch {
+    } catch(err) {
+        console.log("ERROR: " + JSON.stringify(err));
         return { success : false, error: true, message: 'Something went wrong. Please check your request'};
     }
 }
@@ -835,37 +868,42 @@ async function handleWebhookRequest(request:any): Promise<any> {
 async function handleEscrowPayment(payloadInfo: XummTypes.XummGetPayloadResponse, origin?: string) {
     //console.log("escrow/validatepayment PAYLOAD: " + JSON.stringify(payloadInfo));
 
-    if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
-        let txResult:TransactionValidation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+    try {
 
-        //console.log("escrow/validatepayment TXRESULT: " + JSON.stringify(txResult));
+        if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
+            let txResult:TransactionValidation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
 
-        if(txResult) {
-            if(payloadInfo.custom_meta.blob) {
-                txResult.account = payloadInfo.response.account;
-                let escrow:any = payloadInfo.custom_meta.blob;
+            //console.log("escrow/validatepayment TXRESULT: " + JSON.stringify(txResult));
 
-                //console.log("escrow/validatepayment ESCROW: " + JSON.stringify(escrow));
+            if(txResult) {
+                if(payloadInfo.custom_meta.blob) {
+                    txResult.account = payloadInfo.response.account;
+                    let escrow:any = payloadInfo.custom_meta.blob;
 
-                if(escrow && txResult.success && txResult.account == escrow.account && ((txResult.testnet == escrow.testnet) || (escrow.testnet && !txResult.testnet))) {
-                    //insert escrow
-                    let addEscrow:any = await special.addEscrow(escrow);
+                    //console.log("escrow/validatepayment ESCROW: " + JSON.stringify(escrow));
 
-                    //console.log("Add escrow: " + JSON.stringify(addEscrow));
+                    if(escrow && txResult.success && txResult.account == escrow.account && ((txResult.testnet == escrow.testnet) || (escrow.testnet && !txResult.testnet))) {
+                        //insert escrow
+                        let addEscrow:any = await special.addEscrow(escrow);
 
-                    if(addEscrow && addEscrow.success)
-                        console.log("Escrow stored!");
-                    else
-                        console.log("Escrow could not be stored. Please contact the website owner!");
+                        //console.log("Add escrow: " + JSON.stringify(addEscrow));
+
+                        if(addEscrow && addEscrow.success)
+                            console.log("Escrow stored!");
+                        else
+                            console.log("ERROR: Escrow could not be stored. Please contact the website owner!");
+                    } else {
+                        console.log("ERROR: The escrow account does not equal the payment account or you submitted the transaction on a different network (Main/Test).");
+                    }
                 } else {
-                    console.log("The escrow account does not equal the payment account or you submitted the transaction on a different network (Main/Test).");
+                    console.log("ERROR: The transaction could not be matched to an escrow. Please contact the website owner if you think that is wrong!")
                 }
             } else {
-                console.log("The transaction could not be matched to an escrow. Please contact the website owner if you think that is wrong!")
+                console.log("ERROR: Transaction could not be verified!");
             }
-        } else {
-            console.log("Transaction could not be verified!");
         }
+    } catch(err) {
+        console.log("ERROR: " + JSON.stringify(err));
     }
 }
 

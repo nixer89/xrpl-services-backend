@@ -35,7 +35,7 @@ export class DB {
     }
 
     async saveUser(origin:string, applicationId: string, userId:string, xummId: string): Promise<any> {
-        console.log("[DB]: saveUser:" + " origin: " + origin + " userId: " + userId + " xummId: " + xummId);
+        //console.log("[DB]: saveUser:" + " origin: " + origin + " userId: " + userId + " xummId: " + xummId);
         try {
             if((await this.userIdCollection.find({origin: origin, applicationId: applicationId, frontendUserId: userId, xummUserId: xummId}).toArray()).length == 0) {
                 return this.userIdCollection.insertOne({origin: origin, applicationId: applicationId, frontendUserId: userId, xummUserId: xummId, created: new Date()});
@@ -50,7 +50,7 @@ export class DB {
 
     async getXummId(applicationId:string, frontendUserId:string): Promise<string> {
         try {
-            console.log("[DB]: getXummId: applicationId: " + applicationId +" frontendUserId: " + frontendUserId);
+            //console.log("[DB]: getXummId: applicationId: " + applicationId +" frontendUserId: " + frontendUserId);
             let mongoResult:UserIdCollection[] = await this.userIdCollection.find({applicationId: applicationId, frontendUserId: frontendUserId}).sort({created: -1}).limit(1).toArray();
 
             if(mongoResult && mongoResult[0])
@@ -64,7 +64,7 @@ export class DB {
     }
 
     async storePayloadForFrontendId(origin:string, referer:string, applicationId: string, frontendUserId:string, payloadId: string, payloadType: string): Promise<void> {
-        console.log("[DB]: storePayloadForFrontendId:" + " origin: " + origin + " referer: " + referer + " frontendUserId: " + frontendUserId + " payloadId: " + payloadId + " payloadType: " + payloadType);
+        //console.log("[DB]: storePayloadForFrontendId:" + " origin: " + origin + " referer: " + referer + " frontendUserId: " + frontendUserId + " payloadId: " + payloadId + " payloadType: " + payloadType);
         try {
             await this.frontendIdPayloadCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, frontendUserId: frontendUserId}, {
                 $addToSet: this.getSetToUpdate(payloadType, payloadId),
@@ -81,7 +81,7 @@ export class DB {
     }
 
     async getPayloadIdsByFrontendIdForApplication(applicationId: string, frontendUserId:string, payloadType: string): Promise<string[]> {
-        console.log("[DB]: getPayloadIdsByFrontendIdForApplication:" + " applicationId: " + applicationId + " frontendUserId: " + frontendUserId);
+        //console.log("[DB]: getPayloadIdsByFrontendIdForApplication:" + " applicationId: " + applicationId + " frontendUserId: " + frontendUserId);
         try {
             let findResult:FrontendIdPayloadCollection[] = await this.frontendIdPayloadCollection.find({applicationId: applicationId, frontendUserId: frontendUserId}).toArray();
 
@@ -104,7 +104,7 @@ export class DB {
     }
 
     async getPayloadIdsByFrontendIdForApplicationAndReferer(referer: string, applicationId: string, frontendUserId:string, payloadType: string): Promise<string[]> {
-        console.log("[DB]: getPayloadIdsByFrontendIdForApplicationAndReferer:" + " applicationId: " + applicationId + " referer: " + referer+ " frontendUserId: " + frontendUserId);
+        //console.log("[DB]: getPayloadIdsByFrontendIdForApplicationAndReferer:" + " applicationId: " + applicationId + " referer: " + referer+ " frontendUserId: " + frontendUserId);
         try {
             let findResult:FrontendIdPayloadCollection = await this.frontendIdPayloadCollection.findOne({referer: referer, applicationId: applicationId, frontendUserId: frontendUserId});
 
@@ -120,7 +120,7 @@ export class DB {
     }
 
     async storePayloadForXummId(origin:string, referer:string, applicationId: string, xummUserId:string, payloadId: string, payloadType: string): Promise<any> {
-        console.log("[DB]: storePayloadForXummId:" + " origin: " + origin + " referer: " + referer + " xummUserId: " + xummUserId + " payloadId: " + payloadId + " payloadType: " + payloadType);
+        //console.log("[DB]: storePayloadForXummId:" + " origin: " + origin + " referer: " + referer + " xummUserId: " + xummUserId + " payloadId: " + payloadId + " payloadType: " + payloadType);
         try {
             return this.xummIdPayloadCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, xummUserId: xummUserId}, {
                 $addToSet: this.getSetToUpdate(payloadType, payloadId),
@@ -135,7 +135,7 @@ export class DB {
     }
 
     async getPayloadIdsByXummIdForApplication(applicationId: string, xummUserId:string, payloadType: string): Promise<string[]> {
-        console.log("[DB]: getPayloadIdsByXummIdForApplication: applicationId: " + applicationId +" xummUserId: " + xummUserId);
+        //console.log("[DB]: getPayloadIdsByXummIdForApplication: applicationId: " + applicationId +" xummUserId: " + xummUserId);
         try {
             let findResult:XummIdPayloadCollection[] = await this.xummIdPayloadCollection.find({applicationId: applicationId, xummUserId: xummUserId}).toArray();
 
@@ -157,7 +157,7 @@ export class DB {
     }
 
     async getPayloadIdsByXummIdForApplicationAndReferer(referer: string, applicationId: string, xummUserId:string, payloadType: string): Promise<string[]> {
-        console.log("[DB]: getPayloadIdsByXummIdForApplicationAndReferer: referer: " + referer + " applicationId: " + applicationId + " xummUserId: " + xummUserId);
+        //console.log("[DB]: getPayloadIdsByXummIdForApplicationAndReferer: referer: " + referer + " applicationId: " + applicationId + " xummUserId: " + xummUserId);
         try {
             let findResult:XummIdPayloadCollection = await this.xummIdPayloadCollection.findOne({applicationId: applicationId, referer: referer, xummUserId: xummUserId})
             if(findResult)
@@ -172,7 +172,7 @@ export class DB {
     }
 
     async storePayloadForXRPLAccount(origin:string, referer:string, applicationId: string, xrplAccount:string, xummId:string, payloadId: string, payloadType: string): Promise<any> {
-        console.log("[DB]: storePayloadForXRPLAccount:" + " origin: " + origin + " xrplAccount: " + xrplAccount + " xummId: " + xummId + " payloadId: " + payloadId + " payloadType: " + payloadType);
+        //console.log("[DB]: storePayloadForXRPLAccount:" + " origin: " + origin + " xrplAccount: " + xrplAccount + " xummId: " + xummId + " payloadId: " + payloadId + " payloadType: " + payloadType);
         try {
             if(!xummId)
                 xummId = await this.getXummIdForXRPLAccount(applicationId, xrplAccount);
@@ -193,7 +193,7 @@ export class DB {
     }
 
     async getXummIdForXRPLAccount(applicationId: string, xrplAccount:string): Promise<string> {
-        console.log("[DB]: getXummIdForXRPLAccount:" + " applicationId: " + applicationId + " xrplAccount: " + xrplAccount);
+        //console.log("[DB]: getXummIdForXRPLAccount:" + " applicationId: " + applicationId + " xrplAccount: " + xrplAccount);
         try {
             let findResult:XrplAccountPayloadCollection[] = await this.xrplAccountPayloadCollection.find({applicationId: applicationId, xrplAccount: xrplAccount, xummId: { $ne: null}}).sort({updated: -1}).limit(1).toArray();
 
@@ -210,7 +210,7 @@ export class DB {
     }
 
     async getPayloadIdsByXrplAccountForApplicationBySignin(applicationId: string, xrplAccount:string) {
-        console.log("[DB]: getPayloadIdsByXrplAccountForApplicationBySignin:" + " applicationId: " + applicationId + " xrplAccount: " + xrplAccount);
+        //console.log("[DB]: getPayloadIdsByXrplAccountForApplicationBySignin:" + " applicationId: " + applicationId + " xrplAccount: " + xrplAccount);
         try {
             let findResult:XrplAccountPayloadCollection[] = await this.xrplAccountPayloadCollection.find({applicationId: applicationId, xrplAccount: xrplAccount, signin: {$ne: null}}).sort({updated: 1}).toArray();
 
@@ -232,7 +232,7 @@ export class DB {
     }
 
     async getPayloadIdsByXrplAccountForApplicationAndType(applicationId: string, xrplAccount:string, payloadType: string): Promise<string[]> {
-        console.log("[DB]: getPayloadIdsByXrplAccountForApplicationAndType:" + " applicationId: " + applicationId + " xrplAccount: " + xrplAccount + " payloadType: " + payloadType);
+        //console.log("[DB]: getPayloadIdsByXrplAccountForApplicationAndType:" + " applicationId: " + applicationId + " xrplAccount: " + xrplAccount + " payloadType: " + payloadType);
         try {
             let findResult:XrplAccountPayloadCollection[] = await this.xrplAccountPayloadCollection.find({applicationId: applicationId, xrplAccount: xrplAccount}).sort({updated: 1}).toArray();
 
@@ -254,7 +254,7 @@ export class DB {
     }
 
     async getPayloadIdsByXrplAccountForApplicationAndReferer(referer:string, applicationId: string, xrplAccount:string, payloadType: string): Promise<string[]> {
-        console.log("[DB]: getPayloadIdsByXrplAccountForApplicationAndReferer: referer: " + referer + " applicationId: " + applicationId +" xrplAccount: " + xrplAccount + " payloadType: " + payloadType);
+        //console.log("[DB]: getPayloadIdsByXrplAccountForApplicationAndReferer: referer: " + referer + " applicationId: " + applicationId +" xrplAccount: " + xrplAccount + " payloadType: " + payloadType);
         try {
             let findResult:XrplAccountPayloadCollection = await this.xrplAccountPayloadCollection.findOne({referer:referer, applicationId: applicationId, xrplAccount: xrplAccount});
 
@@ -272,10 +272,10 @@ export class DB {
     async getAllOrigins(): Promise<AllowedOrigins[]> {
         try {
             if(!this.allowedOriginCache) {
-                console.log("[DB]: getOrigins from DB");
+                //console.log("[DB]: getOrigins from DB");
                 this.allowedOriginCache = await this.allowedOriginsCollection.find({}).toArray();
             } else {
-                console.log("[DB]: getOrigins from CACHE");
+                //console.log("[DB]: getOrigins from CACHE");
             }
             return this.allowedOriginCache;
         } catch(err) {
@@ -288,10 +288,10 @@ export class DB {
     async getOriginProperties(applicationId: string): Promise<AllowedOrigins> {
         try {
             if(!this.allowedOriginCache) {
-                console.log("[DB]: getOriginProperties from DB:" + " applicationId: " + applicationId);
+                //console.log("[DB]: getOriginProperties from DB:" + " applicationId: " + applicationId);
                 this.allowedOriginCache = await this.allowedOriginsCollection.find().toArray();
             } else {
-                console.log("[DB]: getOriginProperties from CACHE:" + " applicationId: " + applicationId);
+                //console.log("[DB]: getOriginProperties from CACHE:" + " applicationId: " + applicationId);
             }
             return this.allowedOriginCache.filter(originProperties => originProperties.applicationId === applicationId)[0];
         } catch(err) {
@@ -304,10 +304,10 @@ export class DB {
     async getAppIdForOrigin(origin: string): Promise<string> {
         try {
             if(!this.allowedOriginCache) {
-                console.log("[DB]: getAppIdForOrigin:" + " origin from DB: " + origin);
+                //console.log("[DB]: getAppIdForOrigin:" + " origin from DB: " + origin);
                 this.allowedOriginCache = await this.allowedOriginsCollection.find().toArray();
             } else {
-                console.log("[DB]: getAppIdForOrigin:" + " origin from CACHE: " + origin);
+                //console.log("[DB]: getAppIdForOrigin:" + " origin from CACHE: " + origin);
             }
 
             let searchResult:AllowedOrigins[] = this.allowedOriginCache.filter(originProperties => originProperties.origin.split(',').includes(origin));
@@ -325,10 +325,10 @@ export class DB {
     async getAllowedOriginsAsArray(): Promise<string[]> {
         try {
             if(!this.allowedOriginCache) {
-                console.log("[DB]: getAllowedOriginsAsArray from DB");
+                //console.log("[DB]: getAllowedOriginsAsArray from DB");
                 this.allowedOriginCache = await this.allowedOriginsCollection.find().toArray();
             } else {
-                console.log("[DB]: getAllowedOriginsAsArray from CACHE");
+                //console.log("[DB]: getAllowedOriginsAsArray from CACHE");
             }
 
             let allowedOrigins:string[] = [];
@@ -350,10 +350,10 @@ export class DB {
         
         try {
             if(!this.allowedOriginCache) {
-                console.log("[DB]: getOriginReturnUrl from DB:" + " origin: " + origin + " referer: " + referer + " isWeb: " + isWeb);
+                //console.log("[DB]: getOriginReturnUrl from DB:" + " origin: " + origin + " referer: " + referer + " isWeb: " + isWeb);
                 this.allowedOriginCache = await this.allowedOriginsCollection.find().toArray();
             } else {
-                console.log("[DB]: getOriginReturnUrl from CACHE:" + " origin: " + origin + " referer: " + referer + " isWeb: " + isWeb);
+                //console.log("[DB]: getOriginReturnUrl from CACHE:" + " origin: " + origin + " referer: " + referer + " isWeb: " + isWeb);
             }
             
             let searchResult:AllowedOrigins = this.allowedOriginCache.filter(originProperties => originProperties.origin.split(',').includes(origin) && originProperties.applicationId === applicationId)[0];
@@ -382,10 +382,10 @@ export class DB {
         
         try {
             if(!this.applicationApiKeysCache) {
-                console.log("[DB]: getApiSecretForAppId from DB:" + " appId: " + appId);
+                //console.log("[DB]: getApiSecretForAppId from DB:" + " appId: " + appId);
                 this.applicationApiKeysCache = await this.applicationApiKeysCollection.find().toArray();
             } else {
-                console.log("[DB]: getApiSecretForAppId from CACHE:" + " appId: " + appId);
+                //console.log("[DB]: getApiSecretForAppId from CACHE:" + " appId: " + appId);
             }
 
             let searchResult:ApplicationApiKeys = this.applicationApiKeysCache.filter(element => element.xumm_app_id === appId)[0];
@@ -402,7 +402,7 @@ export class DB {
     }
 
     async saveTempInfo(anyInfo: any): Promise<any> {
-        console.log("[DB]: saveTempInfo");
+        //console.log("[DB]: saveTempInfo");
         try {
             anyInfo.created = new Date().toUTCString();
             return this.tmpInfoTable.insertOne(anyInfo);
@@ -413,7 +413,7 @@ export class DB {
     }
 
     async getTempInfo(anyFilter: any): Promise<any> {
-        console.log("[DB]: getTempInfo: " + JSON.stringify(anyFilter));
+        //console.log("[DB]: getTempInfo: " + JSON.stringify(anyFilter));
         try {
             return this.tmpInfoTable.findOne(anyFilter);
         } catch(err) {
@@ -423,7 +423,7 @@ export class DB {
     }
 
     async getAllTempInfo(): Promise<any[]> {
-        console.log("[DB]: getAllTempInfo");
+        //console.log("[DB]: getAllTempInfo");
         try {
             return this.tmpInfoTable.find({}).toArray();
         } catch(err) {
@@ -433,7 +433,7 @@ export class DB {
     }
 
     async deleteTempInfo(anyFilter: any): Promise<any> {
-        console.log("[DB]: deleteTempInfo: " + JSON.stringify(anyFilter));
+        //console.log("[DB]: deleteTempInfo: " + JSON.stringify(anyFilter));
         try {
             return this.tmpInfoTable.deleteOne(anyFilter);
         } catch(err) {
@@ -443,7 +443,7 @@ export class DB {
     }
 
     async saveTransactionInStatistic(origin:string, appId: string, transactionType: string) {
-        console.log("[DB]: saveTransactionInStatistic: [ " +origin + " , "+ appId + " , " + transactionType + " ]");
+        //console.log("[DB]: saveTransactionInStatistic: [ " +origin + " , "+ appId + " , " + transactionType + " ]");
         try {
             let key = "stats."+transactionType.toLowerCase();
             let toIncrement = {};
@@ -463,7 +463,7 @@ export class DB {
     }
 
     async getTransactions(origin:string, appId: string): Promise<any> {
-        console.log("[DB]: getTransactions: [ " + origin + " , "  + appId + " ]");
+        //console.log("[DB]: getTransactions: [ " + origin + " , "  + appId + " ]");
         try {
             let transactions:any[] = await this.statisticsCollection.find({origin: origin, applicationId: appId, type: "transactions"}).toArray();
             if(transactions && transactions.length >= 1)
