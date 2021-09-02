@@ -45,6 +45,11 @@ export async function registerRoutes(fastify, opts, next) {
                 }
 
                 let payloadResponse = await xummBackend.submitPayload(request.body.payload, request.headers.origin, refererURL, request.body.options);
+
+                if(payloadResponse) {
+                    console.log("[XUMM]: payload submitted successfully: " + payloadResponse.uuid);
+                }
+
                 return payloadResponse;
             } catch (err) {
                 console.log("ERROR: " + JSON.stringify(err));
