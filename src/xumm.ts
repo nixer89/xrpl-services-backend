@@ -223,6 +223,7 @@ export class Xumm {
     }
 
     async callXumm(applicationId:string, path:string, method:string, body?:any): Promise<any> {
+        let xummResponse:any = null;
         try {
             let appSecret:string = await this.db.getApiSecretForAppId(applicationId);
             if(appSecret) {
@@ -230,7 +231,7 @@ export class Xumm {
                 //console.log("[XUMM]: appSecret: " + appSecret);
                 //console.log("[XUMM]: calling xumm: " + method + " - " + config.XUMM_API_URL+path);
                 //console.log("[XUMM]: with body: " + JSON.stringify(body));
-                let xummResponse = await fetch.default(config.XUMM_API_URL+path,
+                xummResponse = await fetch.default(config.XUMM_API_URL+path,
                     {
                         headers: {
                             "Content-Type": "application/json",
@@ -254,6 +255,8 @@ export class Xumm {
         } catch(err) {
             console.log("ERROR: error calling xumm");
             console.log(JSON.stringify(err));
+            console.log("input params: applicationId: " + applicationId + " path: " + path + " method: " + method+ " body: " + body);
+            console.log("xumm response: " + JSON.stringify(xummResponse));
         }
     }
 
