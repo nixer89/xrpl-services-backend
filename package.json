@@ -1,6 +1,6 @@
 {
   "name": "generic-xumm-backend",
-  "version": "2.8.15",
+  "version": "2.8.16",
   "description": "provides a generic backend, connected to xumm. Easy access of user tokens for push",
   "main": "src/server.ts",
   "scripts": {
@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/nixer89/gerneric-xumm-backend#readme",
   "dependencies": {
-    "console-stamp": "^0.2.10",
+    "console-stamp": "^3.0.3",
     "device-detector-js": "^2.2.10",
     "fastify": "^2.15.3",
     "fastify-compress": "^2.0.1",

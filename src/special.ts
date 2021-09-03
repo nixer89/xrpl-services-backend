@@ -6,6 +6,9 @@ import * as fetch from 'node-fetch';
 import {verifySignature} from 'verify-xrpl-signature'
 import { XummTypes } from 'xumm-sdk';
 import { TransactionValidation } from './util/types';
+require('console-stamp')(console, { 
+    format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
+});
 
 export class Special {
     proxy = new HttpsProxyAgent(config.PROXY_URL);

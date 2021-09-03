@@ -4,6 +4,9 @@ import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as DB from './db';
 import { XummTypes } from 'xumm-sdk';
 import { GenericBackendPostRequestOptions, AllowedOrigins } from './util/types';
+require('console-stamp')(console, { 
+    format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
+});
 
 export class Xumm {
 

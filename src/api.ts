@@ -2,12 +2,12 @@ import * as Xumm from './xumm';
 import * as Db from './db';
 import * as Special from './special';
 import * as config from './util/config';
-import consoleStamp = require("console-stamp");
 import { XummTypes } from 'xumm-sdk';
 import DeviceDetector = require("device-detector-js");
 import { GenericBackendPostRequestOptions, TransactionValidation } from './util/types';
-
-consoleStamp(console, { pattern: 'yyyy-mm-dd HH:MM:ss' });
+require('console-stamp')(console, { 
+    format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
+});
 
 let xummBackend = new Xumm.Xumm();
 let db = new Db.DB();
