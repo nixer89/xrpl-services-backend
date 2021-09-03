@@ -85,3 +85,9 @@ export interface StatisticsCollection {
     stats: any,
     updated: Date
 }
+
+export interface TrustSetCollection {
+    issuer: string,
+    currency:string,
+    date: Date
+}

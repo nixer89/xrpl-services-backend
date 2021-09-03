@@ -1,5 +1,5 @@
 import { MongoClient, Collection } from 'mongodb';
-import { AllowedOrigins, ApplicationApiKeys, UserIdCollection, FrontendIdPayloadCollection, XummIdPayloadCollection, XrplAccountPayloadCollection, StatisticsCollection } from './util/types';
+import { AllowedOrigins, ApplicationApiKeys, UserIdCollection, FrontendIdPayloadCollection, XummIdPayloadCollection, XrplAccountPayloadCollection, StatisticsCollection, TrustSetCollection } from './util/types';
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 });
@@ -15,6 +15,7 @@ export class DB {
     xrplAccountPayloadCollection:Collection<XrplAccountPayloadCollection> = null;
     tmpInfoTable:Collection = null;
     statisticsCollection:Collection<StatisticsCollection> = null;
+    trustsetCollection:Collection<TrustSetCollection> = null;
 
     allowedOriginCache:AllowedOrigins[] = null;
     applicationApiKeysCache:ApplicationApiKeys[] = null;
@@ -30,6 +31,7 @@ export class DB {
         this.xrplAccountPayloadCollection = await this.getNewDbModel("XrplAccountPayloadCollection");
         this.tmpInfoTable = await this.getNewDbModel("TmpInfoTable");
         this.statisticsCollection = await this.getNewDbModel("StatisticsCollection");
+        this.statisticsCollection = await this.getNewDbModel("TrustSetCollection");
         
         return Promise.resolve();
     }
@@ -576,6 +578,10 @@ export class DB {
             await this.xrplAccountPayloadCollection.createIndex({referer: -1});
             await this.xrplAccountPayloadCollection.createIndex({applicationId: -1});
             await this.xrplAccountPayloadCollection.createIndex({xrplAccount: -1, applicationId: -1, origin:-1, referer: -1}, {unique: true});
+
+            await this.trustsetCollection.createIndex({issuer: 1});
+            await this.trustsetCollection.createIndex({date: 1});
+
 
         } catch(err) {
             console.log("ERR creating indexes");
