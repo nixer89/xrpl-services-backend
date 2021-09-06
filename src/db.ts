@@ -500,6 +500,47 @@ export class DB {
             return [];
     }
 
+    async addTrustlineToDb(issuerKey:string) {
+        //console.log("[DB]: addTrustlineToDb: " + isserKey);
+        try {
+            return this.trustsetCollection.insertOne({issuerKey: issuerKey, date: new Date()});
+        } catch(err) {
+            console.log("[DB]: error addTrustlineToDb");
+            console.log(JSON.stringify(err));
+        }
+    }
+
+    async getHottestToken(): Promise<TrustSetCollection[]> {
+        //console.log("[DB]: getTempInfo: " + JSON.stringify(anyFilter));
+        try {
+            let yesterday:Date = new Date();
+            yesterday.setDate(yesterday.getDate()-1);
+
+            const pipeline = [
+                { $match: { date: { $gte: yesterday} } },
+                { $group: { _id: "$issuerKey", count: { $sum: 1 } } }
+            ];
+
+            return this.trustsetCollection.aggregate(pipeline).sort({count: -1}).limit(10).toArray();
+        } catch(err) {
+            console.log("[DB]: error getTempInfo");
+            console.log(JSON.stringify(err));
+        }
+    }
+
+    async cleanupTrustlineCollection(): Promise<void> {
+        //console.log("[DB]: getTempInfo: " + JSON.stringify(anyFilter));
+        try {
+            let aMonthAgo:Date = new Date();
+            aMonthAgo.setDate(aMonthAgo.getDate()-32);
+
+            await this.trustsetCollection.deleteMany({date: { $lt: aMonthAgo}});
+        } catch(err) {
+            console.log("[DB]: error getTempInfo");
+            console.log(JSON.stringify(err));
+        }
+    }
+
     async getNewDbModel(collectionName: string): Promise<Collection<any>> {
         try {
             console.log("[DB]: connecting to mongo db with collection: " + collectionName +" and an schema");

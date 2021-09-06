@@ -837,13 +837,15 @@ async function handleWebhookRequest(request:any): Promise<any> {
             }
 
             //check escrow payment
-            if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == 'payment' && payloadInfo.custom_meta && payloadInfo.custom_meta.blob)
+            if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == 'payment' && payloadInfo.custom_meta && payloadInfo.custom_meta.blob) {
                 handleEscrowPayment(payloadInfo,origin);
+            }
 
             //check trustline
             if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == 'trustset'
-                && payloadInfo.response && payloadInfo.response.dispatched_nodetype == "MAINNET" && payloadInfo.response.dispatched_result =="tesSUCCESS")
-                handleEscrowPayment(payloadInfo,origin);
+                && payloadInfo.response && payloadInfo.response.dispatched_nodetype == "MAINNET" && payloadInfo.response.dispatched_result =="tesSUCCESS") {
+                    saveTrustlineInfo(payloadInfo);
+                }
 
             if(tmpInfo) {
                 if(payloadInfo && payloadInfo.application && payloadInfo.application.issued_user_token) {
@@ -917,5 +919,7 @@ async function handleEscrowPayment(payloadInfo: XummTypes.XummGetPayloadResponse
 async function saveTrustlineInfo(payloadInfo: XummGetPayloadResponse) {
     let issuer:string = payloadInfo.payload.request_json.LimitAmount['issuer'];
     let currency: string = payloadInfo.payload.request_json.LimitAmount['currency'];
+
+    await db.addTrustlineToDb(issuer+"_"+currency);
 }
 
