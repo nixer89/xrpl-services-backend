@@ -31,7 +31,7 @@ export class DB {
         this.xrplAccountPayloadCollection = await this.getNewDbModel("XrplAccountPayloadCollection");
         this.tmpInfoTable = await this.getNewDbModel("TmpInfoTable");
         this.statisticsCollection = await this.getNewDbModel("StatisticsCollection");
-        this.statisticsCollection = await this.getNewDbModel("TrustSetCollection");
+        this.trustsetCollection = await this.getNewDbModel("TrustSetCollection");
         
         return Promise.resolve();
     }
@@ -626,7 +626,7 @@ export class DB {
             await this.xrplAccountPayloadCollection.createIndex({applicationId: -1});
             await this.xrplAccountPayloadCollection.createIndex({xrplAccount: -1, applicationId: -1, origin:-1, referer: -1}, {unique: true});
 
-            await this.trustsetCollection.createIndex({issuerKey: 1, sourceAccount: 1}, {unique: true});
+            await this.trustsetCollection.createIndex({issuer: 1, currency: 1,  sourceAccount: 1}, {unique: true});
             await this.trustsetCollection.createIndex({date: 1});
 
 
