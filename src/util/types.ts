@@ -87,6 +87,8 @@ export interface StatisticsCollection {
 }
 
 export interface TrustSetCollection {
-    issuerKey: string,
+    issuer: string,
+    currency: string,
+    sourceAccount: string,
     date: Date
 }

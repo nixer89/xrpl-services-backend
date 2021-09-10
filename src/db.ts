@@ -500,10 +500,14 @@ export class DB {
             return [];
     }
 
-    async addTrustlineToDb(issuerKey:string) {
+    async addTrustlineToDb(issuer:string, currency:string, sourceAccount: string) {
         //console.log("[DB]: addTrustlineToDb: " + isserKey);
         try {
-            return this.trustsetCollection.insertOne({issuerKey: issuerKey, date: new Date()});
+            return this.trustsetCollection.updateOne({issuer: issuer, currency: currency, sourceAccount: sourceAccount}, {
+                $currentDate: {
+                   "date": { $type: "timestamp" }
+                }   
+            }, {upsert: true});
         } catch(err) {
             console.log("[DB]: error addTrustlineToDb");
             console.log(JSON.stringify(err));
@@ -516,12 +520,14 @@ export class DB {
             let yesterday:Date = new Date();
             yesterday.setDate(yesterday.getDate()-1);
 
+            let yesterdayInMs = yesterday.getTime();
+
             const pipeline = [
-                { $match: { date: { $gte: yesterday} } },
-                { $group: { _id: "$issuerKey", count: { $sum: 1 } } }
+                { $match: { date: { $gte: yesterdayInMs} } },
+                { $group: { _id: {issuer: "$issuer", currency: "$currency"}, count: { $sum: 1 } } }
             ];
 
-            return this.trustsetCollection.aggregate(pipeline).sort({count: -1}).limit(10).toArray();
+            return this.trustsetCollection.aggregate(pipeline).sort({count: -1}).limit(20).toArray();
         } catch(err) {
             console.log("[DB]: error getTempInfo");
             console.log(JSON.stringify(err));
@@ -620,7 +626,7 @@ export class DB {
             await this.xrplAccountPayloadCollection.createIndex({applicationId: -1});
             await this.xrplAccountPayloadCollection.createIndex({xrplAccount: -1, applicationId: -1, origin:-1, referer: -1}, {unique: true});
 
-            await this.trustsetCollection.createIndex({issuer: 1});
+            await this.trustsetCollection.createIndex({issuerKey: 1, sourceAccount: 1}, {unique: true});
             await this.trustsetCollection.createIndex({date: 1});
 
 

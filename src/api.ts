@@ -789,6 +789,16 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
+    fastify.get('/api/v1/trustlines/hot', async (request, reply) => {
+        
+        try {
+            return special.getHottestTrustlines();              
+        } catch(err) {
+            console.log("ERROR: " + JSON.stringify(err));
+            return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+        }
+    });
+
     fastify.get('/api/resetCache/:token', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
         try {
@@ -917,9 +927,13 @@ async function handleEscrowPayment(payloadInfo: XummTypes.XummGetPayloadResponse
 }
 
 async function saveTrustlineInfo(payloadInfo: XummGetPayloadResponse) {
-    let issuer:string = payloadInfo.payload.request_json.LimitAmount['issuer'];
-    let currency: string = payloadInfo.payload.request_json.LimitAmount['currency'];
+    try {
+        let issuer:string = payloadInfo.payload.request_json.LimitAmount['issuer'];
+        let currency: string = payloadInfo.payload.request_json.LimitAmount['currency'];
 
-    await db.addTrustlineToDb(issuer+"_"+currency);
+        await db.addTrustlineToDb(issuer, currency, payloadInfo.response.account);
+    } catch(err) {
+        console.log(JSON.stringify(err));
+    }
 }
 

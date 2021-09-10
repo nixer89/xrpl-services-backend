@@ -5,7 +5,7 @@ import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as fetch from 'node-fetch';
 import {verifySignature} from 'verify-xrpl-signature'
 import { XummTypes } from 'xumm-sdk';
-import { TransactionValidation } from './util/types';
+import { TransactionValidation, TrustSetCollection } from './util/types';
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 });
@@ -338,6 +338,15 @@ export class Special {
             return escrowCountStats.json();
         } else {
             throw "error calling getEscrowCurrentCount";
+        }
+    }
+
+    async getHottestTrustlines(): Promise<TrustSetCollection[]> {
+        //console.log("loading getHottestTrustlines");
+        try {
+            return this.db.getHottestToken();
+        } catch(err) {
+            console.log(err);
         }
     }
 }

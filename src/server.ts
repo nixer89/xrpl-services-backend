@@ -14,7 +14,7 @@ const fastify = require('fastify')({
   logger: {
     level: 'warn',
     //level: 'info',
-    //file: '/home/ubuntu/fastify-logs/fastify.log' // Will use pino.destination()
+    file: '/home/ubuntu/fastify-logs/fastify.log' // Will use pino.destination()
   }
 });
 
@@ -108,13 +108,14 @@ const start = async () => {
         }
       });
 
-      fastify.addHook('onResponse', (request, reply, done) => {
+      fastify.addHook('onSend', async (request, reply, payload) => {
         // Some code
         if(request['start']) {
           let responseTime = Date.now() - request['start'];
-          if(responseTime > 100) {
+          if(responseTime > 1000) {
             console.log("response time: " + responseTime + ' ms.')
             fs.appendFileSync('./longRunners.txt', JSON.stringify({
+              time: responseTime, 
               request: {
                 query: request.query,
                 body: request.body,
@@ -127,13 +128,14 @@ const start = async () => {
                 routerPath: request.routerPath
               },
               response: {
-                reply: reply.getHeaders(),
+                payload: payload,
               }
-            }));
-
+            })+",\n");
+            console.log("saved long runner!")
           }
         }
-        done()
+        
+        return payload;
       })
 
       fastify.get('/api/resetOrigins/:token', async (request, reply) => {
@@ -179,6 +181,7 @@ const start = async () => {
         }
 
         scheduler.scheduleJob("tmpInfoTableCleanup", {minute: 5}, () => cleanupTmpInfoTable());
+        scheduler.scheduleJob("trustlineTableCleanup", {minute: 1}, () => cleanupTrustlineTable());
 
       } else {
           console.log("Xumm backend not available");
@@ -205,6 +208,12 @@ async function cleanupTmpInfoTable() {
       await mongo.deleteTempInfo(tmpInfoEntries[i]);
     }
   }
+}
+
+async function cleanupTrustlineTable() {
+  //console.log("cleaning up cleanupTmpInfoTable")
+  //get all temp info documents
+  await mongo.cleanupTrustlineCollection();
 }
 
 console.log("running server");
