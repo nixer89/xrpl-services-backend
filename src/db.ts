@@ -504,7 +504,10 @@ export class DB {
         //console.log("[DB]: addTrustlineToDb: " + isserKey);
         try {
             return this.trustsetCollection.updateOne({issuer: issuer, currency: currency, sourceAccount: sourceAccount}, {
-                "date": new Date()
+                issuer: issuer,
+                currency: currency,
+                sourceAccount: sourceAccount,
+                date: new Date()
             }, {upsert: true});
         } catch(err) {
             console.log("[DB]: error addTrustlineToDb");
