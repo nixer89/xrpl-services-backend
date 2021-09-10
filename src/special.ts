@@ -1,31 +1,25 @@
 import * as Xumm from './xumm';
 import * as DB from './db';
 import * as config from './util/config'
-import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as fetch from 'node-fetch';
 import {verifySignature} from 'verify-xrpl-signature'
 import { XummTypes } from 'xumm-sdk';
 import { TransactionValidation } from './util/types';
-import * as rippleLib from 'ripple-lib';
-import { FormattedPayment, FormattedTransactionType } from 'ripple-lib';
+import { FormattedTransactionType, RippleAPI } from 'ripple-lib';
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 });
 
 export class Special {
-    proxy = new HttpsProxyAgent(config.PROXY_URL);
-    useProxy = config.USE_PROXY;
+
     xummBackend = new Xumm.Xumm();
     db = new DB.DB();
 
-    private mainNodes:string[] = ['wss://xrplcluster.com', 'wss://s2.ripple.com', 'wss://xrpl.link'];
+    private mainNodes:string[] = ['wss://xrplcluster.com', 'wss://s2.ripple.com'];
     private testNodes:string[] = ['wss://s.altnet.rippletest.net', 'wss://testnet.xrpl-labs.com'];
 
-    private currentSelectedMainNode = 0;
-    private currentSelectedTestNode = 0;
-
-    private mainnetApi:rippleLib.RippleAPI = new rippleLib.RippleAPI({server: this.mainNodes[this.currentSelectedMainNode]});
-    private testnetApi:rippleLib.RippleAPI = new rippleLib.RippleAPI({server: this.testNodes[this.currentSelectedTestNode]});
+    private mainnetApi:RippleAPI = new RippleAPI({server: this.mainNodes[0]});
+    private testnetApi:RippleAPI = new RippleAPI({server: this.testNodes[0]});
 
     async init() {
         await this.xummBackend.init();
@@ -174,13 +168,13 @@ export class Special {
     }
 
     async validateXRPLTransaction(txid: string): Promise<TransactionValidation> {
-        if(await this.callBithompAndValidate(txid, false)) {
+        if(await this.callXrplAndValidate(txid, false)) {
             return {
                 success: true,
                 testnet: false,
                 txid: txid
             };
-        } else if (await this.callBithompAndValidate(txid, true)) {
+        } else if (await this.callXrplAndValidate(txid, true)) {
             return {
                 success: true,
                 testnet: true,
@@ -201,14 +195,14 @@ export class Special {
         }
         
         if(trxHash && destinationAccount) {
-            if(await this.callBithompAndValidate(trxHash, false, destinationAccount, payloadInfo.payload.request_json.Amount)) {
+            if(await this.callXrplAndValidate(trxHash, false, destinationAccount, payloadInfo.payload.request_json.Amount)) {
                 return {
                     success: true,
                     testnet: false,
                     txid: trxHash,
                     account: payloadInfo.response.account
                 }
-            } else if (await this.callBithompAndValidate(trxHash, true, destinationAccount, payloadInfo.payload.request_json.Amount)) {
+            } else if (await this.callXrplAndValidate(trxHash, true, destinationAccount, payloadInfo.payload.request_json.Amount)) {
                 return {
                     success: true,
                     testnet: true,
@@ -236,7 +230,7 @@ export class Special {
         try {
             //console.log("checking bithomp with trxHash: " + trxHash);
             //console.log("checking bithomp with testnet: " + testnet + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount));
-            let bithompResponse:any = await fetch.default("https://"+(testnet?'test.':'')+"bithomp.com/api/v2/transaction/"+trxHash, {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN },agent: this.useProxy ? this.proxy : null});
+            let bithompResponse:any = await fetch.default("https://"+(testnet?'test.':'')+"bithomp.com/api/v2/transaction/"+trxHash, {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN }});
             if(bithompResponse && bithompResponse.ok) {
                 let ledgerTrx:any = await bithompResponse.json();
                 //console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(ledgerTrx));
@@ -276,17 +270,36 @@ export class Special {
         }
     }
 
-    async callXRPLAndValidate(trxHash:string, testnet: boolean, destinationAccount?:any, amount?:any): Promise<boolean> {
+    async callXrplAndValidate(trxHash:string, testnet: boolean, destinationAccount?:any, amount?:any): Promise<boolean> {
         try {
             //console.log("checking bithomp with trxHash: " + trxHash);
             //console.log("checking bithomp with testnet: " + testnet + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount));
-            if(!(testnet ? this.testnetApi : this.mainnetApi).isConnected)
-                 await (testnet ? this.testnetApi : this.mainnetApi).connect();
+            let apiToUse:RippleAPI = testnet ? this.testnetApi : this.mainnetApi
+            try {
+                if(!apiToUse.isConnected()) {
+                    console.log("wss not connected for " + (testnet ? "testnet" : "mainnet" + ". Connecting..."))
+                    await apiToUse.connect();
+                }
+            } catch(err) {
+                console.log("could not connect to: " + (testnet ? this.testNodes[0] : this.mainNodes[0]));
+                try {
+                    apiToUse = new RippleAPI({server: (testnet ? this.testNodes[1] : this.mainNodes[1])});
+                    await apiToUse.connect();
+
+                    if(!apiToUse.isConnected()) {
+                        console.log("could not connect 2nd try to: " + (testnet ? this.testNodes[1] : this.mainNodes[1]));
+                        return this.callBithompAndValidate(trxHash, testnet, destinationAccount, amount);
+                    }
+                } catch(err) {
+                    console.log("ERROR! could not connect 2nd try to: " + (testnet ? this.testNodes[1] : this.mainNodes[1]));
+                    return this.callBithompAndValidate(trxHash, testnet, destinationAccount, amount);
+                }
+            }
 
             let transaction:FormattedTransactionType = await (testnet ? this.testnetApi : this.mainnetApi).getTransaction(trxHash);
 
             if(transaction) {
-                console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(transaction));
+                //console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(transaction));
 
                 //standard validation of successfull transaction
                 if(transaction && transaction.type && transaction.type.toLowerCase() === 'payment') {
@@ -319,8 +332,11 @@ export class Special {
                 return false;
             }
         } catch(err) {
-            console.log("ERR validating with ");
+            console.log("ERR validating with " +(testnet ? this.testNodes[0] : this.mainNodes[0]));
             console.log(JSON.stringify(err));
+
+            //try bithomp
+            return this.callBithompAndValidate(trxHash, testnet, destinationAccount, amount);
         }
     }
 

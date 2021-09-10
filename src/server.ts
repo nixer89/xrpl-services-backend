@@ -112,7 +112,7 @@ const start = async () => {
         // Some code
         if(request['start']) {
           let responseTime = Date.now() - request['start'];
-          if(responseTime > 2000) {
+          if(responseTime > 1000) {
             console.log("response time: " + responseTime + ' ms.')
             fs.appendFileSync('./longRunners.txt', JSON.stringify({
               time: responseTime, 

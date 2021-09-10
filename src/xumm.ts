@@ -1,6 +1,5 @@
 import * as fetch from 'node-fetch';
 import * as config from './util/config';
-import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as DB from './db';
 import { XummTypes } from 'xumm-sdk';
 import { GenericBackendPostRequestOptions, AllowedOrigins } from './util/types';
@@ -10,8 +9,6 @@ require('console-stamp')(console, {
 
 export class Xumm {
 
-    proxy = new HttpsProxyAgent(config.PROXY_URL);
-    useProxy = config.USE_PROXY;
     db = new DB.DB();
 
     async init() {
@@ -28,38 +25,10 @@ export class Xumm {
         return pingResponse && pingResponse.pong;
     }
 
-    async pingBithomp(): Promise<boolean> {
-        try {
-            let bithompResponse:any = await fetch.default("https://bithomp.com/api/v2/services/lastUpdate", {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN }, agent: this.useProxy ? this.proxy : null});
-            if(bithompResponse && bithompResponse.ok) {
-                return Promise.resolve(true);
-            } else {
-                console.log("no ok response from bithomp");
-                return Promise.resolve(false);
-            }
-        } catch(err) {
-            console.log("error contacting bithomp API");
-            return Promise.resolve(false);
-        }
-    }
-
     async submitPayload(payload:XummTypes.XummPostPayloadBodyJson, origin:string, referer: string, options?:GenericBackendPostRequestOptions): Promise<XummTypes.XummPostPayloadResponse> {
         //trying to resolve xumm user if from given frontendId:
         //console.log("received payload: " + JSON.stringify(payload));
         //console.log("received options: " + JSON.stringify(options));
-
-        //check bithomp api in case of payment and do not proceed if inaccessible
-        try {
-            if(payload && payload.txjson && payload.txjson.TransactionType && "payment" === payload.txjson.TransactionType.toLowerCase() && payload.custom_meta && payload.custom_meta.instruction && "Thank you for your donation!" != payload.custom_meta.instruction) {
-                let bithompAvailable = await this.pingBithomp();
-                if(!bithompAvailable)
-                    return Promise.reject("bithomp");
-            }
-        } catch(err) {
-            console.log("error checking bithomp")
-            return Promise.reject("bithomp");
-        }
-
         
         let frontendId:string;
         let xrplAccount:string;
@@ -241,7 +210,6 @@ export class Xumm {
                             "x-api-key": applicationId,
                             "x-api-secret": appSecret
                         },
-                        agent: this.useProxy ? this.proxy : null,
                         method: method,
                         body: (body ? JSON.stringify(body) : null)
                     },
