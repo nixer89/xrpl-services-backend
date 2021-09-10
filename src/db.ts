@@ -501,10 +501,14 @@ export class DB {
     }
 
     async addTrustlineToDb(issuer:string, currency:string, sourceAccount: string) {
-        //console.log("[DB]: addTrustlineToDb: " + isserKey);
+        //console.log("[DB]: addTrustlineToDb: issuer: " + issuer + " currency: " + currency + " sourceAccount: " + sourceAccount);
+        let now = Date.now();
         try {
             return this.trustsetCollection.updateOne({issuer: issuer, currency: currency, sourceAccount: sourceAccount}, {
-                date: Date.now()
+                issuer: issuer,
+                currency: currency,
+                sourceAccount: sourceAccount,
+                updated: now
             }, {upsert: true});
         } catch(err) {
             console.log("[DB]: error addTrustlineToDb");
@@ -516,7 +520,7 @@ export class DB {
         console.log("[DB]: getHottestToken: " + JSON.stringify(leastTime));
         try {
             let pipeline = [
-                { $match: { date: { $gte: leastTime} } },
+                { $match: { updated: { $gte: leastTime} } },
                 { $group: { _id: {issuer: "$issuer", currency: "$currency"}, count: { $sum: 1 } } }
             ];
 
@@ -535,7 +539,7 @@ export class DB {
             let aMonthAgo:Date = new Date();
             aMonthAgo.setDate(aMonthAgo.getDate()-32);
 
-            await this.trustsetCollection.deleteMany({date: { $lt: aMonthAgo.getTime()}});
+            await this.trustsetCollection.deleteMany({updated: { $lt: aMonthAgo.getTime()}});
         } catch(err) {
             console.log("[DB]: error cleanupTrustlineCollection");
             console.log(JSON.stringify(err));
@@ -622,7 +626,7 @@ export class DB {
             await this.xrplAccountPayloadCollection.createIndex({xrplAccount: -1, applicationId: -1, origin:-1, referer: -1}, {unique: true});
 
             await this.trustsetCollection.createIndex({issuer: 1, currency: 1,  sourceAccount: 1}, {unique: true});
-            await this.trustsetCollection.createIndex({date: 1});
+            await this.trustsetCollection.createIndex({updated: 1});
 
 
         } catch(err) {
