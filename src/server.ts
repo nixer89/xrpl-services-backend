@@ -9,36 +9,40 @@ require('console-stamp')(console, {
   format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 });
 
-const fastify = require('fastify')({
-  trustProxy: config.USE_PROXY,
-  logger: {
-    level: 'warn',
-    //level: 'info',
-    file: '/home/ubuntu/fastify-logs/fastify.log' // Will use pino.destination()
-  }
-});
-
-console.log("adding response compression");
-fastify.register(require('fastify-compress'));
-
-console.log("adding some security headers");
-fastify.register(require('fastify-helmet'));
-
-fastify.register(require('fastify-swagger'), {
-  mode: 'static',
-  specification: {
-    path: './src/doc/swagger-doc.yaml'
-  },
-  exposeRoute: true,
-  routePrefix: '/docs'
-});
-
 let mongo = new DB.DB();
 let xummBackend:Xumm.Xumm = new Xumm.Xumm();
 let allowedOrigins:string[];
 
 // Run the server!
 const start = async () => {
+
+    const fastify = require('fastify')({
+      trustProxy: config.USE_PROXY,
+      logger: {
+        level: 'warn',
+        //level: 'info',
+        //file: '/home/ubuntu/fastify-logs/fastify.log' // Will use pino.destination()
+      }
+    });
+    
+    console.log("registering middleware")
+    await fastify.register(require('middie'))
+    
+    console.log("adding response compression");
+    await fastify.register(require('fastify-compress'));
+    
+    console.log("adding some security headers");
+    await fastify.register(require('fastify-helmet'));
+    
+    await fastify.register(require('fastify-swagger'), {
+      mode: 'static',
+      specification: {
+        path: './src/doc/swagger-doc.yaml'
+      },
+      exposeRoute: true,
+      routePrefix: '/docs'
+    });
+  
     if(!config.BITHOMP_API_TOKEN) {
       console.log("No BITHOMP_API_TOKEN set");
       process.exit(1);
@@ -55,7 +59,7 @@ const start = async () => {
       allowedOrigins = await mongo.getAllowedOriginsAsArray();
 
       console.log("setting allowed origins: " + allowedOrigins);
-      fastify.register(require('fastify-cors'), {
+      await fastify.register(require('fastify-cors'), {
         origin: (origin, cb) => {
 
           //console.log("checking request with origin: " + origin);
@@ -89,7 +93,7 @@ const start = async () => {
         allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'Referer']
       });
       
-      fastify.addHook('onRequest', (request, reply, done) => {
+      await fastify.addHook('onRequest', (request, reply, done) => {
         request['start'] = Date.now();
         if(request.raw.url != '/' &&
             !request.raw.url.startsWith('/docs/') &&
@@ -108,7 +112,7 @@ const start = async () => {
         }
       });
 
-      fastify.addHook('onSend', async (request, reply, payload) => {
+      await fastify.addHook('onSend', async (request, reply, payload) => {
         // Some code
         if(request['start']) {
           let responseTime = Date.now() - request['start'];
@@ -138,7 +142,7 @@ const start = async () => {
         return payload;
       })
 
-      fastify.get('/api/resetOrigins/:token', async (request, reply) => {
+      await fastify.get('/api/resetOrigins/:token', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
         try {
             if(config.RESET_CACHE_TOKEN === request.params.token) {
@@ -153,7 +157,7 @@ const start = async () => {
             console.log(JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
-    });
+      });
       
       await xummBackend.init();
 
@@ -165,7 +169,7 @@ const start = async () => {
         });
 
         console.log("declaring routes");
-        fastify.register(apiRoute.registerRoutes);
+        await fastify.register(apiRoute.registerRoutes);
         console.log("finished declaring routes");
 
         try {
