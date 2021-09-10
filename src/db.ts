@@ -519,11 +519,12 @@ export class DB {
         try {
             let pipeline = [
                 { $match: { updated: { $gte: leastTime} } },
-                { $group: { token: {issuer: "$issuer", currency: "$currency"}, count: { $sum: 1 } } }
+                { $group: { _id: {issuer: "$issuer", currency: "$currency"}, token: {issuer: "$issuer", currency: "$currency"}, count: { $sum: 1 } } },
+                { $project: {_id: 0, token: 1, count: 1} }
             ];
 
             let tokens:any[] = await this.trustsetCollection.aggregate(pipeline).sort({count: -1}).limit(20).toArray();
-            //console.log("found: " + JSON.stringify(tokens));
+            console.log("found: " + JSON.stringify(tokens));
             return tokens;
         } catch(err) {
             console.log("[DB]: error getHottestToken");
