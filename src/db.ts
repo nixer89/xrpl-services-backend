@@ -519,7 +519,7 @@ export class DB {
         try {
             let pipeline = [
                 { $match: { updated: { $gte: leastTime} } },
-                { $group: { _id: {issuer: "$issuer", currency: "$currency"}, count: { $sum: 1 } } }
+                { $group: { token: {issuer: "$issuer", currency: "$currency"}, count: { $sum: 1 } } }
             ];
 
             let tokens:any[] = await this.trustsetCollection.aggregate(pipeline).sort({count: -1}).limit(20).toArray();
