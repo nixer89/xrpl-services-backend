@@ -502,11 +502,10 @@ export class DB {
 
     async addTrustlineToDb(issuer:string, currency:string, sourceAccount: string) {
         //console.log("[DB]: addTrustlineToDb: issuer: " + issuer + " currency: " + currency + " sourceAccount: " + sourceAccount);
-        let now = Date.now();
         try {
             return this.trustsetCollection.updateOne({issuer: issuer, currency: currency, sourceAccount: sourceAccount}, {
                 $set: {
-                    updated: now
+                    updated: new Date()
                 }
             }, {upsert: true});
         } catch(err) {
@@ -515,7 +514,7 @@ export class DB {
         }
     }
 
-    async getHottestToken(leastTime: number): Promise<any[]> {
+    async getHottestToken(leastTime: Date): Promise<any[]> {
         console.log("[DB]: getHottestToken: " + JSON.stringify(leastTime));
         try {
             let pipeline = [
@@ -538,7 +537,7 @@ export class DB {
             let aMonthAgo:Date = new Date();
             aMonthAgo.setDate(aMonthAgo.getDate()-32);
 
-            await this.trustsetCollection.deleteMany({updated: { $lt: aMonthAgo.getTime()}});
+            await this.trustsetCollection.deleteMany({updated: { $lt: aMonthAgo}});
         } catch(err) {
             console.log("[DB]: error cleanupTrustlineCollection");
             console.log(JSON.stringify(err));

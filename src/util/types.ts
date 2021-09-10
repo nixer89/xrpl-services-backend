@@ -90,5 +90,5 @@ export interface TrustSetCollection {
     issuer: string,
     currency: string,
     sourceAccount: string,
-    updated: number
+    updated: Date
 }
