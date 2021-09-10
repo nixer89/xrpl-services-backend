@@ -5,7 +5,9 @@ import * as HttpsProxyAgent from 'https-proxy-agent';
 import * as fetch from 'node-fetch';
 import {verifySignature} from 'verify-xrpl-signature'
 import { XummTypes } from 'xumm-sdk';
-import { TransactionValidation, TrustSetCollection } from './util/types';
+import { TransactionValidation } from './util/types';
+import * as rippleLib from 'ripple-lib';
+import { FormattedPayment, FormattedTransactionType } from 'ripple-lib';
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 });
@@ -16,9 +18,20 @@ export class Special {
     xummBackend = new Xumm.Xumm();
     db = new DB.DB();
 
+    private mainNodes:string[] = ['wss://xrplcluster.com', 'wss://s2.ripple.com', 'wss://xrpl.link'];
+    private testNodes:string[] = ['wss://s.altnet.rippletest.net', 'wss://testnet.xrpl-labs.com'];
+
+    private currentSelectedMainNode = 0;
+    private currentSelectedTestNode = 0;
+
+    private mainnetApi:rippleLib.RippleAPI = new rippleLib.RippleAPI({server: this.mainNodes[this.currentSelectedMainNode]});
+    private testnetApi:rippleLib.RippleAPI = new rippleLib.RippleAPI({server: this.testNodes[this.currentSelectedTestNode]});
+
     async init() {
         await this.xummBackend.init();
         await this.db.initDb("special");
+        await this.mainnetApi.connect();
+        await this.testnetApi.connect();
     }
 
     resetDBCache() {
@@ -259,6 +272,54 @@ export class Special {
             }
         } catch(err) {
             console.log("ERR validating with bithomp");
+            console.log(JSON.stringify(err));
+        }
+    }
+
+    async callXRPLAndValidate(trxHash:string, testnet: boolean, destinationAccount?:any, amount?:any): Promise<boolean> {
+        try {
+            //console.log("checking bithomp with trxHash: " + trxHash);
+            //console.log("checking bithomp with testnet: " + testnet + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount));
+            if(!(testnet ? this.testnetApi : this.mainnetApi).isConnected)
+                 await (testnet ? this.testnetApi : this.mainnetApi).connect();
+
+            let transaction:FormattedTransactionType = await (testnet ? this.testnetApi : this.mainnetApi).getTransaction(trxHash);
+
+            if(transaction) {
+                console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(transaction));
+
+                //standard validation of successfull transaction
+                if(transaction && transaction.type && transaction.type.toLowerCase() === 'payment') {
+                    let paymenTransaction:any = transaction.specification;
+                    if(paymenTransaction  && (destinationAccount ? paymenTransaction.destination.address === destinationAccount.account : true)
+                        && (destinationAccount && destinationAccount.tag ? paymenTransaction.destination.tag == destinationAccount.tag : true) && transaction.outcome  && transaction.outcome.result === 'tesSUCCESS')
+
+                            if(!amount) {
+                                //no amount in request. Accept any amount then
+                                return true;
+                            }
+                            //validate delivered amount
+                            else if(Number.isInteger(parseInt(amount))) {
+                                //handle XRP amount
+                                return transaction.outcome.deliveredAmount.currency === 'XRP' && (parseFloat(transaction.outcome.deliveredAmount.value)*1000000 == parseInt(amount));
+                            } else {
+                                //amount not a number so it must be a IOU
+                                return transaction.outcome.deliveredAmount.currency === amount.currency //check currency
+                                    && transaction.outcome.deliveredAmount.counterparty === amount.issuer //check issuer
+                                        && transaction.outcome.deliveredAmount.value === amount.value; //check value
+                            }
+
+                } else if( transaction && transaction.outcome  && transaction.outcome.result === 'tesSUCCESS') {
+                    return true;
+                } else {
+                    //transaction not valid
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        } catch(err) {
+            console.log("ERR validating with ");
             console.log(JSON.stringify(err));
         }
     }
