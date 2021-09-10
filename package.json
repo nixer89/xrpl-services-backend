@@ -35,7 +35,7 @@
     "fastify-swagger": "^4.11.0",
     "middie": "^5.3.0",
     "mongodb": "^3.7.0",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "^2.6.2",
     "node-schedule": "^2.0.0",
     "ripple-lib": "^1.10.0",
     "verify-xrpl-signature": "^0.3.0",
