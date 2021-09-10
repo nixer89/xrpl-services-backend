@@ -341,7 +341,7 @@ export class Special {
         }
     }
 
-    async getHottestTrustlines(leastTime: Date): Promise<TrustSetCollection[]> {
+    async getHottestTrustlines(leastTime: Date): Promise<any[]> {
         //console.log("loading getHottestTrustlines");
         try {
             return this.db.getHottestToken(leastTime);

@@ -514,17 +514,19 @@ export class DB {
         }
     }
 
-    async getHottestToken(leastTime: Date): Promise<TrustSetCollection[]> {
-        //console.log("[DB]: getTempInfo: " + JSON.stringify(anyFilter));
+    async getHottestToken(leastTime: Date): Promise<any[]> {
+        console.log("[DB]: getHottestToken: " + JSON.stringify(leastTime));
         try {
-            const pipeline = [
+            let pipeline = [
                 { $match: { date: { $gte: leastTime} } },
                 { $group: { _id: {issuer: "$issuer", currency: "$currency"}, count: { $sum: 1 } } }
             ];
 
-            return this.trustsetCollection.aggregate(pipeline).sort({count: -1}).limit(20).toArray();
+            let tokens:any[] = await this.trustsetCollection.aggregate(pipeline).sort({count: -1}).limit(20).toArray();
+            console.log("found: " + JSON.stringify(tokens));
+            return tokens;
         } catch(err) {
-            console.log("[DB]: error getTempInfo");
+            console.log("[DB]: error getHottestToken");
             console.log(JSON.stringify(err));
         }
     }
@@ -537,7 +539,7 @@ export class DB {
 
             await this.trustsetCollection.deleteMany({date: { $lt: aMonthAgo}});
         } catch(err) {
-            console.log("[DB]: error getTempInfo");
+            console.log("[DB]: error cleanupTrustlineCollection");
             console.log(JSON.stringify(err));
         }
     }
