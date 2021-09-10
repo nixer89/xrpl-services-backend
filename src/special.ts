@@ -313,7 +313,7 @@ export class Special {
         }
     }
 
-    async getEscrowNextOrLastRelease(next:boolean): Promise<number> {
+    async getEscrowNextOrLastRelease(next:boolean): Promise<any> {
         //console.log("loading getEscrowNextOrLastRelease");
         let escrowCountStats:fetch.Response = null;
 
@@ -329,7 +329,7 @@ export class Special {
         }
     }
 
-    async getEscrowCurrentCount(): Promise<number> {
+    async getEscrowCurrentCount(): Promise<any> {
         //console.log("loading getEscrowCurrentCount");
         
         let escrowCountStats:fetch.Response = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/stats/currentCount");

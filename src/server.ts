@@ -3,6 +3,7 @@ import * as DB from './db';
 import * as apiRoute from './api';
 import * as config from './util/config';
 import * as scheduler from 'node-schedule';
+import * as fs from 'fs';
 
 require('console-stamp')(console, { 
   format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
@@ -13,7 +14,7 @@ const fastify = require('fastify')({
   logger: {
     level: 'warn',
     //level: 'info',
-    file: '/home/ubuntu/fastify-logs/fastify.log' // Will use pino.destination()
+    //file: '/home/ubuntu/fastify-logs/fastify.log' // Will use pino.destination()
   }
 });
 
@@ -89,6 +90,7 @@ const start = async () => {
       });
       
       fastify.addHook('onRequest', (request, reply, done) => {
+        request['start'] = Date.now();
         if(request.raw.url != '/' &&
             !request.raw.url.startsWith('/docs/') &&
             !request.raw.url.startsWith('/docs') &&
@@ -105,6 +107,34 @@ const start = async () => {
           done()
         }
       });
+
+      fastify.addHook('onResponse', (request, reply, done) => {
+        // Some code
+        if(request['start']) {
+          let responseTime = Date.now() - request['start'];
+          if(responseTime > 100) {
+            console.log("response time: " + responseTime + ' ms.')
+            fs.appendFileSync('./longRunners.txt', JSON.stringify({
+              request: {
+                query: request.query,
+                body: request.body,
+                params: request.params,
+                headers: request.headers,
+                ip: request.ip,
+                hostname: request.hostname,
+                method: request.method,
+                url: request.url,
+                routerPath: request.routerPath
+              },
+              response: {
+                reply: reply.getHeaders(),
+              }
+            }));
+
+          }
+        }
+        done()
+      })
 
       fastify.get('/api/resetOrigins/:token', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
