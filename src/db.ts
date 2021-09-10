@@ -512,7 +512,7 @@ export class DB {
             }, {upsert: true});
         } catch(err) {
             console.log("[DB]: error addTrustlineToDb");
-            console.log(JSON.stringify(err));
+            console.log(err);
         }
     }
 
