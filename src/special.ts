@@ -344,7 +344,7 @@ export class Special {
     async getHottestTrustlines(leastTime: Date): Promise<any[]> {
         //console.log("loading getHottestTrustlines");
         try {
-            return this.db.getHottestToken(leastTime);
+            return this.db.getHottestToken(leastTime.getTime());
         } catch(err) {
             console.log(err);
         }
