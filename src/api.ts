@@ -789,10 +789,39 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
-    fastify.get('/api/v1/trustlines/hot', async (request, reply) => {
+    fastify.get('/api/v1/trustlines/hot/d', async (request, reply) => {
         
         try {
-            return special.getHottestTrustlines();              
+            let yesterday:Date = new Date();
+            yesterday.setDate(yesterday.getDate()-1);
+            
+            return special.getHottestTrustlines(yesterday);              
+        } catch(err) {
+            console.log("ERROR: " + JSON.stringify(err));
+            return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+        }
+    });
+
+    fastify.get('/api/v1/trustlines/hot/w', async (request, reply) => {
+        
+        try {
+            let aWeekAgo:Date = new Date();
+            aWeekAgo.setDate(aWeekAgo.getDate()-7);
+            
+            return special.getHottestTrustlines(aWeekAgo);              
+        } catch(err) {
+            console.log("ERROR: " + JSON.stringify(err));
+            return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+        }
+    });
+
+    fastify.get('/api/v1/trustlines/hot/m', async (request, reply) => {
+        
+        try {
+            let oneMonthAgo:Date = new Date();
+            oneMonthAgo.setDate(oneMonthAgo.getDate()-30);
+            
+            return special.getHottestTrustlines(oneMonthAgo);              
         } catch(err) {
             console.log("ERROR: " + JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};

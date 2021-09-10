@@ -514,16 +514,11 @@ export class DB {
         }
     }
 
-    async getHottestToken(): Promise<TrustSetCollection[]> {
+    async getHottestToken(leastTime: Date): Promise<TrustSetCollection[]> {
         //console.log("[DB]: getTempInfo: " + JSON.stringify(anyFilter));
         try {
-            let yesterday:Date = new Date();
-            yesterday.setDate(yesterday.getDate()-1);
-
-            let yesterdayInMs = yesterday.getTime();
-
             const pipeline = [
-                { $match: { date: { $gte: yesterdayInMs} } },
+                { $match: { date: { $gte: leastTime} } },
                 { $group: { _id: {issuer: "$issuer", currency: "$currency"}, count: { $sum: 1 } } }
             ];
 

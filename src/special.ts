@@ -341,10 +341,10 @@ export class Special {
         }
     }
 
-    async getHottestTrustlines(): Promise<TrustSetCollection[]> {
+    async getHottestTrustlines(leastTime: Date): Promise<TrustSetCollection[]> {
         //console.log("loading getHottestTrustlines");
         try {
-            return this.db.getHottestToken();
+            return this.db.getHottestToken(leastTime);
         } catch(err) {
             console.log(err);
         }
