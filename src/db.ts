@@ -505,10 +505,9 @@ export class DB {
         let now = Date.now();
         try {
             return this.trustsetCollection.updateOne({issuer: issuer, currency: currency, sourceAccount: sourceAccount}, {
-                issuer: issuer,
-                currency: currency,
-                sourceAccount: sourceAccount,
-                updated: now
+                $set: {
+                    updated: now
+                }
             }, {upsert: true});
         } catch(err) {
             console.log("[DB]: error addTrustlineToDb");
