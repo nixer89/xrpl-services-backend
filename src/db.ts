@@ -523,7 +523,7 @@ export class DB {
             ];
 
             let tokens:any[] = await this.trustsetCollection.aggregate(pipeline).sort({count: -1}).limit(20).toArray();
-            console.log("found: " + JSON.stringify(tokens));
+            //console.log("found: " + JSON.stringify(tokens));
             return tokens;
         } catch(err) {
             console.log("[DB]: error getHottestToken");
