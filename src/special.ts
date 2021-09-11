@@ -168,23 +168,34 @@ export class Special {
     }
 
     async validateXRPLTransaction(txid: string): Promise<TransactionValidation> {
-        if(await this.callXrplAndValidate(txid, false)) {
+        console.time(txid);
+        let foundOnMainNet:boolean = await this.callXrplAndValidate(txid, false);
+        console.log("Checked Mainnet:")
+        console.timeEnd(txid);
+        if(foundOnMainNet) {
             return {
                 success: true,
                 testnet: false,
                 txid: txid
             };
-        } else if (await this.callXrplAndValidate(txid, true)) {
-            return {
-                success: true,
-                testnet: true,
-                txid: txid
-            };
         } else {
-            return {
-                success: false,
-                testnet: false
-            };
+            console.time(txid);
+            let foundOnTestNet:boolean = await this.callXrplAndValidate(txid, true);
+            console.log("Checked Testnet:")
+            console.timeEnd(txid);
+
+            if (foundOnTestNet) {
+                return {
+                    success: true,
+                    testnet: true,
+                    txid: txid
+                };
+            } else {
+                return {
+                    success: false,
+                    testnet: false
+                };
+            }
         }
     }
 
@@ -227,6 +238,8 @@ export class Special {
     }
 
     async callBithompAndValidate(trxHash:string, testnet: boolean, destinationAccount?:any, amount?:any): Promise<boolean> {
+        console.time("BITHOMP_"+trxHash)
+        let found:boolean = false;
         try {
             //console.log("checking bithomp with trxHash: " + trxHash);
             //console.log("checking bithomp with testnet: " + testnet + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount));
@@ -242,32 +255,37 @@ export class Special {
 
                             if(!amount) {
                                 //no amount in request. Accept any amount then
-                                return true;
+                                found = true;
                             }
                             //validate delivered amount
                             else if(Number.isInteger(parseInt(amount))) {
                                 //handle XRP amount
-                                return ledgerTrx.outcome.deliveredAmount.currency === 'XRP' && (parseFloat(ledgerTrx.outcome.deliveredAmount.value)*1000000 == parseInt(amount));
+                                found = ledgerTrx.outcome.deliveredAmount.currency === 'XRP' && (parseFloat(ledgerTrx.outcome.deliveredAmount.value)*1000000 == parseInt(amount));
                             } else {
                                 //amount not a number so it must be a IOU
-                                return ledgerTrx.outcome.deliveredAmount.currency === amount.currency //check currency
+                                found = ledgerTrx.outcome.deliveredAmount.currency === amount.currency //check currency
                                     && ledgerTrx.outcome.deliveredAmount.counterparty === amount.issuer //check issuer
                                         && ledgerTrx.outcome.deliveredAmount.value === amount.value; //check value
                             }
 
                 } else if( ledgerTrx && ledgerTrx.outcome  && ledgerTrx.outcome.result === 'tesSUCCESS') {
-                    return true;
+                    found = true;
                 } else {
                     //transaction not valid
-                    return false;
+                    found = false;
                 }
             } else {
-                return false;
+                found = false;
             }
         } catch(err) {
             console.log("ERR validating with bithomp");
             console.log(JSON.stringify(err));
         }
+
+        console.log("Checked Bithomp with " + (testnet ? "testnet" : "mainnet"));
+        console.timeEnd("BITHOMP_"+trxHash)
+
+        return found;
     }
 
     async callXrplAndValidate(trxHash:string, testnet: boolean, destinationAccount?:any, amount?:any): Promise<boolean> {
@@ -334,7 +352,6 @@ export class Special {
         } catch(err) {
             console.log("ERR validating with " +(testnet ? this.testNodes[0] : this.mainNodes[0]));
             console.log(JSON.stringify(err));
-
             //try bithomp
             return this.callBithompAndValidate(trxHash, testnet, destinationAccount, amount);
         }
