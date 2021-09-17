@@ -133,7 +133,7 @@ export class Special {
                     validationTime = originProperties.payloadValidationTimeframe['*'];
 
                 if(validationTime == -1 || (transactionDate && transactionDate.setTime(transactionDate.getTime()+validationTime) > Date.now())) {
-                    return this.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+                    return this.validateTransactionOnLedger(payloadInfo);
                 } else {
                     return { success: false, payloadExpired : true, testnet: false, account: payloadInfo.response.account};
                 }
@@ -167,71 +167,43 @@ export class Special {
         return payloadIdsForXummUserId.includes(payloadId);
     }
 
-    async validateXRPLTransaction(txid: string): Promise<TransactionValidation> {
-        console.time(txid);
-        let foundOnMainNet:boolean = await this.callXrplAndValidate(txid, false);
-        console.log("Checked Mainnet:")
-        console.timeEnd(txid);
-        if(foundOnMainNet) {
-            return {
-                success: true,
-                testnet: false,
-                txid: txid
-            };
-        } else {
-            console.time(txid);
-            let foundOnTestNet:boolean = await this.callXrplAndValidate(txid, true);
-            console.log("Checked Testnet:")
-            console.timeEnd(txid);
-
-            if (foundOnTestNet) {
-                return {
-                    success: true,
-                    testnet: true,
-                    txid: txid
-                };
-            } else {
-                return {
-                    success: false,
-                    testnet: false
-                };
-            }
-        }
-    }
-
-    async validatePaymentOnLedger(trxHash:string, payloadInfo: XummTypes.XummGetPayloadResponse): Promise<TransactionValidation> {
+    async validateTransactionOnLedger(payloadInfo: XummTypes.XummGetPayloadResponse): Promise<TransactionValidation> {
+        //console.log("validatePaymentOnLedger");
         let destinationAccount:any = {
             account: payloadInfo.payload.request_json.Destination,
             tag: payloadInfo.payload.request_json.DestinationTag,
         }
-        
-        if(trxHash && destinationAccount) {
-            if(await this.callXrplAndValidate(trxHash, false, destinationAccount, payloadInfo.payload.request_json.Amount)) {
-                return {
-                    success: true,
-                    testnet: false,
-                    txid: trxHash,
-                    account: payloadInfo.response.account
-                }
-            } else if (await this.callXrplAndValidate(trxHash, true, destinationAccount, payloadInfo.payload.request_json.Amount)) {
-                return {
-                    success: true,
-                    testnet: true,
-                    txid: trxHash,
-                    account: payloadInfo.response.account
-                }
-            }
 
-            return {
-                success: false,
-                testnet: false,
-                account: payloadInfo.response.account
+        let isTestNet:boolean = "MAINNET" != payloadInfo.response.dispatched_nodetype;
+        let trxHash:string = payloadInfo.response.txid;
+        
+        if(trxHash && destinationAccount && "tesSUCCESS" === payloadInfo.response.dispatched_result) {
+            
+            console.time(trxHash);
+            let found = await this.callXrplAndValidate(trxHash, isTestNet, destinationAccount, payloadInfo.payload.request_json.Amount);
+            console.log("Checked " + (isTestNet ? "Testnet:" : "Mainnet:"));
+            console.timeEnd(trxHash);
+
+            if(found) {
+                return {
+                    success: true,
+                    testnet: isTestNet,
+                    txid: trxHash,
+                    account: payloadInfo.response.account
+                }
+            } else {
+
+                return {
+                    success: false,
+                    testnet: isTestNet,
+                    account: payloadInfo.response.account
+                }
             }
 
         } else {
             return {
                 success: false,
-                testnet: false,
+                testnet: isTestNet,
                 account: payloadInfo.response.account
             };
         }
@@ -291,7 +263,7 @@ export class Special {
     async callXrplAndValidate(trxHash:string, testnet: boolean, destinationAccount?:any, amount?:any): Promise<boolean> {
         try {
             //console.log("checking bithomp with trxHash: " + trxHash);
-            //console.log("checking bithomp with testnet: " + testnet + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount));
+            //console.log("checking transaction with testnet: " + testnet + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount));
             let apiToUse:RippleAPI = testnet ? this.testnetApi : this.mainnetApi
             try {
                 if(!apiToUse.isConnected()) {
@@ -314,7 +286,7 @@ export class Special {
                 }
             }
 
-            let transaction:FormattedTransactionType = await (testnet ? this.testnetApi : this.mainnetApi).getTransaction(trxHash);
+            let transaction:FormattedTransactionType = await apiToUse.getTransaction(trxHash);
 
             if(transaction) {
                 //console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(transaction));
@@ -350,10 +322,9 @@ export class Special {
                 return false;
             }
         } catch(err) {
-            console.log("ERR validating with " +(testnet ? this.testNodes[0] : this.mainNodes[0]));
+            console.log("Transaction not found on " +(testnet ? this.testNodes[0] : this.mainNodes[0]));
             console.log(JSON.stringify(err));
-            //try bithomp
-            return this.callBithompAndValidate(trxHash, testnet, destinationAccount, amount);
+            return false;
         }
     }
 

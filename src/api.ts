@@ -319,7 +319,7 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
 
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
-                    let validation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+                    let validation = await special.validateTransactionOnLedger(payloadInfo);
                     
                     return validation;
                 }
@@ -345,7 +345,7 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment');
 
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
-                    let validation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+                    let validation = await special.validateTransactionOnLedger(payloadInfo);
 
                     return validation;
                 }
@@ -369,7 +369,7 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
 
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
-                    let validation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+                    let validation = await special.validateTransactionOnLedger(payloadInfo);
 
                     return validation;
                 }
@@ -401,7 +401,7 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', refererURL);
 
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
-                    let validation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+                    let validation = await special.validateTransactionOnLedger(payloadInfo);
 
                     return validation;
                 }
@@ -626,7 +626,7 @@ export async function registerRoutes(fastify, opts, next) {
 
                 //console.log(JSON.stringify(payloadInfo));
                 if(payloadInfo && payloadInfo.response && payloadInfo.response.txid) {
-                    let txResult = await special.validateXRPLTransaction(payloadInfo.response.txid);
+                    let txResult = await special.validateTransactionOnLedger(payloadInfo);
                     if(txResult)
                         txResult.account = payloadInfo.response.account;
 
@@ -654,7 +654,7 @@ export async function registerRoutes(fastify, opts, next) {
                 //console.log("escrow/validatepayment PAYLOAD: " + JSON.stringify(payloadInfo));
 
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
-                    let txResult:TransactionValidation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+                    let txResult:TransactionValidation = await special.validateTransactionOnLedger(payloadInfo);
 
                     //console.log("escrow/validatepayment TXRESULT: " + JSON.stringify(txResult));
 
@@ -919,7 +919,7 @@ async function handleEscrowPayment(payloadInfo: XummTypes.XummGetPayloadResponse
     try {
 
         if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
-            let txResult:TransactionValidation = await special.validatePaymentOnLedger(payloadInfo.response.txid, payloadInfo);
+            let txResult:TransactionValidation = await special.validateTransactionOnLedger(payloadInfo);
 
             //console.log("escrow/validatepayment TXRESULT: " + JSON.stringify(txResult));
 
