@@ -91,7 +91,7 @@ export class Xumm {
             
         } catch(err) {
             console.log("err creating payload request")
-            console.log(JSON.stringify(err));
+            console.log(err);
         }
 
         //console.log("[XUMM]: payload to send:" + JSON.stringify(payload));
