@@ -275,7 +275,7 @@ export class Xumm {
         //handle return URLs
         let foundReturnUrls:boolean = false;
 
-        if(options.web != undefined && originProperties.return_urls) {
+        if(options && options.web != undefined && originProperties.return_urls) {
 
             if(!payload.options)
                 payload.options = {};
