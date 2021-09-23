@@ -236,7 +236,7 @@ export class Xumm {
         //console.log("[XUMM]: originProperties: " + JSON.stringify(originProperties));
 
         //for payments -> set destination account in backend
-        if(payload.txjson && payload.txjson.TransactionType && payload.txjson.TransactionType.trim().toLowerCase() === 'payment' && !options.issuing && !options.isRawTrx) {
+        if(payload.txjson && payload.txjson.TransactionType && payload.txjson.TransactionType.trim().toLowerCase() === 'payment' && (!options || (!options.issuing && !options.isRawTrx))) {
 
             if(originProperties.destinationAccount) {
                 if(originProperties.destinationAccount[referer]) {
