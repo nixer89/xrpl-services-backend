@@ -44,14 +44,14 @@ export class Xumm {
 
         try {
             //get xummId by frontendId
-            if(options && (frontendId = options.frontendId)) {
+            if(options && (frontendId = options.frontendId) && !pushDisabled) {
                 let xummId:string = await this.db.getXummId(appId, options.frontendId);
-                if(!pushDisabled && xummId && xummId.trim().length > 0)
+                if(xummId && xummId.trim().length > 0)
                     payload.user_token = xummId; 
             }
 
             //get xummId by xrplAccount
-            if(options && (xrplAccount = options.xrplAccount) && !payload.user_token) {
+            if(options && (xrplAccount = options.xrplAccount) && !payload.user_token && !pushDisabled) {
 
                 //resolve xummId by XrplAccount
                 let xummIdForXrplAccount:string = await this.db.getXummIdForXRPLAccount(appId, xrplAccount);
