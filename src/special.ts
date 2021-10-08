@@ -5,7 +5,9 @@ import * as fetch from 'node-fetch';
 import {verifySignature} from 'verify-xrpl-signature'
 import { XummTypes } from 'xumm-sdk';
 import { TransactionValidation } from './util/types';
-import { FormattedTransactionType, RippleAPI } from 'ripple-lib';
+import { Client, TxRequest, TxResponse, TransactionAndMetadata } from 'xrpl'
+import { isNumber } from 'util';
+//import { FormattedTransactionType, RippleAPI } from 'ripple-lib';
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 });
@@ -18,8 +20,8 @@ export class Special {
     private mainNodes:string[] = ['wss://xrplcluster.com', 'wss://s2.ripple.com'];
     private testNodes:string[] = ['wss://s.altnet.rippletest.net', 'wss://testnet.xrpl-labs.com'];
 
-    private mainnetApi:RippleAPI = new RippleAPI({server: this.mainNodes[0]});
-    private testnetApi:RippleAPI = new RippleAPI({server: this.testNodes[0]});
+    private mainnetApi:Client = new Client(this.mainNodes[0]);
+    private testnetApi:Client = new Client(this.testNodes[0]);
 
     async init() {
         await this.xummBackend.init();
@@ -264,19 +266,19 @@ export class Special {
         try {
             //console.log("checking bithomp with trxHash: " + trxHash);
             //console.log("checking transaction with testnet: " + testnet + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount));
-            let apiToUse:RippleAPI = testnet ? this.testnetApi : this.mainnetApi
+            let xrplClient:Client = testnet ? this.testnetApi : this.mainnetApi
             try {
-                if(!apiToUse.isConnected()) {
+                if(!xrplClient.isConnected()) {
                     console.log("wss not connected for " + (testnet ? "testnet" : "mainnet" + ". Connecting..."))
-                    await apiToUse.connect();
+                    await xrplClient.connect();
                 }
             } catch(err) {
                 console.log("could not connect to: " + (testnet ? this.testNodes[0] : this.mainNodes[0]));
                 try {
-                    apiToUse = new RippleAPI({server: (testnet ? this.testNodes[1] : this.mainNodes[1])});
-                    await apiToUse.connect();
+                    xrplClient = new Client((testnet ? this.testNodes[1] : this.mainNodes[1]));
+                    await xrplClient.connect();
 
-                    if(!apiToUse.isConnected()) {
+                    if(!xrplClient.isConnected()) {
                         console.log("could not connect 2nd try to: " + (testnet ? this.testNodes[1] : this.mainNodes[1]));
                         return this.callBithompAndValidate(trxHash, testnet, destinationAccount, amount);
                     }
@@ -286,31 +288,42 @@ export class Special {
                 }
             }
 
-            let transaction:FormattedTransactionType = await apiToUse.getTransaction(trxHash);
+            let transactionRequest:TxRequest = {
+                command: "tx",
+                transaction: trxHash
+            }
 
-            if(transaction) {
+            let transaction:TxResponse = await xrplClient.request(transactionRequest);
+
+            if(transaction && transaction.result) {
                 //console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(transaction));
 
                 //standard validation of successfull transaction
-                if(transaction && transaction.type && transaction.type.toLowerCase() === 'payment') {
-                    let paymenTransaction:any = transaction.specification;
-                    if(paymenTransaction  && (destinationAccount ? paymenTransaction.destination.address === destinationAccount.account : true)
-                        && (destinationAccount && destinationAccount.tag ? paymenTransaction.destination.tag == destinationAccount.tag : true) && transaction.outcome  && transaction.outcome.result === 'tesSUCCESS')
+                if(transaction && transaction.result && transaction.result.TransactionType && transaction.result.TransactionType === "Payment") {
 
+                    
+
+                    if(!destinationAccount || (transaction.result.Destination === destinationAccount.account
+                        && (!destinationAccount.tag || transaction.result.DestinationTag == destinationAccount.tag)) && transaction.result.meta && typeof(transaction.result.meta) === 'object' && transaction.result.meta.TransactionResult === 'tesSUCCESS') {
+
+                            const transactionMeta = transaction.result.meta;
                             if(!amount) {
                                 //no amount in request. Accept any amount then
                                 return true;
                             }
                             //validate delivered amount
-                            else if(Number.isInteger(parseInt(amount))) {
+                            else if(!isNaN(amount)) {
                                 //handle XRP amount
-                                return transaction.outcome.deliveredAmount.currency === 'XRP' && (parseFloat(transaction.outcome.deliveredAmount.value)*1000000 == parseInt(amount));
+                                return typeof(transactionMeta.delivered_amount) === 'string' && transactionMeta.delivered_amount === amount);
                             } else {
                                 //amount not a number so it must be a IOU
                                 return transaction.outcome.deliveredAmount.currency === amount.currency //check currency
                                     && transaction.outcome.deliveredAmount.counterparty === amount.issuer //check issuer
                                         && transaction.outcome.deliveredAmount.value === amount.value; //check value
                             }
+                    } else {
+                        return false;
+                    }
 
                 } else if( transaction && transaction.outcome  && transaction.outcome.result === 'tesSUCCESS') {
                     return true;
