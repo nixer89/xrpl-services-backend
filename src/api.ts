@@ -4,7 +4,7 @@ import * as Special from './special';
 import * as config from './util/config';
 import { XummTypes } from 'xumm-sdk';
 import DeviceDetector = require("device-detector-js");
-import { GenericBackendPostRequestOptions, TransactionValidation } from './util/types';
+import { AllowedOrigins, GenericBackendPostRequestOptions, TransactionValidation } from './util/types';
 import { XummGetPayloadResponse } from 'xumm-sdk/dist/src/types';
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
@@ -609,6 +609,25 @@ export async function registerRoutes(fastify, opts, next) {
                 //we didn't go into the success:true -> so return false :)
                 return {success : false, account: payloadInfo.response.account }
 
+            } catch(err) {
+                console.log("ERROR: " + JSON.stringify(err));
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+            }
+        }
+    });
+
+    fastify.get('/api/v1/payment/amounts', async (request, reply) => {
+        //console.log("request params: " + JSON.stringify(request.params));
+        if(!request.headers.origin)
+            reply.code(500).send('Please provide an origin. Calls without origin are not allowed');
+        else {
+            try {
+                let appId:string = await db.getAppIdForOrigin(request.headers.origin);
+                let originProperties:AllowedOrigins = await db.getOriginProperties(appId)
+                
+                if(originProperties && originProperties.fixAmount)
+                    return originProperties.fixAmount;
+                else return { success : false, error: false};
             } catch(err) {
                 console.log("ERROR: " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};

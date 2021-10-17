@@ -217,8 +217,18 @@ export class Xumm {
 
                 if(xummResponse && xummResponse.ok)
                     return xummResponse.json();
-                else
+                else {
+                    try {
+                        if(xummResponse && xummResponse.body) {
+                            console.log("ERROR calling XUMM:")
+                            console.log(JSON.stringify(xummResponse.body))
+                        }
+                    } catch(err) {
+                        //nothing to do!
+                    }
+
                     return null;
+                }
             } else {
                 console.log("ERROR: Could not find api keys for applicationId: " + applicationId);
                 return null;
