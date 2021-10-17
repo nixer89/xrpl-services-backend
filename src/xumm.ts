@@ -195,7 +195,7 @@ export class Xumm {
     }
 
     async callXumm(applicationId:string, path:string, method:string, body?:any): Promise<any> {
-        let xummResponse:any = null;
+        let xummResponse:fetch.Response = null;
         try {
             let appSecret:string = await this.db.getApiSecretForAppId(applicationId);
             if(appSecret) {
@@ -215,7 +215,7 @@ export class Xumm {
                     },
                 );
 
-                if(xummResponse)
+                if(xummResponse && xummResponse.ok)
                     return xummResponse.json();
                 else
                     return null;
@@ -228,6 +228,7 @@ export class Xumm {
             console.log(JSON.stringify(err));
             console.log("input params: applicationId: " + applicationId + " path: " + path + " method: " + method+ " body: " + body);
             console.log("xumm response: " + JSON.stringify(xummResponse));
+            return null;
         }
     }
 
