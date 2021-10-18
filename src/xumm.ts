@@ -50,6 +50,8 @@ export class Xumm {
                     payload.user_token = xummId; 
             }
 
+            let calls:number = 0;
+
             //get xummId by xrplAccount
             if(options && (xrplAccount = options.xrplAccount) && !payload.user_token && !pushDisabled) {
 
@@ -61,7 +63,6 @@ export class Xumm {
                 }
                 
                 if(!payload.user_token) {
-                    let calls:number = 0;
                     //resolve xummId by latest sign in payload
                     //console.log("getting xummId by xplAccount: " + xrplAccount);
                     let appId:string = await this.db.getAppIdForOrigin(origin)
@@ -94,6 +95,10 @@ export class Xumm {
                         }
                     }
                 }
+            }
+
+            if(!payload.user_token) {
+                console.log("NO XUMM ID AFTER " + calls + " CALLS")
             }
 
             payload = await this.adaptOriginProperties(origin, appId, payload, referer, options);
