@@ -99,11 +99,11 @@ export class Xumm {
 
         if(payloadResponse) {
             console.log("[XUMM]: payload submitted successfully: " + payloadResponse.uuid);
+
+            //don't block the response
+            setTimeout(() => { this.storePayloadInfo(origin, referer, frontendId, appId, payload, payloadResponse) },2000);
         }
 
-        //don't block the response
-        setTimeout(() => { this.storePayloadInfo(origin, referer, frontendId, appId, payload, payloadResponse) },2000);
-        
         return payloadResponse;
     }
 
@@ -220,8 +220,9 @@ export class Xumm {
                 else {
                     try {
                         if(xummResponse && xummResponse.body) {
+                            let body = await xummResponse.text()
                             console.log("ERROR calling XUMM:")
-                            console.log(JSON.stringify(xummResponse.body))
+                            console.log(JSON.stringify(body))
                         }
                     } catch(err) {
                         //nothing to do!
