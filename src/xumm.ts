@@ -9,7 +9,10 @@ require('console-stamp')(console, {
 
 export class Xumm {
 
-    xummCallCounter:number = 0;
+    xummPostCounter:number = 0;
+    xummGetCounter:number = 0;
+    xummDeleteCounter:number = 0;
+    xummOtherCounter:number = 0;
 
     db = new DB.DB();
 
@@ -199,7 +202,15 @@ export class Xumm {
     async callXumm(applicationId:string, path:string, method:string, body?:any): Promise<any> {
         let xummResponse:fetch.Response = null;
         try {
-            console.log("Called XUMM: " + ++this.xummCallCounter);
+            if("POST" === method)
+                console.log("Called POST: " + ++this.xummPostCounter);
+            else if("GET" === method)
+                console.log("Called GET: " + ++this.xummGetCounter);
+            else if("DELETE" === method)
+                console.log("Called DELETE: " + ++this.xummDeleteCounter);
+            else
+                console.log("Called OTHER: " + ++this.xummOtherCounter);
+                
             let appSecret:string = await this.db.getApiSecretForAppId(applicationId);
             if(appSecret) {
                 //console.log("[XUMM]: applicationId: " + applicationId);
