@@ -118,12 +118,10 @@ export class Xumm {
             console.log(JSON.stringify(err));
         }
         try {
-            let expiresMinutes = payload?.options?.expire ? payload.options.expire : 5;
+            let expiresMinutes = payload?.options?.expire ? payload.options.expire : 1440;
 
             let expiresAt:Date = new Date();
             expiresAt.setMinutes(expiresAt.getMinutes()+expiresMinutes);
-
-            console.log("expires at: " + expiresAt.toISOString());
 
             this.db.saveTempInfo({origin: origin, referer: referer, frontendId: frontendId, applicationId: appId, xummUserId: payload.user_token, payloadId: payloadResponse.uuid, expires: expiresAt.toISOString()});
         } catch(err) {
