@@ -220,9 +220,11 @@ export class Xumm {
                 else {
                     try {
                         if(xummResponse && xummResponse.body) {
-                            let body = await xummResponse.text()
                             console.log("ERROR calling XUMM:")
-                            console.log(JSON.stringify(body))
+                            console.log("input params: applicationId: " + applicationId + " path: " + path + " method: " + method+ " body: " + JSON.stringify(body));
+
+                            let bodyResponse = await xummResponse.text()
+                            console.log(JSON.stringify(bodyResponse))
                         }
                     } catch(err) {
                         //nothing to do!

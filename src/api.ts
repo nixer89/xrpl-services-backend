@@ -554,7 +554,7 @@ export async function registerRoutes(fastify, opts, next) {
                 }
                 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false, account: payloadInfo.response.account }
+                return {success : false, account: (payloadInfo ? payloadInfo.response.account : null) }
 
             } catch(err) {
                 console.log("ERROR '/api/v1/check/signin/:payloadId': " + JSON.stringify(err));
@@ -578,7 +578,7 @@ export async function registerRoutes(fastify, opts, next) {
                 }
                 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false, account: payloadInfo.response.account }
+                return {success : false, account: (payloadInfo ? payloadInfo.response.account : null) }
 
             } catch(err) {
                 console.log("ERROR '/api/v1/check/signin/:frontendUserId/:payloadId': " + JSON.stringify(err));
@@ -607,7 +607,7 @@ export async function registerRoutes(fastify, opts, next) {
                 }
                 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false, account: payloadInfo.response.account }
+                return {success : false, account: (payloadInfo ? payloadInfo.response.account : null) }
 
             } catch(err) {
                 console.log("ERROR '/api/v1/check/signin/referer/:frontendUserId/:payloadId': " + JSON.stringify(err));
@@ -653,7 +653,7 @@ export async function registerRoutes(fastify, opts, next) {
                 }
                 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false, testnet: false, account: payloadInfo.response.account }
+                return {success : false, testnet: false, account: (payloadInfo ? payloadInfo.response.account : null) }
 
             } catch(err) {
                 console.log("ERROR '/api/v1/xrpl/validatetx/:payloadId': " + JSON.stringify(err));
@@ -741,7 +741,7 @@ export async function registerRoutes(fastify, opts, next) {
                     return deleteSuccess;
                 } else {
                     //we didn't go into the success:true -> so return false :)
-                    return {success : false, account: payloadInfo.response.account }
+                    return {success : false, account: (payloadInfo ? payloadInfo.response.account : null) }
                 }
             } catch(err) {
                 console.log("ERROR '/api/v1/escrow/signinToDeleteEscrow/:payloadId': " + JSON.stringify(err));
