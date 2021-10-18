@@ -9,6 +9,8 @@ require('console-stamp')(console, {
 
 export class Xumm {
 
+    xummCallCounter:number = 0;
+
     db = new DB.DB();
 
     async init() {
@@ -197,6 +199,7 @@ export class Xumm {
     async callXumm(applicationId:string, path:string, method:string, body?:any): Promise<any> {
         let xummResponse:fetch.Response = null;
         try {
+            console.log("Called XUMM: " + ++this.xummCallCounter);
             let appSecret:string = await this.db.getApiSecretForAppId(applicationId);
             if(appSecret) {
                 //console.log("[XUMM]: applicationId: " + applicationId);
