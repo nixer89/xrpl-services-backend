@@ -515,7 +515,7 @@ export class DB {
     }
 
     async getHottestToken(leastTime: Date): Promise<any[]> {
-        console.log("[DB]: getHottestToken: " + JSON.stringify(leastTime));
+        //console.log("[DB]: getHottestToken: " + JSON.stringify(leastTime));
         try {
             let pipeline = [
                 { $match: { updated: { $gte: leastTime} } },
