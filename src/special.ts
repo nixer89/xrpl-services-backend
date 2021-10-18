@@ -6,9 +6,9 @@ import {verifySignature} from 'verify-xrpl-signature'
 import { XummTypes } from 'xumm-sdk';
 import { TransactionValidation } from './util/types';
 import { FormattedTransactionType, RippleAPI } from 'ripple-lib';
-require('console-stamp')(console, { 
-    format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
-});
+//require('console-stamp')(console, { 
+//    format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
+//});
 
 export class Special {
 
@@ -179,10 +179,11 @@ export class Special {
         
         if(trxHash && destinationAccount && "tesSUCCESS" === payloadInfo.response.dispatched_result) {
             
-            console.time(trxHash);
+            let timeString = (isTestNet ? "Test_" : "Main_") + trxHash;
+            console.time(timeString);
             let found = await this.callXrplAndValidate(trxHash, isTestNet, destinationAccount, payloadInfo.payload.request_json.Amount);
-            console.log("Checked " + (isTestNet ? "Testnet:" : "Mainnet:"));
-            console.timeEnd(trxHash);
+            //console.log("Checked " + (isTestNet ? "Testnet:" : "Mainnet:"));
+            console.timeEnd(timeString);
 
             if(found) {
                 return {

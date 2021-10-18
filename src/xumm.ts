@@ -98,7 +98,7 @@ export class Xumm {
         let payloadResponse:XummTypes.XummPostPayloadResponse = await this.callXumm(appId, "payload", "POST", payload);
 
         if(payloadResponse) {
-            console.log("[XUMM]: payload submitted successfully: " + payloadResponse.uuid);
+            //console.log("[XUMM]: payload submitted successfully: " + payloadResponse.uuid);
 
             //don't block the response
             setTimeout(() => { this.storePayloadInfo(origin, referer, frontendId, appId, payload, payloadResponse) },2000);
