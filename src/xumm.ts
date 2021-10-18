@@ -50,8 +50,6 @@ export class Xumm {
                     payload.user_token = xummId; 
             }
 
-            let calls:number = 0;
-
             //get xummId by xrplAccount
             if(options && (xrplAccount = options.xrplAccount) && !payload.user_token && !pushDisabled) {
 
@@ -59,7 +57,6 @@ export class Xumm {
                 let xummIdForXrplAccount:string = await this.db.getXummIdForXRPLAccount(appId, xrplAccount);
                 if(xummIdForXrplAccount) {
                     payload.user_token = xummIdForXrplAccount;
-                    console.log("RESOLVED FROM XRPLACCOUNT WITH 0 CALLS")
                 }
                 
                 if(!payload.user_token) {
@@ -71,11 +68,10 @@ export class Xumm {
 
                     if(payloadIds && payloadIds.length > 0) {
                         let latestPayloadInfo:XummTypes.XummGetPayloadResponse = await this.getPayloadInfoByAppId(appId, payloadIds[payloadIds.length-1]);
-                        calls++;
+
                         //console.log("latestPayloadInfo: " + JSON.stringify(latestPayloadInfo));
                         if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token) {
                             payload.user_token = latestPayloadInfo.application.issued_user_token;
-                            console.log("RESOLVED BY SIGNIN WITH " + calls + " CALLS")
                         }
                     }
 
@@ -86,19 +82,14 @@ export class Xumm {
 
                         if(payloadIds && payloadIds.length > 0) {
                             let latestPayloadInfo:XummTypes.XummGetPayloadResponse = await this.getPayloadInfoByAppId(appId, payloadIds[payloadIds.length-1]);
-                            calls++;
+
                             //console.log("latestPayloadInfo: " + JSON.stringify(latestPayloadInfo));
                             if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token) {
                                 payload.user_token = latestPayloadInfo.application.issued_user_token;
-                                console.log("RESOLVED BY TRANSACTION WITH " + calls + " CALLS")
                             }
                         }
                     }
                 }
-            }
-
-            if(!payload.user_token) {
-                console.log("NO XUMM ID AFTER " + calls + " CALLS")
             }
 
             payload = await this.adaptOriginProperties(origin, appId, payload, referer, options);
