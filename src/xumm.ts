@@ -55,10 +55,13 @@ export class Xumm {
 
                 //resolve xummId by XrplAccount
                 let xummIdForXrplAccount:string = await this.db.getXummIdForXRPLAccount(appId, xrplAccount);
-                if(xummIdForXrplAccount)
+                if(xummIdForXrplAccount) {
                     payload.user_token = xummIdForXrplAccount;
+                    console.log("RESOLVED FROM XRPLACCOUNT WITH 0 CALLS")
+                }
                 
                 if(!payload.user_token) {
+                    let calls:number = 0;
                     //resolve xummId by latest sign in payload
                     //console.log("getting xummId by xplAccount: " + xrplAccount);
                     let appId:string = await this.db.getAppIdForOrigin(origin)
@@ -67,9 +70,12 @@ export class Xumm {
 
                     if(payloadIds && payloadIds.length > 0) {
                         let latestPayloadInfo:XummTypes.XummGetPayloadResponse = await this.getPayloadInfoByAppId(appId, payloadIds[payloadIds.length-1]);
+                        calls++;
                         //console.log("latestPayloadInfo: " + JSON.stringify(latestPayloadInfo));
-                        if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token)
+                        if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token) {
                             payload.user_token = latestPayloadInfo.application.issued_user_token;
+                            console.log("RESOLVED BY SIGNIN WITH " + calls + " CALLS")
+                        }
                     }
 
                     //no SignIn found or SignIn did not have issued user token
@@ -79,9 +85,12 @@ export class Xumm {
 
                         if(payloadIds && payloadIds.length > 0) {
                             let latestPayloadInfo:XummTypes.XummGetPayloadResponse = await this.getPayloadInfoByAppId(appId, payloadIds[payloadIds.length-1]);
+                            calls++;
                             //console.log("latestPayloadInfo: " + JSON.stringify(latestPayloadInfo));
-                            if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token)
+                            if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token) {
                                 payload.user_token = latestPayloadInfo.application.issued_user_token;
+                                console.log("RESOLVED BY TRANSACTION WITH " + calls + " CALLS")
+                            }
                         }
                     }
                 }
