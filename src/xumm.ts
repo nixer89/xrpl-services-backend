@@ -9,11 +9,6 @@ require('console-stamp')(console, {
 
 export class Xumm {
 
-    xummPostCounter:number = 0;
-    xummGetCounter:number = 0;
-    xummDeleteCounter:number = 0;
-    xummOtherCounter:number = 0;
-
     db = new DB.DB();
 
     async init() {
@@ -123,8 +118,14 @@ export class Xumm {
             console.log(JSON.stringify(err));
         }
         try {
-            let payloadInfo:XummTypes.XummGetPayloadResponse = await this.getPayloadInfoByAppId(appId, payloadResponse.uuid);
-            this.db.saveTempInfo({origin: origin, referer: referer, frontendId: frontendId, applicationId: appId, xummUserId: payload.user_token, payloadId: payloadResponse.uuid, expires: payloadInfo.payload.expires_at});
+            let expiresMinutes = payload?.options?.expire ? payload.options.expire : 5;
+
+            let expiresAt:Date = new Date();
+            expiresAt.setMinutes(expiresAt.getMinutes()+expiresMinutes);
+
+            console.log("expires at: " + expiresAt.toISOString());
+
+            this.db.saveTempInfo({origin: origin, referer: referer, frontendId: frontendId, applicationId: appId, xummUserId: payload.user_token, payloadId: payloadResponse.uuid, expires: expiresAt.toISOString()});
         } catch(err) {
             console.log("Error saving TempInfo");
             console.log(JSON.stringify(err));
@@ -202,15 +203,6 @@ export class Xumm {
     async callXumm(applicationId:string, path:string, method:string, body?:any): Promise<any> {
         let xummResponse:fetch.Response = null;
         try {
-            if("POST" === method)
-                console.log("Called POST: " + ++this.xummPostCounter);
-            else if("GET" === method)
-                console.log("Called GET: " + ++this.xummGetCounter);
-            else if("DELETE" === method)
-                console.log("Called DELETE: " + ++this.xummDeleteCounter);
-            else
-                console.log("Called OTHER: " + ++this.xummOtherCounter);
-                
             let appSecret:string = await this.db.getApiSecretForAppId(applicationId);
             if(appSecret) {
                 //console.log("[XUMM]: applicationId: " + applicationId);
