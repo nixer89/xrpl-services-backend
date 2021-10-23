@@ -212,7 +212,7 @@ export class Xumm {
                 //console.log("[XUMM]: appSecret: " + appSecret);
                 //console.log("[XUMM]: calling xumm: " + method + " - " + config.XUMM_API_URL+path);
                 //console.log("[XUMM]: with body: " + JSON.stringify(body));
-                let start = Date.now();
+
                 xummResponse = await fetch.default(config.XUMM_API_URL+path,
                     {
                         headers: {
@@ -224,10 +224,6 @@ export class Xumm {
                         body: (body ? JSON.stringify(body) : null)
                     },
                 );
-
-                let end = Date.now();
-
-                console.log("XUMM: " + (end-start) + " ms.");
 
                 if(xummResponse && xummResponse.ok)
                     return xummResponse.json();
