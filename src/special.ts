@@ -15,7 +15,7 @@ export class Special {
     xummBackend = new Xumm.Xumm();
     db = new DB.DB();
 
-    private mainNodes:string[] = ['wss://s1.ripple.com','wss://xrplcluster.com'];
+    private mainNodes:string[] = ['wss://xrplcluster.com','wss://s1.ripple.com'];
     private testNodes:string[] = ['wss://s.altnet.rippletest.net', 'wss://testnet.xrpl-labs.com'];
 
     private mainnetApi:RippleAPI = new RippleAPI({server: this.mainNodes[0]});
