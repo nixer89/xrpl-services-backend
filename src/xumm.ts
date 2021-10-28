@@ -3,6 +3,7 @@ import * as config from './util/config';
 import * as DB from './db';
 import { XummTypes } from 'xumm-sdk';
 import { GenericBackendPostRequestOptions, AllowedOrigins } from './util/types';
+import { v4 as uuidv4 } from 'uuid';
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 });
@@ -213,6 +214,8 @@ export class Xumm {
                 //console.log("[XUMM]: calling xumm: " + method + " - " + config.XUMM_API_URL+path);
                 //console.log("[XUMM]: with body: " + JSON.stringify(body));
 
+                let uuid:string = uuidv4();
+                console.time("XUMM_"+uuid);
                 xummResponse = await fetch.default(config.XUMM_API_URL+path,
                     {
                         headers: {
@@ -224,6 +227,7 @@ export class Xumm {
                         body: (body ? JSON.stringify(body) : null)
                     },
                 );
+                console.timeEnd("XUMM_"+uuid);
 
                 if(xummResponse && xummResponse.ok)
                     return xummResponse.json();
