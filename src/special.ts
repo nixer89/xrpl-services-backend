@@ -169,23 +169,22 @@ export class Special {
 
     async validateTransactionOnLedger(payloadInfo: XummTypes.XummGetPayloadResponse): Promise<TransactionValidation> {
         //console.log("validatePaymentOnLedger");
-        let destinationAccount:any = {
-            account: payloadInfo.payload.request_json.Destination,
-            tag: payloadInfo.payload.request_json.DestinationTag,
+        let destinationAccount:any = null;
+
+        if(payloadInfo && payloadInfo.payload && payloadInfo.payload.request_json && payloadInfo.payload.request_json.Destination) {
+            destinationAccount = {
+                account: payloadInfo.payload.request_json.Destination,
+                tag: payloadInfo.payload.request_json.DestinationTag,
+            }
         }
 
         let isTestNet:boolean = "MAINNET" != payloadInfo.response.dispatched_nodetype;
         let trxHash:string = payloadInfo.response.txid;
         
-        if(trxHash && destinationAccount && "tesSUCCESS" === payloadInfo.response.dispatched_result) {
-            
-            let timeString = (isTestNet ? "Test_" : "Main_") + trxHash;
-            console.time(timeString);
-            let found = await this.callXrplAndValidate(trxHash, isTestNet, destinationAccount, payloadInfo.payload.request_json.Amount);
-            //console.log("Checked " + (isTestNet ? "Testnet:" : "Mainnet:"));
-            console.timeEnd(timeString);
+        if(trxHash && "tesSUCCESS" === payloadInfo.response.dispatched_result) {
 
-            if(found) {
+            //do not execute on ledger verification for trustset transactions!
+            if(payloadInfo.payload.tx_type === 'TrustSet') {
                 return {
                     success: true,
                     testnet: isTestNet,
@@ -193,14 +192,29 @@ export class Special {
                     account: payloadInfo.response.account
                 }
             } else {
+                //do on ledger verification for non trustset transactions!
+                let timeString = (isTestNet ? "Test_" : "Main_") + trxHash;
+                console.time(timeString);
+                let found = await this.callXrplAndValidate(trxHash, isTestNet, destinationAccount, payloadInfo.payload.request_json.Amount);
+                //console.log("Checked " + (isTestNet ? "Testnet:" : "Mainnet:"));
+                console.timeEnd(timeString);
 
-                return {
-                    success: false,
-                    testnet: isTestNet,
-                    account: payloadInfo.response.account
+                if(found) {
+                    return {
+                        success: true,
+                        testnet: isTestNet,
+                        txid: trxHash,
+                        account: payloadInfo.response.account
+                    }
+                } else {
+
+                    return {
+                        success: false,
+                        testnet: isTestNet,
+                        account: payloadInfo.response.account
+                    }
                 }
             }
-
         } else {
             return {
                 success: false,
