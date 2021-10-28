@@ -25,6 +25,12 @@ export class Special {
         await this.xummBackend.init();
         await this.db.initDb("special");
         await this.mainnetApi.connect();
+
+        if(this.mainnetApi.isConnected()) {
+            let serverInfo:any = await this.mainnetApi.request("server_info");
+            console.log(JSON.stringify(serverInfo));
+        }
+
         await this.testnetApi.connect();
     }
 
