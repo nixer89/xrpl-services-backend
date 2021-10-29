@@ -118,6 +118,14 @@ const start = async () => {
           let responseTime = Date.now() - request['start'];
           if(responseTime > 1500) {
             console.log("response time: " + responseTime + ' ms.')
+
+            for (var property in request) {
+              if (request.hasOwnProperty(property)) {
+                  if(property.startsWith("XUMM_") || property.startsWith("XRPL_") || property.startsWith("DB_") || property.startsWith("SPECIAL_"))
+                    console.log(request[property]);
+              }
+          }
+
             fs.appendFileSync('./longRunners.txt', JSON.stringify({
               time: responseTime, 
               request: {

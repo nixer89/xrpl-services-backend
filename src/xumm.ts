@@ -21,12 +21,12 @@ export class Xumm {
     }
 
     async pingXummBackend(): Promise<boolean> {
-        let pingResponse = await this.callXumm(await this.db.getAppIdForOrigin("http://localhost:4200"), "ping", "GET");
+        let pingResponse = await this.callXumm(await this.db.getAppIdForOrigin("http://localhost:4200"), "ping", "GET", null);
         console.log("[XUMM]: pingXummBackend response: " + JSON.stringify(pingResponse))
         return pingResponse && pingResponse.pong;
     }
 
-    async submitPayload(payload:XummTypes.XummPostPayloadBodyJson, origin:string, referer: string, options?:GenericBackendPostRequestOptions): Promise<XummTypes.XummPostPayloadResponse> {
+    async submitPayload(payload:XummTypes.XummPostPayloadBodyJson, origin:string, referer: string, request:any, options?:GenericBackendPostRequestOptions): Promise<XummTypes.XummPostPayloadResponse> {
         //trying to resolve xumm user if from given frontendId:
         //console.log("received payload: " + JSON.stringify(payload));
         //console.log("received options: " + JSON.stringify(options));
@@ -68,7 +68,7 @@ export class Xumm {
                     //console.log("payloadIds: " + JSON.stringify(payloadIds));
 
                     if(payloadIds && payloadIds.length > 0) {
-                        let latestPayloadInfo:XummTypes.XummGetPayloadResponse = await this.getPayloadInfoByAppId(appId, payloadIds[payloadIds.length-1]);
+                        let latestPayloadInfo:XummTypes.XummGetPayloadResponse = await this.getPayloadInfoByAppId(appId, payloadIds[payloadIds.length-1],request);
 
                         //console.log("latestPayloadInfo: " + JSON.stringify(latestPayloadInfo));
                         if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token) {
@@ -82,7 +82,7 @@ export class Xumm {
                         payloadIds = await this.db.getPayloadIdsByXrplAccountForApplicationAndType(appId, xrplAccount, payload.txjson.TransactionType);
 
                         if(payloadIds && payloadIds.length > 0) {
-                            let latestPayloadInfo:XummTypes.XummGetPayloadResponse = await this.getPayloadInfoByAppId(appId, payloadIds[payloadIds.length-1]);
+                            let latestPayloadInfo:XummTypes.XummGetPayloadResponse = await this.getPayloadInfoByAppId(appId, payloadIds[payloadIds.length-1],request);
 
                             //console.log("latestPayloadInfo: " + JSON.stringify(latestPayloadInfo));
                             if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token) {
@@ -136,50 +136,50 @@ export class Xumm {
         }
     }
 
-    async getPayloadInfoByOrigin(origin:string, payload_id:string): Promise<XummTypes.XummGetPayloadResponse> {
+    async getPayloadInfoByOrigin(origin:string, payload_id:string,request:any): Promise<XummTypes.XummGetPayloadResponse> {
         let appId:string = await this.db.getAppIdForOrigin(origin);
         if(!appId)
             return null;
 
-        return this.getPayloadInfoByAppId(appId, payload_id);
+        return this.getPayloadInfoByAppId(appId, payload_id,request);
     }
 
-    async getPayloadInfoByAppId(applicationId:string, payload_id:string): Promise<XummTypes.XummGetPayloadResponse> {
-        let payloadResponse:XummTypes.XummGetPayloadResponse = await this.callXumm(applicationId, "payload/"+payload_id, "GET");
+    async getPayloadInfoByAppId(applicationId:string, payload_id:string, request: any): Promise<XummTypes.XummGetPayloadResponse> {
+        let payloadResponse:XummTypes.XummGetPayloadResponse = await this.callXumm(applicationId, "payload/"+payload_id, "GET", request);
         //console.log("getPayloadInfo response: " + JSON.stringify(payloadResponse))
         return payloadResponse;
     }
 
-    async getPayloadForCustomIdentifierByOrigin(origin:string, custom_identifier: string): Promise<XummTypes.XummGetPayloadResponse> {
+    async getPayloadForCustomIdentifierByOrigin(origin:string, custom_identifier: string, request: any): Promise<XummTypes.XummGetPayloadResponse> {
         let appId:string = await this.db.getAppIdForOrigin(origin);
         if(!appId)
             return null;
 
-        return this.getPayloadForCustomIdentifierByAppId(appId, custom_identifier);
+        return this.getPayloadForCustomIdentifierByAppId(appId, custom_identifier, request);
     }
 
-    async getPayloadForCustomIdentifierByAppId(applicationId:string, custom_identifier: string): Promise<XummTypes.XummGetPayloadResponse> {
-        let payloadResponse:XummTypes.XummGetPayloadResponse = await this.callXumm(applicationId, "payload/ci/"+custom_identifier, "GET");
+    async getPayloadForCustomIdentifierByAppId(applicationId:string, custom_identifier: string, request: any): Promise<XummTypes.XummGetPayloadResponse> {
+        let payloadResponse:XummTypes.XummGetPayloadResponse = await this.callXumm(applicationId, "payload/ci/"+custom_identifier, "GET",request);
         //console.log("getPayloadInfo response: " + JSON.stringify(payloadResponse))
         return payloadResponse;
     }
 
-    async deletePayload(origin: string, payload_id:string): Promise<XummTypes.XummDeletePayloadResponse> {
+    async deletePayload(origin: string, payload_id:string, request: any): Promise<XummTypes.XummDeletePayloadResponse> {
         let appId:string = await this.db.getAppIdForOrigin(origin);
         if(!appId)
             return null;
 
-        let payloadResponse = await this.callXumm(appId, "payload/"+payload_id, "DELETE");
+        let payloadResponse = await this.callXumm(appId, "payload/"+payload_id, "DELETE",request);
         //console.log("deletePayload response: " + JSON.stringify(payloadResponse))
         return payloadResponse;
     }
 
-    async getxAppOTT(origin: string, token: string): Promise<any> {
+    async getxAppOTT(origin: string, token: string, request :any): Promise<any> {
         let appId:string = await this.db.getAppIdForOrigin(origin);
         if(!appId)
             return null;
 
-        let ottData = await this.callXumm(appId, "xapp/ott/"+token, "GET");
+        let ottData = await this.callXumm(appId, "xapp/ott/"+token, "GET",request);
         //console.log("getxAppOTT response: " + JSON.stringify(ottData))
         return ottData;
     }
@@ -204,7 +204,7 @@ export class Xumm {
         return xappPushResponse;
     }
 
-    async callXumm(applicationId:string, path:string, method:string, body?:any): Promise<any> {
+    async callXumm(applicationId:string, path:string, method:string, request:any, body?:any): Promise<any> {
         let xummResponse:fetch.Response = null;
         try {
             let appSecret:string = await this.db.getApiSecretForAppId(applicationId);
@@ -214,8 +214,7 @@ export class Xumm {
                 //console.log("[XUMM]: calling xumm: " + method + " - " + config.XUMM_API_URL+path);
                 //console.log("[XUMM]: with body: " + JSON.stringify(body));
 
-                let uuid:string = uuidv4();
-                console.time("XUMM_"+uuid);
+                let start = Date.now();
                 xummResponse = await fetch.default(config.XUMM_API_URL+path,
                     {
                         headers: {
@@ -227,7 +226,12 @@ export class Xumm {
                         body: (body ? JSON.stringify(body) : null)
                     },
                 );
-                console.timeEnd("XUMM_"+uuid);
+                
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'XUMM_'+uuid;
+                    request[key] = "XUMM: " + (Date.now()-start) + " ms";
+                }
 
                 if(xummResponse && xummResponse.ok)
                     return xummResponse.json();

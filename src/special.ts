@@ -6,6 +6,8 @@ import {verifySignature} from 'verify-xrpl-signature'
 import { XummTypes } from 'xumm-sdk';
 import { TransactionValidation } from './util/types';
 import { FormattedTransactionType, RippleAPI } from 'ripple-lib';
+import { v4 as uuidv4 } from 'uuid';
+
 //require('console-stamp')(console, { 
 //    format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 //});
@@ -43,9 +45,9 @@ export class Special {
             return false;
     }
     
-    async getPayloadInfoForFrontendId(origin: string, requestParams:any, payloadType: string, referer?: string): Promise<XummTypes.XummGetPayloadResponse> {
+    async getPayloadInfoForFrontendId(origin: string, requestParams:any, payloadType: string, request: any, referer?: string): Promise<XummTypes.XummGetPayloadResponse> {
         if(await this.validFrontendUserIdToPayload(origin, requestParams,payloadType, referer)) {
-            return this.xummBackend.getPayloadInfoByOrigin(origin, requestParams.payloadId)
+            return this.xummBackend.getPayloadInfoByOrigin(origin, requestParams.payloadId, request)
         } else {
             return null;
         }
@@ -74,11 +76,11 @@ export class Special {
         }
     }
 
-    async checkSignInToValidatePayment(siginPayloadId:string, origin: string, referer: string): Promise<TransactionValidation> {
+    async checkSignInToValidatePayment(siginPayloadId:string, origin: string, referer: string, request: any): Promise<TransactionValidation> {
         //console.log("signInToValidate: siginPayloadId: " + siginPayloadId + " origin: " + origin + " referer: " + referer);
         try {
             if(siginPayloadId) {
-                let payloadInfo:XummTypes.XummGetPayloadResponse = await this.xummBackend.getPayloadInfoByOrigin(origin, siginPayloadId);
+                let payloadInfo:XummTypes.XummGetPayloadResponse = await this.xummBackend.getPayloadInfoByOrigin(origin, siginPayloadId, request);
 
                 //console.log("signInPayloadInfo:" + JSON.stringify(payloadInfo));
                 if(payloadInfo && this.successfullSignInPayloadValidation(payloadInfo)) {
@@ -91,7 +93,7 @@ export class Special {
                         payloadIds = payloadIds.reverse();
                         let validationInfo:any = {success: false};
                         for(let i = 0; i < payloadIds.length; i++) {
-                            validationInfo = await this.validateTimedPaymentPayload(origin, referer, await this.xummBackend.getPayloadInfoByOrigin(origin, payloadIds[i]));
+                            validationInfo = await this.validateTimedPaymentPayload(origin, referer, await this.xummBackend.getPayloadInfoByOrigin(origin, payloadIds[i], request), request);
                             //console.log("validationInfo: " + JSON.stringify(validationInfo));
 
                             if(validationInfo.success || validationInfo.payloadExpired)
@@ -115,7 +117,7 @@ export class Special {
         }
     }
 
-    async validateTimedPaymentPayload(origin: string, referer:string, payloadInfo: XummTypes.XummGetPayloadResponse): Promise<TransactionValidation> {
+    async validateTimedPaymentPayload(origin: string, referer:string, payloadInfo: XummTypes.XummGetPayloadResponse, request: any): Promise<TransactionValidation> {
         let transactionDate:Date;
         if(this.successfullPaymentPayloadValidation(payloadInfo)) {
             transactionDate = new Date(payloadInfo.response.resolved_at)
@@ -133,7 +135,7 @@ export class Special {
                     validationTime = originProperties.payloadValidationTimeframe['*'];
 
                 if(validationTime == -1 || (transactionDate && transactionDate.setTime(transactionDate.getTime()+validationTime) > Date.now())) {
-                    return this.validateTransactionOnLedger(payloadInfo);
+                    return this.validateTransactionOnLedger(payloadInfo, request);
                 } else {
                     return { success: false, payloadExpired : true, testnet: false, account: payloadInfo.response.account};
                 }
@@ -167,7 +169,7 @@ export class Special {
         return payloadIdsForXummUserId.includes(payloadId);
     }
 
-    async validateTransactionOnLedger(payloadInfo: XummTypes.XummGetPayloadResponse): Promise<TransactionValidation> {
+    async validateTransactionOnLedger(payloadInfo: XummTypes.XummGetPayloadResponse, request: any): Promise<TransactionValidation> {
         //console.log("validatePaymentOnLedger");
         let destinationAccount:any = null;
 
@@ -193,11 +195,18 @@ export class Special {
                 }
             } else {
                 //do on ledger verification for non trustset transactions!
+                let start = Date.now();
                 let timeString = (isTestNet ? "Test_" : "Main_") + trxHash;
                 console.time(timeString);
                 let found = await this.callXrplAndValidate(trxHash, isTestNet, destinationAccount, payloadInfo.payload.request_json.Amount);
                 //console.log("Checked " + (isTestNet ? "Testnet:" : "Mainnet:"));
                 console.timeEnd(timeString);
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'XRPL_'+uuid;
+                    request[key] = "XRPL: " + (Date.now()-start) + " ms";
+                }
 
                 if(found) {
                     return {
@@ -343,10 +352,17 @@ export class Special {
         }
     }
 
-    async addEscrow(escrow: any): Promise<any> {
+    async addEscrow(escrow: any, request: any): Promise<any> {
         //console.log("add escrow: account: " + JSON.stringify(escrow));
-        
+        let start = Date.now();
+
         let escrowListResponse:fetch.Response = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/escrowFinish", {method: "post", body: JSON.stringify(escrow)});
+
+        if(request) {
+            let uuid:string = uuidv4();
+            let key:string = 'SPECIAL_ESCROW_ADD'+uuid;
+            request[key] = "ESCROW_ADD: " + (Date.now()-start) + " ms";
+        }
 
         if(escrowListResponse && escrowListResponse.ok) {
             return escrowListResponse.json();
@@ -355,10 +371,17 @@ export class Special {
         }
     }
 
-    async deleteEscrow(escrow: any): Promise<any> {
+    async deleteEscrow(escrow: any, request: any): Promise<any> {
         //console.log("delete escrow: " + JSON.stringify(escrow));
-        
+        let start = Date.now();
+
         let escrowListResponse:fetch.Response = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/escrowFinish/"+escrow.account+"/"+escrow.sequence+"/"+escrow.testnet, {method: "delete"});
+
+        if(request) {
+            let uuid:string = uuidv4();
+            let key:string = 'SPECIAL_ESCROW_DELETE'+uuid;
+            request[key] = "ESCROW_DELETE: " + (Date.now()-start) + " ms";
+        }
 
         if(escrowListResponse && escrowListResponse.ok) {
             return escrowListResponse.json();
@@ -368,10 +391,17 @@ export class Special {
         }
     }
 
-    async escrowExists(escrow: any): Promise<any> {
+    async escrowExists(escrow: any, request: any): Promise<any> {
         //console.log("escrowExists: " + JSON.stringify(escrow));
-        
+        let start = Date.now();
+
         let escrowListResponse:fetch.Response = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/escrowFinish/exists/"+escrow.account+"/"+escrow.sequence+"/"+escrow.testnet);
+
+        if(request) {
+            let uuid:string = uuidv4();
+            let key:string = 'SPECIAL_ESCROW_EXISTS'+uuid;
+            request[key] = "ESCROW_EXISTS: " + (Date.now()-start) + " ms";
+        }
 
         if(escrowListResponse && escrowListResponse.ok) {
             return escrowListResponse.json();
@@ -381,10 +411,17 @@ export class Special {
         }
     }
 
-    async loadEscrowsForAccount(accountInfo: any) {
+    async loadEscrowsForAccount(accountInfo: any, request: any) {
         //console.log("loading escrows for account: " + accountInfo.account + " on " + (accountInfo.testnet ? "Testnet" : "Mainnet"));
-        
+        let start = Date.now();
+
         let escrowListResponse:fetch.Response = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/escrows", {method: "post", body: JSON.stringify(accountInfo)});
+
+        if(request) {
+            let uuid:string = uuidv4();
+            let key:string = 'SPECIAL_ACCOUNT_ESCROWS'+uuid;
+            request[key] = "ACCOUNT_ESCROWS: " + (Date.now()-start) + " ms";
+        }
 
         if(escrowListResponse && escrowListResponse.ok) {
             return escrowListResponse.json();
@@ -393,14 +430,22 @@ export class Special {
         }
     }
 
-    async getEscrowNextOrLastRelease(next:boolean): Promise<any> {
+    async getEscrowNextOrLastRelease(next:boolean, request: any): Promise<any> {
         //console.log("loading getEscrowNextOrLastRelease");
         let escrowCountStats:fetch.Response = null;
+
+        let start = Date.now();
 
         if(next)
             escrowCountStats = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/stats/nextRelease");
         else
             escrowCountStats = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/stats/lastRelease");
+
+        if(request) {
+            let uuid:string = uuidv4();
+            let key:string = 'SPECIAL_NEXT_RELEASE'+uuid;
+            request[key] = "NEXT_RELEASE: " + (Date.now()-start) + " ms";
+        }
 
         if(escrowCountStats && escrowCountStats.ok) {
             return escrowCountStats.json();
@@ -409,10 +454,17 @@ export class Special {
         }
     }
 
-    async getEscrowCurrentCount(): Promise<any> {
+    async getEscrowCurrentCount(request: any): Promise<any> {
         //console.log("loading getEscrowCurrentCount");
         
+        let start = Date.now();
         let escrowCountStats:fetch.Response = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/stats/currentCount");
+
+        if(request) {
+            let uuid:string = uuidv4();
+            let key:string = 'SPECIAL_ESCROW_COUNT'+uuid;
+            request[key] = "ESCROW_COUNT: " + (Date.now()-start) + " ms";
+        }
 
         if(escrowCountStats && escrowCountStats.ok) {
             return escrowCountStats.json();
@@ -421,10 +473,20 @@ export class Special {
         }
     }
 
-    async getHottestTrustlines(leastTime: Date): Promise<any[]> {
+    async getHottestTrustlines(leastTime: Date, request:any): Promise<any[]> {
         //console.log("loading getHottestTrustlines");
         try {
-            return this.db.getHottestToken(leastTime);
+            let start = Date.now();
+
+            let result:any[] = await  this.db.getHottestToken(leastTime);
+            
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'SPECIAL_HOT_TOKEN'+uuid;
+                request[key] = "HOT_TOKEN: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
         } catch(err) {
             console.log(err);
         }
