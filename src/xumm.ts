@@ -233,9 +233,16 @@ export class Xumm {
                     request[key] = "XUMM: " + (Date.now()-start) + " ms";
                 }
 
-                if(xummResponse && xummResponse.ok)
-                    return xummResponse.json();
-                else {
+                if(xummResponse && xummResponse.ok) {
+                    let start = Date.now();
+                    let response:any = await xummResponse.json();
+                    if(request) {
+                        let uuid:string = uuidv4();
+                        let key:string = 'XUMM_'+uuid;
+                        request[key] = "XUMM_PARSE: " + (Date.now()-start) + " ms";
+                    }
+                    return response;
+                } else {
                     try {
                         if(xummResponse && xummResponse.body) {
                             console.log("ERROR calling XUMM:")
