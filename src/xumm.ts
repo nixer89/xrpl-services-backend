@@ -101,7 +101,7 @@ export class Xumm {
         }
 
         //console.log("[XUMM]: payload to send:" + JSON.stringify(payload));
-        let payloadResponse:XummTypes.XummPostPayloadResponse = await this.callXumm(appId, "payload", "POST", payload);
+        let payloadResponse:XummTypes.XummPostPayloadResponse = await this.callXumm(appId, "payload", "POST", request, payload);
 
         if(payloadResponse) {
             //console.log("[XUMM]: payload submitted successfully: " + payloadResponse.uuid);
@@ -184,22 +184,22 @@ export class Xumm {
         return ottData;
     }
 
-    async sendxAppEvent(origin: string, data: any): Promise<any> {
+    async sendxAppEvent(origin: string, data: any, request:any): Promise<any> {
         let appId:string = await this.db.getAppIdForOrigin(origin);
         if(!appId)
             return null;
 
-        let xappEventResponse = await this.callXumm(appId, "xapp/event", "POST", data);
+        let xappEventResponse = await this.callXumm(appId, "xapp/event", "POST", request, data);
         //console.log("sendxAppEvent response: " + JSON.stringify(xappEventResponse))
         return xappEventResponse;
     }
 
-    async sendxAppPush(origin: string, data: any): Promise<any> {
+    async sendxAppPush(origin: string, data: any, request: any): Promise<any> {
         let appId:string = await this.db.getAppIdForOrigin(origin);
         if(!appId)
             return null;
 
-        let xappPushResponse = await this.callXumm(appId, "xapp/push", "POST", data);
+        let xappPushResponse = await this.callXumm(appId, "xapp/push", "POST", request, data);
         //console.log("sendxAppPush response: " + JSON.stringify(xappPushResponse))
         return xappPushResponse;
     }
