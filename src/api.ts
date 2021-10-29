@@ -123,7 +123,7 @@ export async function registerRoutes(fastify, opts, next) {
         else {
             //try parsing the user agent when unknown to determine if web or app
             try {
-                let payloadResponse = await xummBackend.sendxAppEvent(request.headers.origin, request.body);
+                let payloadResponse = await xummBackend.sendxAppEvent(request.headers.origin, request.body, request);
                 return payloadResponse;
             } catch (err) {
                 console.log("ERROR '/api/v1/platform/xapp/event': " + JSON.stringify(err));
@@ -140,7 +140,7 @@ export async function registerRoutes(fastify, opts, next) {
         else {
             //try parsing the user agent when unknown to determine if web or app
             try {
-                let payloadResponse = await xummBackend.sendxAppPush(request.headers.origin, request.body);
+                let payloadResponse = await xummBackend.sendxAppPush(request.headers.origin, request.body, request);
                 return payloadResponse;
             } catch (err) {
                 console.log("ERROR '/api/v1/platform/xapp/push': " + JSON.stringify(err));
