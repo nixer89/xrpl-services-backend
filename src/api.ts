@@ -622,8 +622,8 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(500).send('Please provide an origin. Calls without origin are not allowed');
         else {
             try {
-                let appId:string = await db.getAppIdForOrigin(request.headers.origin);
-                let originProperties:AllowedOrigins = await db.getOriginProperties(appId)
+                let appId:string = await db.getAppIdForOrigin(request.headers.origin, request);
+                let originProperties:AllowedOrigins = await db.getOriginProperties(appId, request)
                 
                 if(originProperties && originProperties.fixAmount)
                     return originProperties.fixAmount;
@@ -769,8 +769,8 @@ export async function registerRoutes(fastify, opts, next) {
         
         try {
             let origin = request && request.query && request.query.origin ? request.query.origin : request.headers.origin;
-            let appId = await db.getAppIdForOrigin(origin);
-            let transactionStats:any = await db.getTransactions(origin, appId);
+            let appId = await db.getAppIdForOrigin(origin, request);
+            let transactionStats:any = await db.getTransactions(origin, appId, request);
             return transactionStats;                
         } catch(err) {
             console.log("ERROR '/api/v1/statistics/transactions': " + JSON.stringify(err));
@@ -885,13 +885,13 @@ async function handleWebhookRequest(request:any): Promise<any> {
         
         //check if we have to store the user
         try {
-            let tmpInfo:any = await db.getTempInfo({payloadId: payloadInfo.meta.uuid, applicationId: payloadInfo.application.uuidv4});
+            let tmpInfo:any = await db.getTempInfo({payloadId: payloadInfo.meta.uuid, applicationId: payloadInfo.application.uuidv4}, request);
             let origin:string = tmpInfo ? tmpInfo.origin : null;
 
             //store transaction statistic
             //check if payload was signed and submitted successfully (or is a SignIn request which is not submitted)
             if(payloadInfo && payloadInfo.meta.signed && origin && ((payloadInfo.response && payloadInfo.response.dispatched_result && payloadInfo.response.dispatched_result == "tesSUCCESS") || ( payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == "signin" ))) {
-                db.saveTransactionInStatistic(origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
+                db.saveTransactionInStatistic(origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type, request);
             }
 
             //check escrow payment
@@ -902,21 +902,21 @@ async function handleWebhookRequest(request:any): Promise<any> {
             //check trustline
             if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == 'trustset'
                 && payloadInfo.response && payloadInfo.response.dispatched_nodetype == "MAINNET" && payloadInfo.response.dispatched_result =="tesSUCCESS") {
-                    saveTrustlineInfo(payloadInfo);
+                    saveTrustlineInfo(payloadInfo, request);
                 }
 
             if(tmpInfo) {
                 if(payloadInfo && payloadInfo.application && payloadInfo.application.issued_user_token) {
-                    await db.saveUser(origin, payloadInfo.application.uuidv4, tmpInfo.frontendId, payloadInfo.application.issued_user_token);
-                    await db.storePayloadForXummId(origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.application.issued_user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
+                    await db.saveUser(origin, payloadInfo.application.uuidv4, tmpInfo.frontendId, payloadInfo.application.issued_user_token, request);
+                    await db.storePayloadForXummId(origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.application.issued_user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type, request);
                 }
 
                 //store payload to XRPL account
                 if(payloadInfo && payloadInfo.response && payloadInfo.response.account) {
-                    await db.storePayloadForXRPLAccount(origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, webhookRequest.userToken.user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
+                    await db.storePayloadForXRPLAccount(origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, webhookRequest.userToken.user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type, request);
                 }
 
-                await db.deleteTempInfo(tmpInfo);
+                await db.deleteTempInfo(tmpInfo, request);
 
                 return {success: true}
             } else {
@@ -974,12 +974,12 @@ async function handleEscrowPayment(payloadInfo: XummTypes.XummGetPayloadResponse
     }
 }
 
-async function saveTrustlineInfo(payloadInfo: XummGetPayloadResponse) {
+async function saveTrustlineInfo(payloadInfo: XummGetPayloadResponse, request) {
     try {
         let issuer:string = payloadInfo.payload.request_json.LimitAmount['issuer'];
         let currency: string = payloadInfo.payload.request_json.LimitAmount['currency'];
 
-        await db.addTrustlineToDb(issuer, currency, payloadInfo.response.account);
+        await db.addTrustlineToDb(issuer, currency, payloadInfo.response.account, request);
     } catch(err) {
         console.log(JSON.stringify(err));
     }

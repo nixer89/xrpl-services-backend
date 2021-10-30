@@ -35,18 +35,18 @@ export class Special {
         this.xummBackend.resetDBCache();
     }
 
-    async validFrontendUserIdToPayload(origin:string, requestParams:any, payloadType: string, referer?: string): Promise<boolean> {
+    async validFrontendUserIdToPayload(origin:string, requestParams:any, payloadType: string, request:any, referer?: string): Promise<boolean> {
         let frontendUserId:string = requestParams.frontendUserId
         let payloadId:string = requestParams.payloadId;
     
         if(frontendUserId && payloadId)
-            return this.validateFrontendIdToPayloadId(await this.db.getAppIdForOrigin(origin), frontendUserId, payloadId,payloadType, referer);
+            return this.validateFrontendIdToPayloadId(await this.db.getAppIdForOrigin(origin,request), frontendUserId, payloadId,payloadType, request, referer);
         else
             return false;
     }
     
     async getPayloadInfoForFrontendId(origin: string, requestParams:any, payloadType: string, request: any, referer?: string): Promise<XummTypes.XummGetPayloadResponse> {
-        if(await this.validFrontendUserIdToPayload(origin, requestParams,payloadType, referer)) {
+        if(await this.validFrontendUserIdToPayload(origin, requestParams,payloadType, request, referer)) {
             return this.xummBackend.getPayloadInfoByOrigin(origin, requestParams.payloadId, request)
         } else {
             return null;
@@ -86,7 +86,7 @@ export class Special {
                 if(payloadInfo && this.successfullSignInPayloadValidation(payloadInfo)) {
                     //console.log("sucessfully validated:" + JSON.stringify(payloadInfo));
                     //user signed in successfull -> check his latest payloads
-                    let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccountForApplicationAndReferer(referer, await this.db.getAppIdForOrigin(origin), payloadInfo.response.account, "payment");
+                    let payloadIds:string[] = await this.db.getPayloadIdsByXrplAccountForApplicationAndReferer(referer, await this.db.getAppIdForOrigin(origin,request), payloadInfo.response.account, "payment",request);
                     //console.log("payloadIds: " + JSON.stringify(payloadIds));
                     if(payloadIds && payloadIds.length > 0) {
                         //reverse order to get latest first
@@ -121,8 +121,8 @@ export class Special {
         let transactionDate:Date;
         if(this.successfullPaymentPayloadValidation(payloadInfo)) {
             transactionDate = new Date(payloadInfo.response.resolved_at)
-            let appId = await this.db.getAppIdForOrigin(origin);
-            let originProperties = await this.db.getOriginProperties(appId);
+            let appId = await this.db.getAppIdForOrigin(origin,request);
+            let originProperties = await this.db.getOriginProperties(appId,request);
 
             if(originProperties && originProperties.payloadValidationTimeframe && JSON.stringify(originProperties.payloadValidationTimeframe).trim().length > 0) {
                 //resolve validation time
@@ -147,24 +147,24 @@ export class Special {
         }
     }
 
-    async validateFrontendIdToPayloadId(applicationId: string, frontendUserId: string, payloadId: string, payloadType: string, referer?: string): Promise<boolean> {
+    async validateFrontendIdToPayloadId(applicationId: string, frontendUserId: string, payloadId: string, payloadType: string, request:any, referer?: string): Promise<boolean> {
         let payloadIdsForFrontendId:string[];
         if(referer)
-            payloadIdsForFrontendId = await this.db.getPayloadIdsByFrontendIdForApplicationAndReferer(referer, applicationId, frontendUserId, payloadType);
+            payloadIdsForFrontendId = await this.db.getPayloadIdsByFrontendIdForApplicationAndReferer(referer, applicationId, frontendUserId, payloadType,request);
         else
-            payloadIdsForFrontendId = await this.db.getPayloadIdsByFrontendIdForApplication(applicationId, frontendUserId, payloadType);
+            payloadIdsForFrontendId = await this.db.getPayloadIdsByFrontendIdForApplication(applicationId, frontendUserId, payloadType,request);
 
         //console.log("payloadIdsForFrontendId: " + JSON.stringify(payloadIdsForFrontendId));
         //console.log(payloadIdsForFrontendId.includes(payloadId));
         return payloadIdsForFrontendId.includes(payloadId);
     }
 
-    async validateXummIdToPayloadId(applicationId: string, xummUserId: string, payloadId: string, payloadType: string, referer?: string): Promise<boolean> {
+    async validateXummIdToPayloadId(applicationId: string, xummUserId: string, payloadId: string, payloadType: string, request:any, referer?: string): Promise<boolean> {
         let payloadIdsForXummUserId:string[]
         if(referer)
-            payloadIdsForXummUserId = await this.db.getPayloadIdsByXummIdForApplicationAndReferer(referer, applicationId, xummUserId, payloadType);
+            payloadIdsForXummUserId = await this.db.getPayloadIdsByXummIdForApplicationAndReferer(referer, applicationId, xummUserId, payloadType,request);
         else
-            payloadIdsForXummUserId = await this.db.getPayloadIdsByXummIdForApplication(applicationId, xummUserId, payloadType);
+            payloadIdsForXummUserId = await this.db.getPayloadIdsByXummIdForApplication(applicationId, xummUserId, payloadType, request);
 
         return payloadIdsForXummUserId.includes(payloadId);
     }
@@ -478,7 +478,7 @@ export class Special {
         try {
             let start = Date.now();
 
-            let result:any[] = await  this.db.getHottestToken(leastTime);
+            let result:any[] = await  this.db.getHottestToken(leastTime,request);
             
             if(request) {
                 let uuid:string = uuidv4();

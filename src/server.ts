@@ -56,7 +56,7 @@ const start = async () => {
       await mongo.ensureIndexes()
 
       console.log("adding cors");
-      allowedOrigins = await mongo.getAllowedOriginsAsArray();
+      allowedOrigins = await mongo.getAllowedOriginsAsArray(null);
 
       console.log("setting allowed origins: " + allowedOrigins);
       await fastify.register(require('fastify-cors'), {
@@ -156,7 +156,7 @@ const start = async () => {
             if(config.RESET_CACHE_TOKEN === request.params.token) {
                 mongo.resetCache();
                 xummBackend.resetDBCache();
-                allowedOrigins = await mongo.getAllowedOriginsAsArray();
+                allowedOrigins = await mongo.getAllowedOriginsAsArray(null);
 
                 return {success: true }
             } else
@@ -208,7 +208,7 @@ const start = async () => {
 async function cleanupTmpInfoTable() {
   //console.log("cleaning up cleanupTmpInfoTable")
   //get all temp info documents
-  let tmpInfoEntries:any[] = await mongo.getAllTempInfo();
+  let tmpInfoEntries:any[] = await mongo.getAllTempInfo(null);
   console.log("cleanup having entries: " + tmpInfoEntries.length);
   for(let i = 0; i < tmpInfoEntries.length; i++) {
     let expirationDate:Date = new Date(tmpInfoEntries[i].expires);
@@ -217,15 +217,15 @@ async function cleanupTmpInfoTable() {
     //payload is expired. Check if user has opened it
     if(Date.now() > expirationDate.getTime()) {
       //console.log("checking entry: " + JSON.stringify(tmpInfoEntries[i]));
-      await mongo.deleteTempInfo(tmpInfoEntries[i]);
+      await mongo.deleteTempInfo(tmpInfoEntries[i],null);
     }
   }
 }
 
 async function cleanupTrustlineTable() {
-  //console.log("cleaning up cleanupTmpInfoTable")
+  console.log("cleaning up cleanupTmpInfoTable")
   //get all temp info documents
-  await mongo.cleanupTrustlineCollection();
+  await mongo.cleanupTrustlineCollection(null);
 }
 
 console.log("running server");

@@ -1,5 +1,6 @@
 import { MongoClient, Collection } from 'mongodb';
 import { AllowedOrigins, ApplicationApiKeys, UserIdCollection, FrontendIdPayloadCollection, XummIdPayloadCollection, XrplAccountPayloadCollection, StatisticsCollection, TrustSetCollection } from './util/types';
+import { v4 as uuidv4 } from 'uuid';
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 });
@@ -36,13 +37,21 @@ export class DB {
         return Promise.resolve();
     }
 
-    async saveUser(origin:string, applicationId: string, userId:string, xummId: string): Promise<any> {
+    async saveUser(origin:string, applicationId: string, userId:string, xummId: string, request:any): Promise<any> {
         //console.log("[DB]: saveUser:" + " origin: " + origin + " userId: " + userId + " xummId: " + xummId);
         try {
+            let start = Date.now();
+            let result = null;
             if((await this.userIdCollection.find({origin: origin, applicationId: applicationId, frontendUserId: userId, xummUserId: xummId}).toArray()).length == 0) {
-                return this.userIdCollection.insertOne({origin: origin, applicationId: applicationId, frontendUserId: userId, xummUserId: xummId, created: new Date()});
+                result = await this.userIdCollection.insertOne({origin: origin, applicationId: applicationId, frontendUserId: userId, xummUserId: xummId, created: new Date()});
             } else {
-                return Promise.resolve();
+                result = Promise.resolve();
+            }
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_saveUser: " + (Date.now()-start) + " ms";
             }
         } catch(err) {
             console.log("[DB]: error saveUser");
@@ -50,10 +59,17 @@ export class DB {
         }
     }
 
-    async getXummId(applicationId:string, frontendUserId:string): Promise<string> {
+    async getXummId(applicationId:string, frontendUserId:string, request: any): Promise<string> {
         try {
             //console.log("[DB]: getXummId: applicationId: " + applicationId +" frontendUserId: " + frontendUserId);
+            let start = Date.now();
             let mongoResult:UserIdCollection[] = await this.userIdCollection.find({applicationId: applicationId, frontendUserId: frontendUserId}).sort({created: -1}).limit(1).toArray();
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getXummId: " + (Date.now()-start) + " ms";
+            }
 
             if(mongoResult && mongoResult[0])
                 return mongoResult[0].xummUserId;
@@ -65,15 +81,22 @@ export class DB {
         }
     }
 
-    async storePayloadForFrontendId(origin:string, referer:string, applicationId: string, frontendUserId:string, payloadId: string, payloadType: string): Promise<void> {
+    async storePayloadForFrontendId(origin:string, referer:string, applicationId: string, frontendUserId:string, payloadId: string, payloadType: string, request:any ): Promise<void> {
         //console.log("[DB]: storePayloadForFrontendId:" + " origin: " + origin + " referer: " + referer + " frontendUserId: " + frontendUserId + " payloadId: " + payloadId + " payloadType: " + payloadType);
         try {
+            let start = Date.now();
             await this.frontendIdPayloadCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, frontendUserId: frontendUserId}, {
                 $addToSet: this.getSetToUpdate(payloadType, payloadId),
                 $currentDate: {
                    "updated": { $type: "timestamp" }
                 }                
               }, {upsert: true});
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_storePayloadForFrontendId: " + (Date.now()-start) + " ms";
+            }
 
             return Promise.resolve();
         } catch(err) {
@@ -82,9 +105,10 @@ export class DB {
         }
     }
 
-    async getPayloadIdsByFrontendIdForApplication(applicationId: string, frontendUserId:string, payloadType: string): Promise<string[]> {
+    async getPayloadIdsByFrontendIdForApplication(applicationId: string, frontendUserId:string, payloadType: string, request:any): Promise<string[]> {
         //console.log("[DB]: getPayloadIdsByFrontendIdForApplication:" + " applicationId: " + applicationId + " frontendUserId: " + frontendUserId);
         try {
+            let start = Date.now();
             let findResult:FrontendIdPayloadCollection[] = await this.frontendIdPayloadCollection.find({applicationId: applicationId, frontendUserId: frontendUserId}).toArray();
 
             //console.log("findResult: " + JSON.stringify(findResult));
@@ -92,6 +116,12 @@ export class DB {
                 let payloadsForUserAndOrigin:string[] = [];
                 for(let i = 0; i < findResult.length; i++){
                     payloadsForUserAndOrigin = payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], payloadType));
+                }
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'DB_'+uuid;
+                    request[key] = "DB_getPayloadIdsByFrontendIdForApplication: " + (Date.now()-start) + " ms";
                 }
 
                 return payloadsForUserAndOrigin;
@@ -105,10 +135,17 @@ export class DB {
         }
     }
 
-    async getPayloadIdsByFrontendIdForApplicationAndReferer(referer: string, applicationId: string, frontendUserId:string, payloadType: string): Promise<string[]> {
+    async getPayloadIdsByFrontendIdForApplicationAndReferer(referer: string, applicationId: string, frontendUserId:string, payloadType: string, request:any): Promise<string[]> {
         //console.log("[DB]: getPayloadIdsByFrontendIdForApplicationAndReferer:" + " applicationId: " + applicationId + " referer: " + referer+ " frontendUserId: " + frontendUserId);
         try {
+            let start = Date.now();
             let findResult:FrontendIdPayloadCollection = await this.frontendIdPayloadCollection.findOne({referer: referer, applicationId: applicationId, frontendUserId: frontendUserId});
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getPayloadIdsByFrontendIdForApplicationAndReferer: " + (Date.now()-start) + " ms";
+            }
 
             if(findResult)
                 return this.getPayloadArrayForType(findResult, payloadType);
@@ -121,30 +158,47 @@ export class DB {
         }
     }
 
-    async storePayloadForXummId(origin:string, referer:string, applicationId: string, xummUserId:string, payloadId: string, payloadType: string): Promise<any> {
+    async storePayloadForXummId(origin:string, referer:string, applicationId: string, xummUserId:string, payloadId: string, payloadType: string, request: any): Promise<any> {
         //console.log("[DB]: storePayloadForXummId:" + " origin: " + origin + " referer: " + referer + " xummUserId: " + xummUserId + " payloadId: " + payloadId + " payloadType: " + payloadType);
         try {
-            return this.xummIdPayloadCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, xummUserId: xummUserId}, {
+            let start = Date.now();
+            let result = null;
+            result = await this.xummIdPayloadCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, xummUserId: xummUserId}, {
                 $addToSet: this.getSetToUpdate(payloadType, payloadId),
                 $currentDate: {
                    "updated": { $type: "timestamp" }
                 }   
             }, {upsert: true});
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_storePayloadForXummId: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
         } catch(err) {
             console.log("[DB]: error storePayloadForXummId");
             console.log(JSON.stringify(err));
         }
     }
 
-    async getPayloadIdsByXummIdForApplication(applicationId: string, xummUserId:string, payloadType: string): Promise<string[]> {
+    async getPayloadIdsByXummIdForApplication(applicationId: string, xummUserId:string, payloadType: string, request:any): Promise<string[]> {
         //console.log("[DB]: getPayloadIdsByXummIdForApplication: applicationId: " + applicationId +" xummUserId: " + xummUserId);
         try {
+            let start = Date.now()
             let findResult:XummIdPayloadCollection[] = await this.xummIdPayloadCollection.find({applicationId: applicationId, xummUserId: xummUserId}).toArray();
 
             if(findResult && findResult.length > 0) {
                 let payloadsForUserAndOrigin:string[] = [];
                 for(let i = 0; i < findResult.length; i++){
                     payloadsForUserAndOrigin = payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], payloadType));
+                }
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'DB_'+uuid;
+                    request[key] = "DB_getPayloadIdsByXummIdForApplication: " + (Date.now()-start) + " ms";
                 }
 
                 return payloadsForUserAndOrigin;
@@ -158,13 +212,22 @@ export class DB {
         }
     }
 
-    async getPayloadIdsByXummIdForApplicationAndReferer(referer: string, applicationId: string, xummUserId:string, payloadType: string): Promise<string[]> {
+    async getPayloadIdsByXummIdForApplicationAndReferer(referer: string, applicationId: string, xummUserId:string, payloadType: string, request: any): Promise<string[]> {
         //console.log("[DB]: getPayloadIdsByXummIdForApplicationAndReferer: referer: " + referer + " applicationId: " + applicationId + " xummUserId: " + xummUserId);
         try {
+            let start = Date.now();
             let findResult:XummIdPayloadCollection = await this.xummIdPayloadCollection.findOne({applicationId: applicationId, referer: referer, xummUserId: xummUserId})
-            if(findResult)
-                return this.getPayloadArrayForType(findResult, payloadType);
-            else
+            if(findResult) {
+                let result = await this.getPayloadArrayForType(findResult, payloadType);
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'DB_'+uuid;
+                    request[key] = "DB_getPayloadIdsByXummIdForApplicationAndReferer: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
+            } else
                 return [];
         } catch(err) {
             console.log("[DB]: error getPayloadIdsByXummIdForApplicationAndReferer");
@@ -173,13 +236,14 @@ export class DB {
         }
     }
 
-    async storePayloadForXRPLAccount(origin:string, referer:string, applicationId: string, xrplAccount:string, xummId:string, payloadId: string, payloadType: string): Promise<any> {
+    async storePayloadForXRPLAccount(origin:string, referer:string, applicationId: string, xrplAccount:string, xummId:string, payloadId: string, payloadType: string, request: any): Promise<any> {
         //console.log("[DB]: storePayloadForXRPLAccount:" + " origin: " + origin + " xrplAccount: " + xrplAccount + " xummId: " + xummId + " payloadId: " + payloadId + " payloadType: " + payloadType);
         try {
+            let start = Date.now();
             if(!xummId)
-                xummId = await this.getXummIdForXRPLAccount(applicationId, xrplAccount);
+                xummId = await this.getXummIdForXRPLAccount(applicationId, xrplAccount,request);
 
-            return this.xrplAccountPayloadCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, xrplAccount: xrplAccount}, {
+            let result = await this.xrplAccountPayloadCollection.updateOne({origin: origin, referer: referer, applicationId: applicationId, xrplAccount: xrplAccount}, {
                 $set: {
                     xummId: xummId
                 },
@@ -188,21 +252,40 @@ export class DB {
                    "updated": { $type: "timestamp" }
                 }                
               }, {upsert: true});
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_storePayloadForXRPLAccount: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
+            
         } catch(err) {
             console.log("[DB]: error storePayloadForXRPLAccount");
             console.log(JSON.stringify(err));
         }
     }
 
-    async getXummIdForXRPLAccount(applicationId: string, xrplAccount:string): Promise<string> {
+    async getXummIdForXRPLAccount(applicationId: string, xrplAccount:string, request: any): Promise<string> {
         //console.log("[DB]: getXummIdForXRPLAccount:" + " applicationId: " + applicationId + " xrplAccount: " + xrplAccount);
         try {
+            let start = Date.now();
             let findResult:XrplAccountPayloadCollection[] = await this.xrplAccountPayloadCollection.find({applicationId: applicationId, xrplAccount: xrplAccount, xummId: { $ne: null}}).sort({updated: -1}).limit(1).toArray();
 
+            let result = null;
             if(findResult && findResult[0] && findResult[0].xummId) {
-                return findResult[0].xummId;
+                result = findResult[0].xummId;
             } else
-                return "";
+                result = "";
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getXummIdForXRPLAccount: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
 
         } catch(err) {
             console.log("[DB]: error getXummIdForXRPLAccount");
@@ -211,15 +294,22 @@ export class DB {
         }
     }
 
-    async getPayloadIdsByXrplAccountForApplicationBySignin(applicationId: string, xrplAccount:string) {
+    async getPayloadIdsByXrplAccountForApplicationBySignin(applicationId: string, xrplAccount:string, request: any) {
         //console.log("[DB]: getPayloadIdsByXrplAccountForApplicationBySignin:" + " applicationId: " + applicationId + " xrplAccount: " + xrplAccount);
         try {
+            let start = Date.now();
             let findResult:XrplAccountPayloadCollection[] = await this.xrplAccountPayloadCollection.find({applicationId: applicationId, xrplAccount: xrplAccount, signin: {$ne: null}}).sort({updated: 1}).toArray();
 
             if(findResult && findResult.length > 0) {
                 let payloadsForUserAndOrigin:string[] = [];
                 for(let i = 0; i < findResult.length; i++){
                     payloadsForUserAndOrigin = payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], 'signin'));
+                }
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'DB_'+uuid;
+                    request[key] = "DB_getPayloadIdsByXrplAccountForApplicationBySignin: " + (Date.now()-start) + " ms";
                 }
 
                 return payloadsForUserAndOrigin;
@@ -233,15 +323,22 @@ export class DB {
         }
     }
 
-    async getPayloadIdsByXrplAccountForApplicationAndType(applicationId: string, xrplAccount:string, payloadType: string): Promise<string[]> {
+    async getPayloadIdsByXrplAccountForApplicationAndType(applicationId: string, xrplAccount:string, payloadType: string, request:any): Promise<string[]> {
         //console.log("[DB]: getPayloadIdsByXrplAccountForApplicationAndType:" + " applicationId: " + applicationId + " xrplAccount: " + xrplAccount + " payloadType: " + payloadType);
         try {
+            let start = Date.now();
             let findResult:XrplAccountPayloadCollection[] = await this.xrplAccountPayloadCollection.find({applicationId: applicationId, xrplAccount: xrplAccount}).sort({updated: 1}).toArray();
 
             if(findResult && findResult.length > 0) {
                 let payloadsForUserAndOrigin:string[] = [];
                 for(let i = 0; i < findResult.length; i++){
                     payloadsForUserAndOrigin = payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], payloadType));
+                }
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'DB_'+uuid;
+                    request[key] = "DB_getPayloadIdsByXrplAccountForApplicationAndType: " + (Date.now()-start) + " ms";
                 }
 
                 return payloadsForUserAndOrigin;
@@ -255,14 +352,23 @@ export class DB {
         }
     }
 
-    async getPayloadIdsByXrplAccountForApplicationAndReferer(referer:string, applicationId: string, xrplAccount:string, payloadType: string): Promise<string[]> {
+    async getPayloadIdsByXrplAccountForApplicationAndReferer(referer:string, applicationId: string, xrplAccount:string, payloadType: string, request: any): Promise<string[]> {
         //console.log("[DB]: getPayloadIdsByXrplAccountForApplicationAndReferer: referer: " + referer + " applicationId: " + applicationId +" xrplAccount: " + xrplAccount + " payloadType: " + payloadType);
         try {
+            let start = Date.now();
             let findResult:XrplAccountPayloadCollection = await this.xrplAccountPayloadCollection.findOne({referer:referer, applicationId: applicationId, xrplAccount: xrplAccount});
 
-            if(findResult)
-                return this.getPayloadArrayForType(findResult, payloadType);
-            else
+            if(findResult) {
+                let result = await this.getPayloadArrayForType(findResult, payloadType);
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'DB_'+uuid;
+                    request[key] = "DB_getPayloadIdsByXrplAccountForApplicationAndReferer: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
+            } else
                 return [];
         } catch(err) {
             console.log("[DB]: error getPayloadIdsByXrplAccountForApplicationAndReferer");
@@ -271,14 +377,22 @@ export class DB {
         }
     }
 
-    async getAllOrigins(): Promise<AllowedOrigins[]> {
+    async getAllOrigins(request: any): Promise<AllowedOrigins[]> {
         try {
+            let start = Date.now();
             if(!this.allowedOriginCache) {
                 //console.log("[DB]: getOrigins from DB");
                 this.allowedOriginCache = await this.allowedOriginsCollection.find({}).toArray();
             } else {
                 //console.log("[DB]: getOrigins from CACHE");
             }
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getAllOrigins: " + (Date.now()-start) + " ms";
+            }
+
             return this.allowedOriginCache;
         } catch(err) {
             console.log("[DB]: error getOrigins");
@@ -287,15 +401,24 @@ export class DB {
         }
     }
 
-    async getOriginProperties(applicationId: string): Promise<AllowedOrigins> {
+    async getOriginProperties(applicationId: string, request: any): Promise<AllowedOrigins> {
         try {
+            let start = Date.now();
             if(!this.allowedOriginCache) {
                 //console.log("[DB]: getOriginProperties from DB:" + " applicationId: " + applicationId);
                 this.allowedOriginCache = await this.allowedOriginsCollection.find().toArray();
             } else {
                 //console.log("[DB]: getOriginProperties from CACHE:" + " applicationId: " + applicationId);
             }
-            return this.allowedOriginCache.filter(originProperties => originProperties.applicationId === applicationId)[0];
+            let result = this.allowedOriginCache.filter(originProperties => originProperties.applicationId === applicationId)[0];
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getOriginProperties: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
         } catch(err) {
             console.log("[DB]: error getOriginProperties");
             console.log(JSON.stringify(err));
@@ -303,8 +426,9 @@ export class DB {
         }
     }
 
-    async getAppIdForOrigin(origin: string): Promise<string> {
+    async getAppIdForOrigin(origin: string, request: any): Promise<string> {
         try {
+            let start = Date.now();
             if(!this.allowedOriginCache) {
                 //console.log("[DB]: getAppIdForOrigin:" + " origin from DB: " + origin);
                 this.allowedOriginCache = await this.allowedOriginsCollection.find().toArray();
@@ -313,8 +437,16 @@ export class DB {
             }
 
             let searchResult:AllowedOrigins[] = this.allowedOriginCache.filter(originProperties => originProperties.origin.split(',').includes(origin));
-            if(searchResult)
+            if(searchResult) {
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'DB_'+uuid;
+                    request[key] = "DB_getAppIdForOrigin: " + (Date.now()-start) + " ms";
+                }
+
                 return searchResult[0].applicationId;
+            }
             return null;
 
         } catch(err) {
@@ -328,8 +460,9 @@ export class DB {
         }
     }
 
-    async getAllowedOriginsAsArray(): Promise<string[]> {
+    async getAllowedOriginsAsArray(request: any): Promise<string[]> {
         try {
+            let start = Date.now();
             if(!this.allowedOriginCache) {
                 //console.log("[DB]: getAllowedOriginsAsArray from DB");
                 this.allowedOriginCache = await this.allowedOriginsCollection.find().toArray();
@@ -343,6 +476,12 @@ export class DB {
                     allowedOrigins = allowedOrigins.concat(this.allowedOriginCache[i].origin.split(','));
             }
 
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getAllowedOriginsAsArray: " + (Date.now()-start) + " ms";
+            }
+
             return allowedOrigins;
 
         } catch(err) {
@@ -352,9 +491,10 @@ export class DB {
         }
     }
 
-    async getOriginReturnUrl(origin: string, applicationId: string, referer: string, isWeb: boolean): Promise<string> {
+    async getOriginReturnUrl(origin: string, applicationId: string, referer: string, isWeb: boolean, request: any): Promise<string> {
         
         try {
+            let start = Date.now();
             if(!this.allowedOriginCache) {
                 //console.log("[DB]: getOriginReturnUrl from DB:" + " origin: " + origin + " referer: " + referer + " isWeb: " + isWeb);
                 this.allowedOriginCache = await this.allowedOriginsCollection.find().toArray();
@@ -366,6 +506,13 @@ export class DB {
             if(searchResult && searchResult.return_urls) {
                 for(let i = 0; i < searchResult.return_urls.length; i++) {
                     if(searchResult.return_urls[i].from === referer) {
+
+                        if(request) {
+                            let uuid:string = uuidv4();
+                            let key:string = 'DB_'+uuid;
+                            request[key] = "DB_getOriginReturnUrl: " + (Date.now()-start) + " ms";
+                        }
+
                         if(isWeb)
                             return searchResult.return_urls[i].to_web;
                         else
@@ -384,9 +531,10 @@ export class DB {
         }
     }
 
-    async getApiSecretForAppId(appId: string): Promise<string> {
+    async getApiSecretForAppId(appId: string, request: any): Promise<string> {
         
         try {
+            let start = Date.now();
             if(!this.applicationApiKeysCache) {
                 //console.log("[DB]: getApiSecretForAppId from DB:" + " appId: " + appId);
                 this.applicationApiKeysCache = await this.applicationApiKeysCollection.find().toArray();
@@ -395,6 +543,12 @@ export class DB {
             }
 
             let searchResult:ApplicationApiKeys = this.applicationApiKeysCache.filter(element => element.xumm_app_id === appId)[0];
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getApiSecretForAppId: " + (Date.now()-start) + " ms";
+            }
 
             if(searchResult && searchResult.xumm_app_secret)
                 return searchResult.xumm_app_secret;
@@ -407,71 +561,126 @@ export class DB {
         }
     }
 
-    async saveTempInfo(anyInfo: any): Promise<any> {
+    async saveTempInfo(anyInfo: any, request: any): Promise<any> {
         //console.log("[DB]: saveTempInfo");
         try {
+            let start = Date.now();
             anyInfo.created = new Date().toUTCString();
-            return this.tmpInfoTable.insertOne(anyInfo);
+            let result = await this.tmpInfoTable.insertOne(anyInfo);
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_saveTempInfo: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
         } catch(err) {
             console.log("[DB]: error saveTempInfo");
             console.log(JSON.stringify(err));
         }
     }
 
-    async getTempInfo(anyFilter: any): Promise<any> {
+    async getTempInfo(anyFilter: any, request: any): Promise<any> {
         //console.log("[DB]: getTempInfo: " + JSON.stringify(anyFilter));
         try {
-            return this.tmpInfoTable.findOne(anyFilter);
+            let start = Date.now();
+            let result = await this.tmpInfoTable.findOne(anyFilter);
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getTempInfo: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
         } catch(err) {
             console.log("[DB]: error getTempInfo");
             console.log(JSON.stringify(err));
         }
     }
 
-    async getAllTempInfo(): Promise<any[]> {
+    async getAllTempInfo(request: any): Promise<any[]> {
         //console.log("[DB]: getAllTempInfo");
         try {
-            return this.tmpInfoTable.find({}).toArray();
+            let start = Date.now();
+
+            let result = await this.tmpInfoTable.find({}).toArray();
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getAllTempInfo: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
         } catch(err) {
             console.log("[DB]: error getAllTempInfo");
             console.log(JSON.stringify(err));
         }
     }
 
-    async deleteTempInfo(anyFilter: any): Promise<any> {
+    async deleteTempInfo(anyFilter: any, request: any): Promise<any> {
         //console.log("[DB]: deleteTempInfo: " + JSON.stringify(anyFilter));
         try {
-            return this.tmpInfoTable.deleteOne(anyFilter);
+            let start = Date.now();
+            let result = await this.tmpInfoTable.deleteOne(anyFilter);
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_deleteTempInfo: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
         } catch(err) {
             console.log("[DB]: error deleteTempInfo");
             console.log(JSON.stringify(err));
         }
     }
 
-    async saveTransactionInStatistic(origin:string, appId: string, transactionType: string) {
+    async saveTransactionInStatistic(origin:string, appId: string, transactionType: string, request: any) {
         //console.log("[DB]: saveTransactionInStatistic: [ " +origin + " , "+ appId + " , " + transactionType + " ]");
         try {
+            let start = Date.now();
+
             let key = "stats."+transactionType.toLowerCase();
             let toIncrement = {};
             toIncrement[key] = 1;
 
 
-            return this.statisticsCollection.updateOne({origin: origin, applicationId: appId, type: "transactions"}, {
+            let result = await this.statisticsCollection.updateOne({origin: origin, applicationId: appId, type: "transactions"}, {
                 $inc: toIncrement,
                 $currentDate: {
                    "updated": { $type: "timestamp" }
                 }                
               }, {upsert: true});
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_saveTransactionInStatistic: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
         } catch(err) {
             console.log("[DB]: error saveTransactionInStatistic");
             console.log(JSON.stringify(err));
         }
     }
 
-    async getTransactions(origin:string, appId: string): Promise<any> {
+    async getTransactions(origin:string, appId: string, request: any): Promise<any> {
         //console.log("[DB]: getTransactions: [ " + origin + " , "  + appId + " ]");
         try {
+            let start = Date.now();
             let transactions:any[] = await this.statisticsCollection.find({origin: origin, applicationId: appId, type: "transactions"}).toArray();
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getTransactions: " + (Date.now()-start) + " ms";
+            }
+
             if(transactions && transactions.length >= 1)
                 return transactions[0].stats
             else
@@ -500,23 +709,34 @@ export class DB {
             return [];
     }
 
-    async addTrustlineToDb(issuer:string, currency:string, sourceAccount: string) {
+    async addTrustlineToDb(issuer:string, currency:string, sourceAccount: string, request: any) {
         //console.log("[DB]: addTrustlineToDb: issuer: " + issuer + " currency: " + currency + " sourceAccount: " + sourceAccount);
         try {
-            return this.trustsetCollection.updateOne({issuer: issuer, currency: currency, sourceAccount: sourceAccount}, {
+            let start = Date.now();
+            let result = await  this.trustsetCollection.updateOne({issuer: issuer, currency: currency, sourceAccount: sourceAccount}, {
                 $set: {
                     updated: new Date()
                 }
             }, {upsert: true});
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_addTrustlineToDb: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
         } catch(err) {
             console.log("[DB]: error addTrustlineToDb");
             console.log(err);
         }
     }
 
-    async getHottestToken(leastTime: Date): Promise<any[]> {
+    async getHottestToken(leastTime: Date, request: any): Promise<any[]> {
         //console.log("[DB]: getHottestToken: " + JSON.stringify(leastTime));
         try {
+            let start = Date.now();
+
             let pipeline = [
                 { $match: { updated: { $gte: leastTime} } },
                 { $group: { _id: {issuer: "$issuer", currency: "$currency"}, count: { $sum: 1 } } }
@@ -524,6 +744,13 @@ export class DB {
 
             let tokens:any[] = await this.trustsetCollection.aggregate(pipeline).sort({count: -1}).limit(20).toArray();
             //console.log("found: " + JSON.stringify(tokens));
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getHottestToken: " + (Date.now()-start) + " ms";
+            }
+
             return tokens;
         } catch(err) {
             console.log("[DB]: error getHottestToken");
@@ -531,13 +758,22 @@ export class DB {
         }
     }
 
-    async cleanupTrustlineCollection(): Promise<void> {
+    async cleanupTrustlineCollection(request: any): Promise<void> {
         //console.log("[DB]: getTempInfo: " + JSON.stringify(anyFilter));
         try {
-            let aMonthAgo:Date = new Date();
-            aMonthAgo.setDate(aMonthAgo.getDate()-32);
+            let start = Date.now();
 
-            await this.trustsetCollection.deleteMany({updated: { $lt: aMonthAgo}});
+            let twoDaysAgo:Date = new Date();
+            twoDaysAgo.setDate(twoDaysAgo.getDate()-2);
+
+            await this.trustsetCollection.deleteMany({updated: { $lt: twoDaysAgo}});
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_cleanupTrustlineCollection: " + (Date.now()-start) + " ms";
+            }
+
         } catch(err) {
             console.log("[DB]: error cleanupTrustlineCollection");
             console.log(JSON.stringify(err));
@@ -624,6 +860,7 @@ export class DB {
             await this.xrplAccountPayloadCollection.createIndex({xrplAccount: -1, applicationId: -1, origin:-1, referer: -1}, {unique: true});
 
             await this.trustsetCollection.createIndex({issuer: 1, currency: 1,  sourceAccount: 1}, {unique: true});
+            await this.trustsetCollection.createIndex({issuer: 1, currency: 1});
             await this.trustsetCollection.createIndex({updated: 1});
 
 
