@@ -670,9 +670,8 @@ export class DB {
                 await this.trustsetCollection.createIndex({updated: 1});
 
             //tmpInfoTable
-            if(!(await this.tmpInfoTable.indexExists("applicationId_1_payloadId_1"))) {
+            if(!(await this.tmpInfoTable.indexExists("applicationId_1_payloadId_1")))
                 await this.tmpInfoTable.createIndex({applicationId: 1, payloadId: 1}, {unique: true});
-            }
 
 
         } catch(err) {
