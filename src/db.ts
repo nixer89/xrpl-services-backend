@@ -575,64 +575,63 @@ export class DB {
         try {
             console.log("ensureIndexes");
             //AllowedOrigins
-            if((await this.allowedOriginsCollection.indexes).length>0)
-                await this.allowedOriginsCollection.dropIndexes();
-
-            await this.allowedOriginsCollection.createIndex({origin: -1});
-            await this.allowedOriginsCollection.createIndex({applicationId: -1});
-            await this.allowedOriginsCollection.createIndex({origin:-1, applicationId: -1}, {unique: true});
-
+            if((await this.allowedOriginsCollection.indexes).length<=1) {
+                await this.allowedOriginsCollection.createIndex({origin: -1});
+                await this.allowedOriginsCollection.createIndex({applicationId: -1});
+                await this.allowedOriginsCollection.createIndex({origin:-1, applicationId: -1}, {unique: true});
+            }
             //ApplicationApiKeys
-            if((await this.applicationApiKeysCollection.indexes).length>0)
-                await this.applicationApiKeysCollection.dropIndexes();
-
-            await this.applicationApiKeysCollection.createIndex({xumm_app_id: -1}, {unique: true});
+            if(!(await this.applicationApiKeysCollection.indexExists("xumm_app_id_-1"))) {
+                await this.applicationApiKeysCollection.createIndex({xumm_app_id: -1}, {unique: true});
+            }
 
             //UserIdCollection
-            if((await this.userIdCollection.indexes).length>0)
-                await this.userIdCollection.dropIndexes();
-            
-            await this.userIdCollection.createIndex({origin: -1});
-            await this.userIdCollection.createIndex({applicationId: -1});
-            await this.userIdCollection.createIndex({frontendUserId: -1});
-            await this.userIdCollection.createIndex({xummUserId: -1});
-            await this.userIdCollection.createIndex({origin: -1, applicationId: -1, frontendUserId: -1 , xummUserId: -1}, {unique: true});
+            if((await this.userIdCollection.indexes).length<=1) {
+                await this.userIdCollection.createIndex({origin: -1});
+                await this.userIdCollection.createIndex({applicationId: -1});
+                await this.userIdCollection.createIndex({frontendUserId: -1});
+                await this.userIdCollection.createIndex({xummUserId: -1});
+                await this.userIdCollection.createIndex({origin: -1, applicationId: -1, frontendUserId: -1 , xummUserId: -1}, {unique: true});
+            }
 
             //FrontendIdPayloadCollection
-            if((await this.frontendIdPayloadCollection.indexes).length>0)
-                await this.frontendIdPayloadCollection.dropIndexes();
-
-            await this.frontendIdPayloadCollection.createIndex({frontendUserId: -1});
-            await this.frontendIdPayloadCollection.createIndex({origin: -1});
-            await this.frontendIdPayloadCollection.createIndex({referer: -1});
-            await this.frontendIdPayloadCollection.createIndex({applicationId: -1});
-            await this.frontendIdPayloadCollection.createIndex({frontendUserId: -1, applicationId: -1, origin:-1, referer: -1}, {unique: true});
+            if((await this.frontendIdPayloadCollection.indexes).length<=1) {
+                await this.frontendIdPayloadCollection.createIndex({frontendUserId: -1});
+                await this.frontendIdPayloadCollection.createIndex({origin: -1});
+                await this.frontendIdPayloadCollection.createIndex({referer: -1});
+                await this.frontendIdPayloadCollection.createIndex({applicationId: -1});
+                await this.frontendIdPayloadCollection.createIndex({frontendUserId: -1, applicationId: -1, origin:-1, referer: -1}, {unique: true});
+            }
 
             //XummIdPayloadCollection
-            if((await this.xummIdPayloadCollection.indexes).length>0)
-                await this.xummIdPayloadCollection.dropIndexes();
-                
-            await this.xummIdPayloadCollection.createIndex({xummUserId: -1});
-            await this.xummIdPayloadCollection.createIndex({origin: -1});
-            await this.xummIdPayloadCollection.createIndex({referer: -1});
-            await this.xummIdPayloadCollection.createIndex({applicationId: -1});
-            await this.xummIdPayloadCollection.createIndex({xummUserId: -1, applicationId: -1, origin:-1, referer: -1}, {unique: true});
+            if((await this.xummIdPayloadCollection.indexes).length<=1) {
+                await this.xummIdPayloadCollection.createIndex({xummUserId: -1});
+                await this.xummIdPayloadCollection.createIndex({origin: -1});
+                await this.xummIdPayloadCollection.createIndex({referer: -1});
+                await this.xummIdPayloadCollection.createIndex({applicationId: -1});
+                await this.xummIdPayloadCollection.createIndex({xummUserId: -1, applicationId: -1, origin:-1, referer: -1}, {unique: true});
+            }
 
             //XrplAccountPayloadCollection
-            if((await this.xrplAccountPayloadCollection.indexes).length>0)
-                await this.xrplAccountPayloadCollection.dropIndexes();
-                
-            await this.xrplAccountPayloadCollection.createIndex({xrplAccount: -1});
-            await this.xrplAccountPayloadCollection.createIndex({origin: -1});
-            await this.xrplAccountPayloadCollection.createIndex({referer: -1});
-            await this.xrplAccountPayloadCollection.createIndex({applicationId: -1});
-            await this.xrplAccountPayloadCollection.createIndex({xrplAccount: -1, applicationId: -1, origin:-1, referer: -1}, {unique: true});
+            if((await this.xrplAccountPayloadCollection.indexes).length<=1) {
+                await this.xrplAccountPayloadCollection.createIndex({xrplAccount: -1});
+                await this.xrplAccountPayloadCollection.createIndex({origin: -1});
+                await this.xrplAccountPayloadCollection.createIndex({referer: -1});
+                await this.xrplAccountPayloadCollection.createIndex({applicationId: -1});
+                await this.xrplAccountPayloadCollection.createIndex({xrplAccount: -1, applicationId: -1, origin:-1, referer: -1}, {unique: true});    
+            }
+            
+            //trustsetCollection
+            if((await this.trustsetCollection.indexes).length<=1) {
+                await this.trustsetCollection.createIndex({issuer: 1, currency: 1,  sourceAccount: 1}, {unique: true});
+                await this.trustsetCollection.createIndex({issuer: 1, currency: 1}, {unique: true});
+                await this.trustsetCollection.createIndex({updated: 1});
+            }
 
-            await this.trustsetCollection.createIndex({issuer: 1, currency: 1,  sourceAccount: 1}, {unique: true});
-            await this.trustsetCollection.createIndex({issuer: 1, currency: 1}, {unique: true});
-            await this.trustsetCollection.createIndex({updated: 1});
-
-            await this.tmpInfoTable.createIndex({applicationId: 1, payloadId: 1}, {unique: true});
+            //tmpInfoTable
+            if(!(await this.tmpInfoTable.indexExists("applicationId_1_payloadId_1"))) {
+                await this.tmpInfoTable.createIndex({applicationId: 1, payloadId: 1}, {unique: true});
+            }
 
 
         } catch(err) {
