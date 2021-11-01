@@ -200,17 +200,16 @@ const start = async () => {
 async function cleanupTmpInfoTable() {
   //console.log("cleaning up cleanupTmpInfoTable")
   //get all temp info documents
-  let tmpInfoEntries:any[] = await mongo.getAllTempInfo();
+  let tmpInfoEntries:any[] = await mongo.getAllTempInfoForCleanup();
   console.log("cleanup having entries: " + tmpInfoEntries.length);
   for(let i = 0; i < tmpInfoEntries.length; i++) {
-    let expirationDate:Date = new Date(tmpInfoEntries[i].expires);
-    //add 10 days to expiration date to make sure payload is not used anymore
-    expirationDate.setDate(expirationDate.getDate()+10);
-    //payload is expired. Check if user has opened it
-    if(Date.now() > expirationDate.getTime()) {
-      //console.log("checking entry: " + JSON.stringify(tmpInfoEntries[i]));
-      await mongo.deleteTempInfo(tmpInfoEntries[i]);
+  
+    let filter = {
+      applicationId: tmpInfoEntries[i].applicationId,
+      payloadId: tmpInfoEntries[i].payloadId,
     }
+    //console.log("checking entry: " + JSON.stringify(tmpInfoEntries[i]));
+    await mongo.deleteTempInfo(filter);
   }
 }
 

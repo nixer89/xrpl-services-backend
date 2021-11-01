@@ -428,10 +428,14 @@ export class DB {
         }
     }
 
-    async getAllTempInfo(): Promise<any[]> {
+    async getAllTempInfoForCleanup(): Promise<any[]> {
         //console.log("[DB]: getAllTempInfo");
         try {
-            return this.tmpInfoTable.find({}).toArray();
+            let expirationDate:Date = new Date();
+
+            expirationDate.setMinutes(expirationDate.getMinutes()-5);
+
+            return this.tmpInfoTable.find({expires: {lt: expirationDate}}).toArray();
         } catch(err) {
             console.log("[DB]: error getAllTempInfo");
             console.log(JSON.stringify(err));
@@ -534,10 +538,11 @@ export class DB {
     async cleanupTrustlineCollection(): Promise<void> {
         //console.log("[DB]: getTempInfo: " + JSON.stringify(anyFilter));
         try {
-            let aMonthAgo:Date = new Date();
-            aMonthAgo.setDate(aMonthAgo.getDate()-32);
+            let aDayAgo:Date = new Date();
+            aDayAgo.setDate(aDayAgo.getDate()-1);
+            aDayAgo.setHours(aDayAgo.getHours()-1);
 
-            await this.trustsetCollection.deleteMany({updated: { $lt: aMonthAgo}});
+            await this.trustsetCollection.deleteMany({updated: { $lt: aDayAgo}});
         } catch(err) {
             console.log("[DB]: error cleanupTrustlineCollection");
             console.log(JSON.stringify(err));
@@ -624,7 +629,10 @@ export class DB {
             await this.xrplAccountPayloadCollection.createIndex({xrplAccount: -1, applicationId: -1, origin:-1, referer: -1}, {unique: true});
 
             await this.trustsetCollection.createIndex({issuer: 1, currency: 1,  sourceAccount: 1}, {unique: true});
+            await this.trustsetCollection.createIndex({issuer: 1, currency: 1}, {unique: true});
             await this.trustsetCollection.createIndex({updated: 1});
+
+            await this.tmpInfoTable.createIndex({applicationId: 1, payloadId: 1}, {unique: true});
 
 
         } catch(err) {
