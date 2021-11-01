@@ -53,6 +53,8 @@ export class DB {
                 let key:string = 'DB_'+uuid;
                 request[key] = "DB_saveUser: " + (Date.now()-start) + " ms";
             }
+
+            return result;
         } catch(err) {
             console.log("[DB]: error saveUser");
             console.log(JSON.stringify(err));
@@ -65,16 +67,18 @@ export class DB {
             let start = Date.now();
             let mongoResult:UserIdCollection[] = await this.userIdCollection.find({applicationId: applicationId, frontendUserId: frontendUserId}).sort({created: -1}).limit(1).toArray();
 
+            let result:string = null;
+
+            if(mongoResult && mongoResult[0])
+                result = mongoResult[0].xummUserId;
+
             if(request) {
                 let uuid:string = uuidv4();
                 let key:string = 'DB_'+uuid;
                 request[key] = "DB_getXummId: " + (Date.now()-start) + " ms";
             }
 
-            if(mongoResult && mongoResult[0])
-                return mongoResult[0].xummUserId;
-            else
-                return null;
+            return result;
         } catch(err) {
             console.log("[DB]: error getXummId");
             console.log(JSON.stringify(err));
@@ -111,6 +115,7 @@ export class DB {
             let start = Date.now();
             let findResult:FrontendIdPayloadCollection[] = await this.frontendIdPayloadCollection.find({applicationId: applicationId, frontendUserId: frontendUserId}).toArray();
 
+            let result:string[] = [];
             //console.log("findResult: " + JSON.stringify(findResult));
             if(findResult && findResult.length > 0) {
                 let payloadsForUserAndOrigin:string[] = [];
@@ -118,15 +123,16 @@ export class DB {
                     payloadsForUserAndOrigin = payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], payloadType));
                 }
 
-                if(request) {
-                    let uuid:string = uuidv4();
-                    let key:string = 'DB_'+uuid;
-                    request[key] = "DB_getPayloadIdsByFrontendIdForApplication: " + (Date.now()-start) + " ms";
-                }
+                result = payloadsForUserAndOrigin;
+            }
 
-                return payloadsForUserAndOrigin;
-            } else
-                return [];
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getPayloadIdsByFrontendIdForApplication: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
 
         } catch(err) {
             console.log("[DB]: error getPayloadIdsByFrontendIdForApplication");
@@ -141,16 +147,18 @@ export class DB {
             let start = Date.now();
             let findResult:FrontendIdPayloadCollection = await this.frontendIdPayloadCollection.findOne({referer: referer, applicationId: applicationId, frontendUserId: frontendUserId});
 
+            let result:string[] = [];
+
+            if(findResult)
+                result =  this.getPayloadArrayForType(findResult, payloadType);
+            
             if(request) {
                 let uuid:string = uuidv4();
                 let key:string = 'DB_'+uuid;
                 request[key] = "DB_getPayloadIdsByFrontendIdForApplicationAndReferer: " + (Date.now()-start) + " ms";
             }
 
-            if(findResult)
-                return this.getPayloadArrayForType(findResult, payloadType);
-            else
-                return [];
+            return result;
         } catch(err) {
             console.log("[DB]: error getPayloadIdsByFrontendIdForApplicationAndReferer");
             console.log(JSON.stringify(err));
@@ -189,21 +197,22 @@ export class DB {
             let start = Date.now()
             let findResult:XummIdPayloadCollection[] = await this.xummIdPayloadCollection.find({applicationId: applicationId, xummUserId: xummUserId}).toArray();
 
+            let result:string[] = [];
             if(findResult && findResult.length > 0) {
                 let payloadsForUserAndOrigin:string[] = [];
                 for(let i = 0; i < findResult.length; i++){
                     payloadsForUserAndOrigin = payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], payloadType));
                 }
+                result = payloadsForUserAndOrigin;
+            }
 
-                if(request) {
-                    let uuid:string = uuidv4();
-                    let key:string = 'DB_'+uuid;
-                    request[key] = "DB_getPayloadIdsByXummIdForApplication: " + (Date.now()-start) + " ms";
-                }
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getPayloadIdsByXummIdForApplication: " + (Date.now()-start) + " ms";
+            }
 
-                return payloadsForUserAndOrigin;
-            } else
-                return [];
+            return result;
 
         } catch(err) {
             console.log("[DB]: error getPayloadIdsByXummIdForApplication");
@@ -217,18 +226,19 @@ export class DB {
         try {
             let start = Date.now();
             let findResult:XummIdPayloadCollection = await this.xummIdPayloadCollection.findOne({applicationId: applicationId, referer: referer, xummUserId: xummUserId})
+
+            let result:string[] = [];
             if(findResult) {
-                let result = await this.getPayloadArrayForType(findResult, payloadType);
+                result = await this.getPayloadArrayForType(findResult, payloadType);
+            }
 
-                if(request) {
-                    let uuid:string = uuidv4();
-                    let key:string = 'DB_'+uuid;
-                    request[key] = "DB_getPayloadIdsByXummIdForApplicationAndReferer: " + (Date.now()-start) + " ms";
-                }
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getPayloadIdsByXummIdForApplication: " + (Date.now()-start) + " ms";
+            }
 
-                return result;
-            } else
-                return [];
+            return result;
         } catch(err) {
             console.log("[DB]: error getPayloadIdsByXummIdForApplicationAndReferer");
             console.log(JSON.stringify(err));
@@ -294,27 +304,29 @@ export class DB {
         }
     }
 
-    async getPayloadIdsByXrplAccountForApplicationBySignin(applicationId: string, xrplAccount:string, request: any) {
+    async getPayloadIdsByXrplAccountForApplicationBySignin(applicationId: string, xrplAccount:string, request: any): Promise<string[]> {
         //console.log("[DB]: getPayloadIdsByXrplAccountForApplicationBySignin:" + " applicationId: " + applicationId + " xrplAccount: " + xrplAccount);
         try {
             let start = Date.now();
             let findResult:XrplAccountPayloadCollection[] = await this.xrplAccountPayloadCollection.find({applicationId: applicationId, xrplAccount: xrplAccount, signin: {$ne: null}}).sort({updated: 1}).toArray();
 
+            let result:string[] = [];
             if(findResult && findResult.length > 0) {
                 let payloadsForUserAndOrigin:string[] = [];
                 for(let i = 0; i < findResult.length; i++){
                     payloadsForUserAndOrigin = payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], 'signin'));
                 }
 
-                if(request) {
-                    let uuid:string = uuidv4();
-                    let key:string = 'DB_'+uuid;
-                    request[key] = "DB_getPayloadIdsByXrplAccountForApplicationBySignin: " + (Date.now()-start) + " ms";
-                }
+                result = payloadsForUserAndOrigin;
+            }
 
-                return payloadsForUserAndOrigin;
-            } else
-                return [];
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getPayloadIdsByXrplAccountForApplicationBySignin: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
 
         } catch(err) {
             console.log("[DB]: error getPayloadIdsByXrplAccountForApplicationBySignin");
@@ -329,21 +341,23 @@ export class DB {
             let start = Date.now();
             let findResult:XrplAccountPayloadCollection[] = await this.xrplAccountPayloadCollection.find({applicationId: applicationId, xrplAccount: xrplAccount}).sort({updated: 1}).toArray();
 
+            let result:string[] = [];
             if(findResult && findResult.length > 0) {
                 let payloadsForUserAndOrigin:string[] = [];
                 for(let i = 0; i < findResult.length; i++){
                     payloadsForUserAndOrigin = payloadsForUserAndOrigin.concat(this.getPayloadArrayForType(findResult[i], payloadType));
                 }
 
-                if(request) {
-                    let uuid:string = uuidv4();
-                    let key:string = 'DB_'+uuid;
-                    request[key] = "DB_getPayloadIdsByXrplAccountForApplicationAndType: " + (Date.now()-start) + " ms";
-                }
-
                 return payloadsForUserAndOrigin;
-            } else
-                return [];
+            }
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getPayloadIdsByXrplAccountForApplicationAndType: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
 
         } catch(err) {
             console.log("[DB]: error getPayloadIdsByXrplAccountForApplicationAndType");
@@ -358,18 +372,19 @@ export class DB {
             let start = Date.now();
             let findResult:XrplAccountPayloadCollection = await this.xrplAccountPayloadCollection.findOne({referer:referer, applicationId: applicationId, xrplAccount: xrplAccount});
 
+            let result:string[] = [];
+
             if(findResult) {
-                let result = await this.getPayloadArrayForType(findResult, payloadType);
+                result = await this.getPayloadArrayForType(findResult, payloadType);
+            }
 
-                if(request) {
-                    let uuid:string = uuidv4();
-                    let key:string = 'DB_'+uuid;
-                    request[key] = "DB_getPayloadIdsByXrplAccountForApplicationAndReferer: " + (Date.now()-start) + " ms";
-                }
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getPayloadIdsByXrplAccountForApplicationAndReferer: " + (Date.now()-start) + " ms";
+            }
 
-                return result;
-            } else
-                return [];
+            return result;
         } catch(err) {
             console.log("[DB]: error getPayloadIdsByXrplAccountForApplicationAndReferer");
             console.log(JSON.stringify(err));
@@ -436,18 +451,20 @@ export class DB {
                 //console.log("[DB]: getAppIdForOrigin:" + " origin from CACHE: " + origin);
             }
 
+            let result:string = null;
+
             let searchResult:AllowedOrigins[] = this.allowedOriginCache.filter(originProperties => originProperties.origin.split(',').includes(origin));
-            if(searchResult) {
-
-                if(request) {
-                    let uuid:string = uuidv4();
-                    let key:string = 'DB_'+uuid;
-                    request[key] = "DB_getAppIdForOrigin: " + (Date.now()-start) + " ms";
-                }
-
-                return searchResult[0].applicationId;
+            if(searchResult && searchResult[0] && searchResult[0].applicationId) {
+                result = searchResult[0].applicationId;
             }
-            return null;
+            
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getAppIdForOrigin: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
 
         } catch(err) {
             console.log("[DB]: error getAppIdForOrigin");
@@ -501,29 +518,28 @@ export class DB {
             } else {
                 //console.log("[DB]: getOriginReturnUrl from CACHE:" + " origin: " + origin + " referer: " + referer + " isWeb: " + isWeb);
             }
+
+            let result:string = null;
             
             let searchResult:AllowedOrigins = this.allowedOriginCache.filter(originProperties => originProperties.origin.split(',').includes(origin) && originProperties.applicationId === applicationId)[0];
             if(searchResult && searchResult.return_urls) {
                 for(let i = 0; i < searchResult.return_urls.length; i++) {
                     if(searchResult.return_urls[i].from === referer) {
-
-                        if(request) {
-                            let uuid:string = uuidv4();
-                            let key:string = 'DB_'+uuid;
-                            request[key] = "DB_getOriginReturnUrl: " + (Date.now()-start) + " ms";
-                        }
-
                         if(isWeb)
-                            return searchResult.return_urls[i].to_web;
+                            result = searchResult.return_urls[i].to_web;
                         else
-                            return searchResult.return_urls[i].to_app;
+                            result = searchResult.return_urls[i].to_app;
                     }
                 }
-
-                return null;
             }
-            else
-                return null;
+            
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'DB_'+uuid;
+                request[key] = "DB_getOriginReturnUrl: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
         } catch(err) {
             console.log("[DB]: error getOriginReturnUrl");
             console.log(JSON.stringify(err));
@@ -544,16 +560,18 @@ export class DB {
 
             let searchResult:ApplicationApiKeys = this.applicationApiKeysCache.filter(element => element.xumm_app_id === appId)[0];
 
+            let result:string = null;
+
+            if(searchResult && searchResult.xumm_app_secret)
+                result = searchResult.xumm_app_secret;
+
             if(request) {
                 let uuid:string = uuidv4();
                 let key:string = 'DB_'+uuid;
                 request[key] = "DB_getApiSecretForAppId: " + (Date.now()-start) + " ms";
             }
 
-            if(searchResult && searchResult.xumm_app_secret)
-                return searchResult.xumm_app_secret;
-            else
-                return null;
+            return result;
         } catch(err) {
             console.log("[DB]: error getApiSecretForAppId");
             console.log(JSON.stringify(err));
@@ -669,16 +687,18 @@ export class DB {
             let start = Date.now();
             let transactions:any[] = await this.statisticsCollection.find({origin: origin, applicationId: appId, type: "transactions"}).toArray();
 
+            let result:any = {};
+            
+            if(transactions && transactions.length >= 1)
+                result = transactions[0].stats
+
             if(request) {
                 let uuid:string = uuidv4();
                 let key:string = 'DB_'+uuid;
                 request[key] = "DB_getTransactions: " + (Date.now()-start) + " ms";
             }
 
-            if(transactions && transactions.length >= 1)
-                return transactions[0].stats
-            else
-                return {};
+            return result;
         } catch(err) {
             console.log("[DB]: error getTransactions");
             console.log(JSON.stringify(err));
@@ -877,11 +897,11 @@ export class DB {
                 await this.xrplAccountPayloadCollection.createIndex({xrplAccount: -1, applicationId: -1, origin:-1, referer: -1}, {unique: true});    
             
             //trustsetCollection
-            if(!(await this.trustsetCollection.indexExists("issuer_1_currency_1_sourceAccount_1")))
-                await this.trustsetCollection.createIndex({issuer: 1, currency: 1,  sourceAccount: 1}, {unique: true});
-
             if(!(await this.trustsetCollection.indexExists("issuer_1_currency_1")))
                 await this.trustsetCollection.createIndex({issuer: 1, currency: 1}, {unique: true});
+
+            if(!(await this.trustsetCollection.indexExists("issuer_1_currency_1_sourceAccount_1")))
+                await this.trustsetCollection.createIndex({issuer: 1, currency: 1,  sourceAccount: 1}, {unique: true});
 
             if(!(await this.trustsetCollection.indexExists("updated_1")))
                 await this.trustsetCollection.createIndex({updated: 1});

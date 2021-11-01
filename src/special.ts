@@ -460,17 +460,22 @@ export class Special {
         let start = Date.now();
         let escrowCountStats:fetch.Response = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/stats/currentCount");
 
+        let response:any = null;
+
+        if(escrowCountStats && escrowCountStats.ok) {
+            response = await  escrowCountStats.json();
+        } else {
+            throw "error calling getEscrowCurrentCount";
+        }
+
         if(request) {
             let uuid:string = uuidv4();
             let key:string = 'SPECIAL_ESCROW_COUNT'+uuid;
             request[key] = "ESCROW_COUNT: " + (Date.now()-start) + " ms";
         }
 
-        if(escrowCountStats && escrowCountStats.ok) {
-            return escrowCountStats.json();
-        } else {
-            throw "error calling getEscrowCurrentCount";
-        }
+        return response;
+
     }
 
     async getHottestTrustlines(leastTime: Date, request:any): Promise<any[]> {

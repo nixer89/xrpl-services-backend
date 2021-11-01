@@ -6,6 +6,7 @@ import { XummTypes } from 'xumm-sdk';
 import DeviceDetector = require("device-detector-js");
 import { AllowedOrigins, GenericBackendPostRequestOptions, TransactionValidation } from './util/types';
 import { XummGetPayloadResponse } from 'xumm-sdk/dist/src/types';
+import { v4 as uuidv4 } from 'uuid';
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 });
@@ -21,6 +22,7 @@ export async function registerRoutes(fastify, opts, next) {
     await special.init();
     
     fastify.post('/api/v1/platform/payload', async (request, reply) => {
+        let start = Date.now();
         //console.log("post payload headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
         if(!request.body.payload)
@@ -47,6 +49,12 @@ export async function registerRoutes(fastify, opts, next) {
 
                 let payloadResponse = await xummBackend.submitPayload(request.body.payload, request.headers.origin, refererURL, request.body.options);
                 
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/platform/payload: " + (Date.now()-start) + " ms";
+                }
+
                 return payloadResponse;
             } catch (err) {
                 console.log("ERROR '/api/v1/platform/payload': " + JSON.stringify(err));
@@ -60,12 +68,21 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/platform/payload/:id', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.id) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
-                return xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.id, request);
+                let result = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.id, request);
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/platform/payload/:id: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
             } catch(err) {
                 console.log("ERROR '/api/v1/platform/payload/:id': " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -74,12 +91,21 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/platform/payload/ci/:custom_identifier', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.custom_identifier) {
             reply.code(500).send('Please provide a custom_identifier. Calls without custom_identifier are not allowed');
         } else {
             try {
-                return xummBackend.getPayloadForCustomIdentifierByOrigin(request.headers.origin, request.params.custom_identifier, request);
+                let result = await xummBackend.getPayloadForCustomIdentifierByOrigin(request.headers.origin, request.params.custom_identifier, request);
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/platform/payload/ci/:custom_identifier: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
             } catch(err) {
                 console.log("ERROR '/api/v1/platform/payload/ci/:custom_identifier': " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -88,12 +114,21 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.delete('/api/v1/platform/payload/:id', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.id) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
-                return xummBackend.deletePayload(request.headers.origin, request.params.id, request);
+                let result = await xummBackend.deletePayload(request.headers.origin, request.params.id, request);
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/platform/payload/:id (DELETE): " + (Date.now()-start) + " ms";
+                }
+
+                return result;
             } catch(err) {
                 console.log("ERROR '/api/v1/platform/payload/:id': " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -102,12 +137,21 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/platform/xapp/ott/:token', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.token) {
             reply.code(500).send('Please provide a token. Calls without token are not allowed');
         } else {
             try {
-                return xummBackend.getxAppOTT(request.headers.origin, request.params.token, request);
+                let result = xummBackend.getxAppOTT(request.headers.origin, request.params.token, request);
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/platform/xapp/ott/:token: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
             } catch(err) {
                 console.log("ERROR '/api/v1/platform/xapp/ott/:token': " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -116,6 +160,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.post('/api/v1/platform/xapp/event', async (request, reply) => {
+        let start = Date.now();
         //console.log("post xApp event headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
         if(!request.body.user_token || !request.body.subtitle)
@@ -124,6 +169,13 @@ export async function registerRoutes(fastify, opts, next) {
             //try parsing the user agent when unknown to determine if web or app
             try {
                 let payloadResponse = await xummBackend.sendxAppEvent(request.headers.origin, request.body, request);
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/platform/xapp/event: " + (Date.now()-start) + " ms";
+                }
+
                 return payloadResponse;
             } catch (err) {
                 console.log("ERROR '/api/v1/platform/xapp/event': " + JSON.stringify(err));
@@ -133,6 +185,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.post('/api/v1/platform/xapp/push', async (request, reply) => {
+        let start = Date.now();
         //console.log("post xApp push headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
         if(!request.body.user_token || !request.body.subtitle)
@@ -141,6 +194,13 @@ export async function registerRoutes(fastify, opts, next) {
             //try parsing the user agent when unknown to determine if web or app
             try {
                 let payloadResponse = await xummBackend.sendxAppPush(request.headers.origin, request.body, request);
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/platform/xapp/push: " + (Date.now()-start) + " ms";
+                }
+
                 return payloadResponse;
             } catch (err) {
                 console.log("ERROR '/api/v1/platform/xapp/push': " + JSON.stringify(err));
@@ -150,6 +210,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/initiate/simplePayment', async (request, reply) => {
+        let start = Date.now();
         //console.log("simplePayment headers: " + JSON.stringify(request.headers));
         //console.log("simplePayment request.params: " + JSON.stringify(request.params));
         //console.log("body: " + JSON.stringify(request.body));
@@ -182,6 +243,13 @@ export async function registerRoutes(fastify, opts, next) {
             }
 
             let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, genericPayloadOptions);
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'API_'+uuid;
+                request[key] = "API_/api/v1/initiate/simplePayment: " + (Date.now()-start) + " ms";
+            }
+
             return payloadResponse;
         } catch(err) {
             console.log("ERROR '/api/v1/initiate/simplePayment': " + JSON.stringify(err));
@@ -194,6 +262,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/initiate/simplePayment/:deviceType', async (request, reply) => {
+        let start = Date.now();
         //console.log("simplePayment/ headers: " + JSON.stringify(request.headers));
         //console.log("simplePayment/ request.params: " + JSON.stringify(request.params));
         //console.log("body: " + JSON.stringify(request.body));
@@ -230,6 +299,13 @@ export async function registerRoutes(fastify, opts, next) {
             }
 
             let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, genericPayloadOptions);
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'API_'+uuid;
+                request[key] = "API_/api/v1/initiate/simplePayment/:deviceType: " + (Date.now()-start) + " ms";
+            }
+
             return payloadResponse;
         } catch(err) {
             console.log("ERROR '/api/v1/initiate/simplePayment/:deviceType': " + JSON.stringify(err));
@@ -241,6 +317,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/initiate/simplePaymentRedirect', async (request, reply) => {
+        let start = Date.now();
         //console.log("simplePayment headers: " + JSON.stringify(request.headers));
         //console.log("simplePayment request.params: " + JSON.stringify(request.params));
         //console.log("body: " + JSON.stringify(request.body));
@@ -274,6 +351,12 @@ export async function registerRoutes(fastify, opts, next) {
 
             let payload:XummTypes.XummPostPayloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, genericPayloadOptions);
 
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'API_'+uuid;
+                request[key] = "API_/api/v1/initiate/simplePaymentRedirect: " + (Date.now()-start) + " ms";
+            }
+
             if(payload && payload.next && payload.next.always) {
                 reply.redirect(307, payload.next.always);
             } else {
@@ -290,6 +373,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/check/signinToValidatePayment/:signinPayloadId', async (request, reply) => {
+        let start = Date.now();
         //console.log("headers: " + JSON.stringify(request.headers));
         //console.log("query: " + JSON.stringify(request.query));
         if(!request.params.signinPayloadId) {
@@ -302,7 +386,15 @@ export async function registerRoutes(fastify, opts, next) {
                     refererURL = refererURL.substring(0, refererURL.indexOf('?'));
                 }
                 
-                return special.checkSignInToValidatePayment(request.params.signinPayloadId, request.headers.origin, refererURL, request);
+                let result = await special.checkSignInToValidatePayment(request.params.signinPayloadId, request.headers.origin, refererURL, request);
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/check/signinToValidatePayment/:signinPayloadId: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
             } catch(err) {
                 console.log("ERROR '/api/v1/check/signinToValidatePayment/:signinPayloadId': " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -311,6 +403,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/check/payment/:payloadId', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.payloadId) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
@@ -318,14 +411,24 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, request);
 
+                let result = null;
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
                     let validation = await special.validateTransactionOnLedger(payloadInfo, request);
                     
-                    return validation;
+                    result = validation;
                 }
 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false}
+                if(result == null)
+                    result = {success : false}
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/check/payment/:payloadId: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
                 
             } catch(err) {
                 console.log("ERROR '/api/v1/check/payment/:payloadId': " + JSON.stringify(err));
@@ -335,6 +438,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/check/payment/:frontendUserId/:payloadId', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.frontendUserId)
             reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
@@ -344,14 +448,24 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', request);
 
+                let result = null;
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
                     let validation = await special.validateTransactionOnLedger(payloadInfo, request);
 
-                    return validation;
+                    result = validation;
                 }
 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false}
+                if(result == null)
+                    result = {success : false}
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/check/payment/:frontendUserId/:payloadId: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
                 
             } catch(err) {
                 console.log("ERROR '/api/v1/check/payment/:frontendUserId/:payloadId': " + JSON.stringify(err));
@@ -361,6 +475,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/check/payment/referer/:payloadId', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
@@ -368,14 +483,24 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, request);
 
+                let result = null;
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
                     let validation = await special.validateTransactionOnLedger(payloadInfo, request);
 
-                    return validation;
+                    result = validation;
                 }
 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false}
+                if(result == null)
+                    result = {success : false}
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/check/payment/referer/:payloadId: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
                 
             } catch(err) {
                 console.log("ERROR '/api/v1/check/payment/referer/:payloadId': " + JSON.stringify(err));
@@ -385,6 +510,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/check/payment/referer/:frontendUserId/:payloadId', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.frontendUserId)
             reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
@@ -400,14 +526,25 @@ export async function registerRoutes(fastify, opts, next) {
 
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', refererURL);
 
+                let result = null;
+
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
                     let validation = await special.validateTransactionOnLedger(payloadInfo, request);
 
-                    return validation;
+                    result = validation;
                 }
 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false}
+                if(result == null)
+                    result = {success : false}
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/check/payment/referer/:frontendUserId/:payloadId: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
                 
             } catch(err) {
                 console.log("ERROR '/api/v1/check/payment/referer/:frontendUserId/:payloadId': " + JSON.stringify(err));
@@ -417,6 +554,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/check/timed/payment/:payloadId', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
@@ -424,6 +562,7 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, request);
 
+                let result = null;
                 if(payloadInfo) {
                     let refererURL:string = request.headers.referer;
 
@@ -431,13 +570,20 @@ export async function registerRoutes(fastify, opts, next) {
                         refererURL = refererURL.substring(0, refererURL.indexOf('?'));
                     }
 
-                    let validation = await special.validateTimedPaymentPayload(request.headers.origin, refererURL, payloadInfo, request);
-
-                    return validation;
+                    result = await special.validateTimedPaymentPayload(request.headers.origin, refererURL, payloadInfo, request);                    
                 }
                 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false }
+                if(result == null)
+                    result = {success : false }
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/check/timed/payment/:payloadId: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
             } catch(err) {
                 console.log("ERROR '/api/v1/check/timed/payment/:payloadId': " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -446,6 +592,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/check/timed/payment/:frontendUserId/:payloadId', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.frontendUserId)
             reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
@@ -455,6 +602,7 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', request);
 
+                let result = null;
                 if(payloadInfo) {
                     let refererURL:string = request.headers.referer;
 
@@ -462,13 +610,20 @@ export async function registerRoutes(fastify, opts, next) {
                         refererURL = refererURL.substring(0, refererURL.indexOf('?'));
                     }
 
-                    let validation = await special.validateTimedPaymentPayload(request.headers.origin, refererURL, payloadInfo, request);
-
-                    return validation;
+                    result = await special.validateTimedPaymentPayload(request.headers.origin, refererURL, payloadInfo, request);
                 }
                 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false}
+                if(result == null)
+                    result = {success : false}
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/check/timed/payment/:frontendUserId/:payloadId: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
 
             } catch(err) {
                 console.log("ERROR '/api/v1/check/timed/payment/:frontendUserId/:payloadId': " + JSON.stringify(err));
@@ -478,6 +633,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/check/timed/payment/referer/:payloadId', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         //console.log("request query: " + JSON.stringify(request.query));
         if(!request.params.payloadId)
@@ -486,6 +642,8 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, request);
 
+                let result = null;
+
                 if(payloadInfo) {
                     let refererURL:string = request.query.referer ? request.query.referer : request.headers.referer;
 
@@ -493,13 +651,20 @@ export async function registerRoutes(fastify, opts, next) {
                         refererURL = refererURL.substring(0, refererURL.indexOf('?'));
                     }
 
-                    let validation = await special.validateTimedPaymentPayload(request.headers.origin, refererURL, payloadInfo, request);
-
-                    return validation;
+                    result = await special.validateTimedPaymentPayload(request.headers.origin, refererURL, payloadInfo, request);
                 }
 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false}
+                if(result == null)
+                    result = {success : false}
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/check/timed/payment/referer/:payloadId: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
 
             } catch(err) {
                 console.log("ERROR '/api/v1/check/timed/payment/referer/:payloadId': " + JSON.stringify(err));
@@ -509,6 +674,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/check/timed/payment/referer/:frontendUserId/:payloadId', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         //console.log("request query: " + JSON.stringify(request.query));
         if(!request.params.frontendUserId)
@@ -525,14 +691,23 @@ export async function registerRoutes(fastify, opts, next) {
 
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', refererURL);
 
-                if(payloadInfo) {
-                    let validation = await special.validateTimedPaymentPayload(request.headers.origin, refererURL, payloadInfo, request);
+                let result = null;
 
-                    return validation;
+                if(payloadInfo) {
+                    result = await special.validateTimedPaymentPayload(request.headers.origin, refererURL, payloadInfo, request);
                 }
 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false}
+                if(result == null)
+                    result = {success : false}
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/check/timed/payment/referer/:frontendUserId/:payloadId: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
 
             } catch(err) {
                 console.log("ERROR '/api/v1/check/timed/payment/referer/:frontendUserId/:payloadId': " + JSON.stringify(err));
@@ -542,6 +717,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/check/signin/:payloadId', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
@@ -549,12 +725,23 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId, request);
 
+                let result = null;
+
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
-                    return {success: true, account: payloadInfo.response.account}
+                    result = {success: true, account: payloadInfo.response.account}
                 }
                 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false, account: (payloadInfo ? payloadInfo.response.account : null) }
+                if(result == null)
+                    result = {success : false, account: (payloadInfo ? payloadInfo.response.account : null) }
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/check/signin/:payloadId: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
 
             } catch(err) {
                 console.log("ERROR '/api/v1/check/signin/:payloadId': " + JSON.stringify(err));
@@ -564,6 +751,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/check/signin/:frontendUserId/:payloadId', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.frontendUserId)
             reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
@@ -573,12 +761,22 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin', request);
 
+                let result = null;
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
-                    return {success: true, account: payloadInfo.response.account }
+                    result = {success: true, account: payloadInfo.response.account }
                 }
                 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false, account: (payloadInfo ? payloadInfo.response.account : null) }
+                if(result == null)
+                    result = {success : false, account: (payloadInfo ? payloadInfo.response.account : null) }
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/check/signin/:frontendUserId/:payloadId: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
 
             } catch(err) {
                 console.log("ERROR '/api/v1/check/signin/:frontendUserId/:payloadId': " + JSON.stringify(err));
@@ -588,6 +786,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/check/signin/referer/:frontendUserId/:payloadId', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.frontendUserId)
             reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
@@ -602,13 +801,23 @@ export async function registerRoutes(fastify, opts, next) {
 
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin', refererURL);
 
+                let result = null;
+
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
-                    return {success: true, account: payloadInfo.response.account }
+                    result = {success: true, account: payloadInfo.response.account }
                 }
                 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false, account: (payloadInfo ? payloadInfo.response.account : null) }
+                if(result == null)
+                    result = {success : false, account: (payloadInfo ? payloadInfo.response.account : null) }
 
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/check/signin/referer/:frontendUserId/:payloadId: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
             } catch(err) {
                 console.log("ERROR '/api/v1/check/signin/referer/:frontendUserId/:payloadId': " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -617,6 +826,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/payment/amounts', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
             reply.code(500).send('Please provide an origin. Calls without origin are not allowed');
@@ -625,9 +835,20 @@ export async function registerRoutes(fastify, opts, next) {
                 let appId:string = await db.getAppIdForOrigin(request.headers.origin, request);
                 let originProperties:AllowedOrigins = await db.getOriginProperties(appId, request)
                 
+                let result = null;
+
                 if(originProperties && originProperties.fixAmount)
-                    return originProperties.fixAmount;
-                else return { success : false, error: false};
+                    result = originProperties.fixAmount;
+                else 
+                    result = { success : false, error: false};
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/payment/amounts: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
             } catch(err) {
                 console.log("ERROR '/api/v1/payment/amounts': " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -636,6 +857,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/xrpl/validatetx/:payloadId', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.payloadId) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
@@ -643,17 +865,27 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, request)
 
+                let result = null;
                 //console.log(JSON.stringify(payloadInfo));
                 if(payloadInfo && payloadInfo.response && payloadInfo.response.txid) {
                     let txResult = await special.validateTransactionOnLedger(payloadInfo, request);
                     if(txResult)
                         txResult.account = payloadInfo.response.account;
 
-                    return txResult;
+                    result = txResult;
                 }
                 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false, testnet: false, account: (payloadInfo ? payloadInfo.response.account : null) }
+                if(result == null)
+                    result = {success : false, testnet: false, account: (payloadInfo ? payloadInfo.response.account : null) }
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/xrpl/validatetx/:payloadId: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
 
             } catch(err) {
                 console.log("ERROR '/api/v1/xrpl/validatetx/:payloadId': " + JSON.stringify(err));
@@ -663,6 +895,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/escrow/validatepayment/:payloadId', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.payloadId) {
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
@@ -671,6 +904,8 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, request)
 
                 //console.log("escrow/validatepayment PAYLOAD: " + JSON.stringify(payloadInfo));
+
+                let result = null;
 
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
                     let txResult:TransactionValidation = await special.validateTransactionOnLedger(payloadInfo, request);
@@ -691,7 +926,7 @@ export async function registerRoutes(fastify, opts, next) {
                                 //console.log("escrowsExists: " + JSON.stringify(escrowsExists));
 
                                 if(escrowsExists && escrowsExists.success)
-                                    return txResult;
+                                    result = txResult;
                                 else {
                                     //try to add again maybe?
                                     let addEscrow:any = await special.addEscrow(escrow, request);
@@ -699,23 +934,32 @@ export async function registerRoutes(fastify, opts, next) {
                                     //console.log("Add escrow: " + JSON.stringify(addEscrow));
 
                                     if(addEscrow && addEscrow.success)
-                                        return txResult;
+                                        result = txResult;
                                     else
-                                        return {success : false, testnet: txResult.testnet, account: payloadInfo.response.account, error: true, message: "Escrow could not be stored. Please contact the website owner!" }
+                                        result = {success : false, testnet: txResult.testnet, account: payloadInfo.response.account, error: true, message: "Escrow could not be stored. Please contact the website owner!" }
                                 }
                             } else {
-                                return {success : false, testnet: txResult.testnet, account: payloadInfo.response.account, error: true, message: "The escrow account does not equal the payment account or you submitted the transaction on a different network (Main/Test)." }
+                                result = {success : false, testnet: txResult.testnet, account: payloadInfo.response.account, error: true, message: "The escrow account does not equal the payment account or you submitted the transaction on a different network (Main/Test)." }
                             }
                         } else {
-                            return {success : false, testnet: txResult.testnet, account: payloadInfo.response.account, error: true, message: "The transaction could not be matched to an escrow. Please contact the website owner if you think that is wrong!" }
+                            result = {success : false, testnet: txResult.testnet, account: payloadInfo.response.account, error: true, message: "The transaction could not be matched to an escrow. Please contact the website owner if you think that is wrong!" }
                         }
                     } else {
-                        return {success : false, testnet: false, account: payloadInfo.response.account, error: true, message: "Your transaction could not be verified!" }
+                        result = {success : false, testnet: false, account: payloadInfo.response.account, error: true, message: "Your transaction could not be verified!" }
                     }
                 }
                 
                 //we didn't go into the success:true -> so return false :)
-                return {success : false, testnet: false, account: payloadInfo.response.account }
+                if(result == null)
+                    result = {success : false, testnet: false, account: payloadInfo.response.account }
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/escrow/validatepayment/:payloadId: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
 
             } catch(err) {
                 console.log("ERROR '/api/v1/escrow/validatepayment/:payloadId': " + JSON.stringify(err));
@@ -725,6 +969,7 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/escrow/signinToDeleteEscrow/:payloadId', async (request, reply) => {
+        let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.payloadId)
             reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
@@ -734,15 +979,24 @@ export async function registerRoutes(fastify, opts, next) {
 
                 //console.log("escrow/signinToDeleteEscrow PAYLOAD: " + JSON.stringify(payloadInfo));
 
+                let result = null;
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo) && payloadInfo.custom_meta && payloadInfo.custom_meta.blob && payloadInfo.response.account === payloadInfo.custom_meta.blob.account ) {
                     let deleteSuccess = await special.deleteEscrow(payloadInfo.custom_meta.blob, request);
                     //console.log("escrow/signinToDeleteEscrow deleteSuccess: " + JSON.stringify(deleteSuccess));
                     deleteSuccess.account = payloadInfo.response.account;
-                    return deleteSuccess;
+                    result = deleteSuccess;
                 } else {
                     //we didn't go into the success:true -> so return false :)
-                    return {success : false, account: (payloadInfo ? payloadInfo.response.account : null) }
+                    result = {success : false, account: (payloadInfo ? payloadInfo.response.account : null) }
                 }
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/escrow/signinToDeleteEscrow/:payloadId: " + (Date.now()-start) + " ms";
+                }
+
+                return result;
             } catch(err) {
                 console.log("ERROR '/api/v1/escrow/signinToDeleteEscrow/:payloadId': " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -751,12 +1005,20 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.post('/api/v1/escrows', async (request, reply) => {
+        let start = Date.now();
         //console.log("body params escrow: " + JSON.stringify(request.body));
         if(!request.body || !request.body.account) {
             reply.code(500).send('Please provide an XRPL account as body param. Calls without account are not allowed');
         } else {
             try {
                 let loadEscrowResponse:any = await special.loadEscrowsForAccount(request.body, request);
+
+                if(request) {
+                    let uuid:string = uuidv4();
+                    let key:string = 'API_'+uuid;
+                    request[key] = "API_/api/v1/escrows: " + (Date.now()-start) + " ms";
+                }
+
                 return loadEscrowResponse;                
             } catch(err) {
                 console.log("ERROR '/api/v1/escrows': " + JSON.stringify(err));
@@ -766,11 +1028,19 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/statistics/transactions', async (request, reply) => {
+        let start = Date.now();
         
         try {
             let origin = request && request.query && request.query.origin ? request.query.origin : request.headers.origin;
             let appId = await db.getAppIdForOrigin(origin, request);
             let transactionStats:any = await db.getTransactions(origin, appId, request);
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'API_'+uuid;
+                request[key] = "API_/api/v1/statistics/transactions: " + (Date.now()-start) + " ms";
+            }
+
             return transactionStats;                
         } catch(err) {
             console.log("ERROR '/api/v1/statistics/transactions': " + JSON.stringify(err));
@@ -779,9 +1049,18 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/statistics/escrows/nextRelease', async (request, reply) => {
+        let start = Date.now();
         
         try {
-            return special.getEscrowNextOrLastRelease(true, request);
+            let result = await special.getEscrowNextOrLastRelease(true, request);
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'API_'+uuid;
+                request[key] = "API_/api/v1/statistics/escrows/nextRelease: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
         } catch(err) {
             console.log("ERROR '/api/v1/statistics/escrows/nextRelease': " + JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -789,9 +1068,18 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/statistics/escrows/lastRelease', async (request, reply) => {
+        let start = Date.now();
         
         try {
-            return special.getEscrowNextOrLastRelease(false, request);
+            let result = await special.getEscrowNextOrLastRelease(false, request);
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'API_'+uuid;
+                request[key] = "API_/api/v1/statistics/escrows/lastRelease: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
         } catch(err) {
             console.log("ERROR '/api/v1/statistics/escrows/lastRelease': " + JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -799,9 +1087,18 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/statistics/escrows/currentCount', async (request, reply) => {
+        let start = Date.now();
         
         try {
-            return special.getEscrowCurrentCount(request);              
+            let result = await special.getEscrowCurrentCount(request);
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'API_'+uuid;
+                request[key] = "API_/api/v1/statistics/escrows/currentCount: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
         } catch(err) {
             console.log("ERROR '/api/v1/statistics/escrows/currentCount': " + JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -809,12 +1106,21 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/trustlines/hot/d', async (request, reply) => {
+        let start = Date.now();
         
         try {
             let yesterday:Date = new Date();
             yesterday.setDate(yesterday.getDate()-1);
             
-            return special.getHottestTrustlines(yesterday, request);              
+            let result = await special.getHottestTrustlines(yesterday, request);              
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'API_'+uuid;
+                request[key] = "API_/api/v1/trustlines/hot/d: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
         } catch(err) {
             console.log("ERROR '/api/v1/trustlines/hot/d': " + JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -822,12 +1128,21 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/trustlines/hot/w', async (request, reply) => {
+        let start = Date.now();
         
         try {
             let aWeekAgo:Date = new Date();
             aWeekAgo.setDate(aWeekAgo.getDate()-7);
             
-            return special.getHottestTrustlines(aWeekAgo, request);              
+            let result = await special.getHottestTrustlines(aWeekAgo, request);
+            
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'API_'+uuid;
+                request[key] = "API_/api/v1/trustlines/hot/w: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
         } catch(err) {
             console.log("ERROR '/api/v1/trustlines/hot/w': " + JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -835,19 +1150,28 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.get('/api/v1/trustlines/hot/m', async (request, reply) => {
+        let start = Date.now();
         
         try {
             let oneMonthAgo:Date = new Date();
             oneMonthAgo.setDate(oneMonthAgo.getDate()-30);
             
-            return special.getHottestTrustlines(oneMonthAgo, request);              
+            let result = await special.getHottestTrustlines(oneMonthAgo, request);              
+
+            if(request) {
+                let uuid:string = uuidv4();
+                let key:string = 'API_'+uuid;
+                request[key] = "API_/api/v1/trustlines/hot/m: " + (Date.now()-start) + " ms";
+            }
+
+            return result;
         } catch(err) {
             console.log("ERROR '/api/v1/trustlines/hot/m': " + JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
     });
 
-    fastify.get('/api/resetCache/:token', async (request, reply) => {
+    fastify.get('/api/resetCache/:token', async (request, reply) => {        
         //console.log("request params: " + JSON.stringify(request.params));
         try {
             if(config.RESET_CACHE_TOKEN === request.params.token) {
@@ -876,10 +1200,13 @@ export async function registerRoutes(fastify, opts, next) {
 }
 
 async function handleWebhookRequest(request:any): Promise<any> {
+    let start = Date.now();
     //console.log("webhook headers: " + JSON.stringify(request.headers));
     //console.log("webhook body: " + JSON.stringify(request.body));
     
     try {
+
+        let result = null;
         let webhookRequest:XummTypes.XummWebhookBody = request.body;
         let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByAppId(webhookRequest.meta.application_uuidv4, webhookRequest.meta.payload_uuidv4, request);
         
@@ -918,14 +1245,22 @@ async function handleWebhookRequest(request:any): Promise<any> {
 
                 await db.deleteTempInfo(tmpInfo, request);
 
-                return {success: true}
+                result = {success: true}
             } else {
-                return {success: false}
+                result = {success: false}
             }
         } catch(err) {
             console.log("ERROR '/api/v1/webhook': " + JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
+
+        if(request) {
+            let uuid:string = uuidv4();
+            let key:string = 'API_'+uuid;
+            request[key] = "API_handleWebhookRequest: " + (Date.now()-start) + " ms";
+        }
+
+        return result;
     } catch(err) {
         console.log("ERROR '/api/v1/webhook': " + JSON.stringify(err));
         return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -933,10 +1268,10 @@ async function handleWebhookRequest(request:any): Promise<any> {
 }
 
 async function handleEscrowPayment(payloadInfo: XummTypes.XummGetPayloadResponse, request: any, origin?: string) {
+    let start = Date.now();
     //console.log("escrow/validatepayment PAYLOAD: " + JSON.stringify(payloadInfo));
 
     try {
-
         if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
             let txResult:TransactionValidation = await special.validateTransactionOnLedger(payloadInfo, request);
 
@@ -972,9 +1307,16 @@ async function handleEscrowPayment(payloadInfo: XummTypes.XummGetPayloadResponse
     } catch(err) {
         console.log("ERROR handleEscrowPayment: " + JSON.stringify(err));
     }
+
+    if(request) {
+        let uuid:string = uuidv4();
+        let key:string = 'API_'+uuid;
+        request[key] = "API_handleEscrowPayment: " + (Date.now()-start) + " ms";
+    }
 }
 
 async function saveTrustlineInfo(payloadInfo: XummGetPayloadResponse, request) {
+    let start = Date.now();
     try {
         let issuer:string = payloadInfo.payload.request_json.LimitAmount['issuer'];
         let currency: string = payloadInfo.payload.request_json.LimitAmount['currency'];
@@ -982,6 +1324,12 @@ async function saveTrustlineInfo(payloadInfo: XummGetPayloadResponse, request) {
         await db.addTrustlineToDb(issuer, currency, payloadInfo.response.account, request);
     } catch(err) {
         console.log(JSON.stringify(err));
+    }
+
+    if(request) {
+        let uuid:string = uuidv4();
+        let key:string = 'API_'+uuid;
+        request[key] = "API_saveTrustlineInfo: " + (Date.now()-start) + " ms";
     }
 }
 
