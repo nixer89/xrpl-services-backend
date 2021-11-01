@@ -1,6 +1,6 @@
 {
   "name": "generic-xumm-backend",
-  "version": "3.1.52",
+  "version": "3.2.3",
   "description": "provides a generic backend, connected to xumm. Easy access of user tokens for push",
   "main": "src/server.ts",
   "scripts": {
@@ -35,7 +35,7 @@
     "fastify-swagger": "^4.12.6",
     "middie": "^5.3.0",
     "mongodb": "^3.7.3",
-    "node-fetch": "^2.6.5",
+    "node-fetch": "^2.6.6",
     "node-schedule": "^2.0.0",
     "ripple-lib": "^1.10.0",
     "uuid": "^8.3.2",
