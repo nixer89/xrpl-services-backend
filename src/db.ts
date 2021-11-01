@@ -618,6 +618,8 @@ export class DB {
                 await this.xrplAccountPayloadCollection.createIndex({origin: -1});
                 await this.xrplAccountPayloadCollection.createIndex({referer: -1});
                 await this.xrplAccountPayloadCollection.createIndex({applicationId: -1});
+                await this.xrplAccountPayloadCollection.createIndex({xummId: -1});
+                await this.xrplAccountPayloadCollection.createIndex({xummId: -1, xrplAccount: -1});
                 await this.xrplAccountPayloadCollection.createIndex({xrplAccount: -1, applicationId: -1, origin:-1, referer: -1}, {unique: true});    
             }
             
