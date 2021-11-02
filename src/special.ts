@@ -189,7 +189,8 @@ export class Special {
                     success: true,
                     testnet: isTestNet,
                     txid: trxHash,
-                    account: payloadInfo.response.account
+                    account: payloadInfo.response.account,
+                    originalPayload: payloadInfo
                 }
             } else {
                 //do on ledger verification for non trustset transactions!
@@ -204,14 +205,16 @@ export class Special {
                         success: true,
                         testnet: isTestNet,
                         txid: trxHash,
-                        account: payloadInfo.response.account
+                        account: payloadInfo.response.account,
+                        originalPayload: payloadInfo
                     }
                 } else {
 
                     return {
                         success: false,
                         testnet: isTestNet,
-                        account: payloadInfo.response.account
+                        account: payloadInfo.response.account,
+                        originalPayload: payloadInfo
                     }
                 }
             }
@@ -219,7 +222,8 @@ export class Special {
             return {
                 success: false,
                 testnet: isTestNet,
-                account: payloadInfo.response.account
+                account: payloadInfo.response.account,
+                originalPayload: payloadInfo
             };
         }
     }
