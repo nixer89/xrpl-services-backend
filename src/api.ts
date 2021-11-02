@@ -47,14 +47,7 @@ export async function registerRoutes(fastify, opts, next) {
                     refererURL = refererURL.substring(0, refererURL.indexOf('?'));
                 }
 
-                if(!request.body.options) {
-                    console.log("NO OPTIONS SET IN SUBMIT!");
-                    console.log("origin: " + request.headers.origin);
-                    console.log("referer: " + refererURL)
-                    console.log("payload: " + JSON.stringify(request.body.payload));
-                }
-
-                let payloadResponse = await xummBackend.submitPayload(request.body.payload, request.headers.origin, refererURL, request.body.options);
+                let payloadResponse = await xummBackend.submitPayload(request.body.payload, request.headers.origin, refererURL, request, request.body.options);
                 
                 if(request) {
                     let uuid:string = uuidv4();
@@ -249,14 +242,7 @@ export async function registerRoutes(fastify, opts, next) {
                 refererURL = refererURL.substring(0, refererURL.indexOf('?'));
             }
 
-            if(!request.body.options) {
-                console.log("NO OPTIONS SET IN SIMPLEPAYMENT!");
-                console.log("origin: " + request.headers.origin);
-                console.log("referer: " + refererURL)
-                console.log("payload: " + JSON.stringify(request.body.payload));
-            }
-
-            let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, genericPayloadOptions);
+            let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, request, genericPayloadOptions);
 
             if(request) {
                 let uuid:string = uuidv4();
@@ -312,14 +298,7 @@ export async function registerRoutes(fastify, opts, next) {
                 refererURL = refererURL.substring(0, refererURL.indexOf('?'));
             }
 
-            if(!request.body.options) {
-                console.log("NO OPTIONS SET IN SIMPLEPAYMENT_DEVICE!");
-                console.log("origin: " + request.headers.origin);
-                console.log("referer: " + refererURL)
-                console.log("payload: " + JSON.stringify(request.body.payload));
-            }
-
-            let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, genericPayloadOptions);
+            let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, request, genericPayloadOptions);
 
             if(request) {
                 let uuid:string = uuidv4();
@@ -370,14 +349,7 @@ export async function registerRoutes(fastify, opts, next) {
                 refererURL = refererURL.substring(0, refererURL.indexOf('?'));
             }
 
-            if(!request.body.options) {
-                console.log("NO OPTIONS SET IN SIMPLEPAYMENT_REDIRECT!");
-                console.log("origin: " + request.headers.origin);
-                console.log("referer: " + refererURL)
-                console.log("payload: " + JSON.stringify(request.body.payload));
-            }
-
-            let payload:XummTypes.XummPostPayloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, genericPayloadOptions);
+            let payload:XummTypes.XummPostPayloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, request, genericPayloadOptions);
 
             if(request) {
                 let uuid:string = uuidv4();
