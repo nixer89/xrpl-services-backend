@@ -26,7 +26,6 @@ export interface TransactionValidation {
     noValidationTimeFrame?: boolean,
     redirect?: boolean,
     account?: string,
-    payloadId?:string,
     originalPayload?: XummTypes.XummGetPayloadResponse
 }
 
