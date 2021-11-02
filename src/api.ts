@@ -47,6 +47,13 @@ export async function registerRoutes(fastify, opts, next) {
                     refererURL = refererURL.substring(0, refererURL.indexOf('?'));
                 }
 
+                if(!request.body.options) {
+                    console.log("NO OPTIONS SET!");
+                    console.log("origin: " + request.headers.origin);
+                    console.log("referer: " + refererURL)
+                    console.log("payload: " + JSON.stringify(request.body.payload));
+                }
+
                 let payloadResponse = await xummBackend.submitPayload(request.body.payload, request.headers.origin, refererURL, request.body.options);
                 
                 if(request) {
