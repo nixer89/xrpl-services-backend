@@ -277,6 +277,11 @@ export class Xumm {
         //for payments -> set destination account in backend
         if(payload.txjson && payload.txjson.TransactionType && payload.txjson.TransactionType.trim().toLowerCase() === 'payment' && (!options || (!options.issuing && !options.isRawTrx))) {
 
+            console.log("PAYMENT - REPLACING PROPERTIES")
+            console.log("OPTIONS: " + JSON.stringify(options));
+            console.log("PAYLOAD: " + JSON.stringify(payload));
+            console.log("ORIGIN: " + origin + " - APP_ID: " + appId);
+            
             if(originProperties.destinationAccount) {
                 if(originProperties.destinationAccount[referer]) {
                     payload.txjson.Destination = originProperties.destinationAccount[referer].account;
