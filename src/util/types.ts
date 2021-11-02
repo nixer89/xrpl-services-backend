@@ -26,6 +26,7 @@ export interface TransactionValidation {
     noValidationTimeFrame?: boolean,
     redirect?: boolean,
     account?: string
+    originalPayload?: XummTypes.XummGetPayloadResponse
 }
 
 export interface AllowedOrigins {
