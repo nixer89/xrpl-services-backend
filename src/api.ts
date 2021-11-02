@@ -48,7 +48,7 @@ export async function registerRoutes(fastify, opts, next) {
                 }
 
                 if(!request.body.options) {
-                    console.log("NO OPTIONS SET!");
+                    console.log("NO OPTIONS SET IN SUBMIT!");
                     console.log("origin: " + request.headers.origin);
                     console.log("referer: " + refererURL)
                     console.log("payload: " + JSON.stringify(request.body.payload));
@@ -249,6 +249,13 @@ export async function registerRoutes(fastify, opts, next) {
                 refererURL = refererURL.substring(0, refererURL.indexOf('?'));
             }
 
+            if(!request.body.options) {
+                console.log("NO OPTIONS SET IN SIMPLEPAYMENT!");
+                console.log("origin: " + request.headers.origin);
+                console.log("referer: " + refererURL)
+                console.log("payload: " + JSON.stringify(request.body.payload));
+            }
+
             let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, genericPayloadOptions);
 
             if(request) {
@@ -305,6 +312,13 @@ export async function registerRoutes(fastify, opts, next) {
                 refererURL = refererURL.substring(0, refererURL.indexOf('?'));
             }
 
+            if(!request.body.options) {
+                console.log("NO OPTIONS SET IN SIMPLEPAYMENT_DEVICE!");
+                console.log("origin: " + request.headers.origin);
+                console.log("referer: " + refererURL)
+                console.log("payload: " + JSON.stringify(request.body.payload));
+            }
+
             let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, genericPayloadOptions);
 
             if(request) {
@@ -354,6 +368,13 @@ export async function registerRoutes(fastify, opts, next) {
             let refererURL:string = request.headers.referer;
             if(refererURL && refererURL.includes('?')) {
                 refererURL = refererURL.substring(0, refererURL.indexOf('?'));
+            }
+
+            if(!request.body.options) {
+                console.log("NO OPTIONS SET IN SIMPLEPAYMENT_REDIRECT!");
+                console.log("origin: " + request.headers.origin);
+                console.log("referer: " + refererURL)
+                console.log("payload: " + JSON.stringify(request.body.payload));
             }
 
             let payload:XummTypes.XummPostPayloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, genericPayloadOptions);
