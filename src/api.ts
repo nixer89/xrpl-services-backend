@@ -26,7 +26,7 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("post payload headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
         if(!request.body.payload)
-            reply.code(500).send('Please provide a xumm payload. Calls without xumm payload are not allowed');
+            reply.code(400).send('Please provide a xumm payload. Calls without xumm payload are not allowed');
         else {
             //try parsing the user agent when unknown to determine if web or app
             try {
@@ -71,7 +71,7 @@ export async function registerRoutes(fastify, opts, next) {
         let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.id) {
-            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+            reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
                 let result = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.id, request);
@@ -94,7 +94,7 @@ export async function registerRoutes(fastify, opts, next) {
         let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.custom_identifier) {
-            reply.code(500).send('Please provide a custom_identifier. Calls without custom_identifier are not allowed');
+            reply.code(400).send('Please provide a custom_identifier. Calls without custom_identifier are not allowed');
         } else {
             try {
                 let result = await xummBackend.getPayloadForCustomIdentifierByOrigin(request.headers.origin, request.params.custom_identifier, request);
@@ -117,7 +117,7 @@ export async function registerRoutes(fastify, opts, next) {
         let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.id) {
-            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+            reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
                 let result = await xummBackend.deletePayload(request.headers.origin, request.params.id, request);
@@ -140,7 +140,7 @@ export async function registerRoutes(fastify, opts, next) {
         let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.token) {
-            reply.code(500).send('Please provide a token. Calls without token are not allowed');
+            reply.code(400).send('Please provide a token. Calls without token are not allowed');
         } else {
             try {
                 let result = xummBackend.getxAppOTT(request.headers.origin, request.params.token, request);
@@ -164,7 +164,7 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("post xApp event headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
         if(!request.body.user_token || !request.body.subtitle)
-            reply.code(500).send('Please provide a xumm user_token and subtitle. Calls without xumm user_token and subtitle are not allowed');
+            reply.code(400).send('Please provide a xumm user_token and subtitle. Calls without xumm user_token and subtitle are not allowed');
         else {
             //try parsing the user agent when unknown to determine if web or app
             try {
@@ -189,7 +189,7 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("post xApp push headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
         if(!request.body.user_token || !request.body.subtitle)
-            reply.code(500).send('Please provide a xumm user_token and subtitle. Calls without xumm user_token and subtitle are not allowed');
+            reply.code(400).send('Please provide a xumm user_token and subtitle. Calls without xumm user_token and subtitle are not allowed');
         else {
             //try parsing the user agent when unknown to determine if web or app
             try {
@@ -377,7 +377,7 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("headers: " + JSON.stringify(request.headers));
         //console.log("query: " + JSON.stringify(request.query));
         if(!request.params.signinPayloadId) {
-            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+            reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
                 let refererURL:string = request.query.referer ? request.query.referer : request.headers.referer;
@@ -406,7 +406,7 @@ export async function registerRoutes(fastify, opts, next) {
         let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.payloadId) {
-            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+            reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, request);
@@ -441,9 +441,9 @@ export async function registerRoutes(fastify, opts, next) {
         let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.frontendUserId)
-            reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
+            reply.code(400).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
         else if(!request.params.payloadId)
-            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+            reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', request);
@@ -478,7 +478,7 @@ export async function registerRoutes(fastify, opts, next) {
         let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.payloadId)
-            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+            reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, request);
@@ -513,9 +513,9 @@ export async function registerRoutes(fastify, opts, next) {
         let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.frontendUserId)
-            reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
+            reply.code(400).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
         else if(!request.params.payloadId)
-            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+            reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
                 let refererURL:string = request.query.referer ? request.query.referer : request.headers.referer;
@@ -557,7 +557,7 @@ export async function registerRoutes(fastify, opts, next) {
         let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.payloadId)
-            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+            reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, request);
@@ -595,9 +595,9 @@ export async function registerRoutes(fastify, opts, next) {
         let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.frontendUserId)
-            reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
+            reply.code(400).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
         else if(!request.params.payloadId)
-            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+            reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'payment', request);
@@ -637,7 +637,7 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         //console.log("request query: " + JSON.stringify(request.query));
         if(!request.params.payloadId)
-            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+            reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, request);
@@ -678,9 +678,9 @@ export async function registerRoutes(fastify, opts, next) {
         //console.log("request params: " + JSON.stringify(request.params));
         //console.log("request query: " + JSON.stringify(request.query));
         if(!request.params.frontendUserId)
-            reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
+            reply.code(400).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
         else if(!request.params.payloadId)
-            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+            reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
                 let refererURL:string = request.query.referer ? request.query.referer : request.headers.referer;
@@ -720,7 +720,7 @@ export async function registerRoutes(fastify, opts, next) {
         let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.payloadId)
-            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+            reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId, request);
@@ -754,9 +754,9 @@ export async function registerRoutes(fastify, opts, next) {
         let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.frontendUserId)
-            reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
+            reply.code(400).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
         else if(!request.params.payloadId)
-            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+            reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin', request);
@@ -789,9 +789,9 @@ export async function registerRoutes(fastify, opts, next) {
         let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.frontendUserId)
-            reply.code(500).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
+            reply.code(400).send('Please provide a frontendUserId. Calls without frontendUserId are not allowed');
         else if(!request.params.payloadId)
-            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+            reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
                 let refererURL:string = request.query.referer ? request.query.referer : request.headers.referer;
@@ -829,7 +829,7 @@ export async function registerRoutes(fastify, opts, next) {
         let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.headers.origin)
-            reply.code(500).send('Please provide an origin. Calls without origin are not allowed');
+            reply.code(400).send('Please provide an origin. Calls without origin are not allowed');
         else {
             try {
                 let appId:string = await db.getAppIdForOrigin(request.headers.origin, request);
@@ -860,7 +860,7 @@ export async function registerRoutes(fastify, opts, next) {
         let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.payloadId) {
-            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+            reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, request)
@@ -898,7 +898,7 @@ export async function registerRoutes(fastify, opts, next) {
         let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.payloadId) {
-            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+            reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, request)
@@ -972,7 +972,7 @@ export async function registerRoutes(fastify, opts, next) {
         let start = Date.now();
         //console.log("request params: " + JSON.stringify(request.params));
         if(!request.params.payloadId)
-            reply.code(500).send('Please provide a payload id. Calls without payload id are not allowed');
+            reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId, request);
@@ -1008,7 +1008,7 @@ export async function registerRoutes(fastify, opts, next) {
         let start = Date.now();
         //console.log("body params escrow: " + JSON.stringify(request.body));
         if(!request.body || !request.body.account) {
-            reply.code(500).send('Please provide an XRPL account as body param. Calls without account are not allowed');
+            reply.code(400).send('Please provide an XRPL account as body param. Calls without account are not allowed');
         } else {
             try {
                 let loadEscrowResponse:any = await special.loadEscrowsForAccount(request.body, request);

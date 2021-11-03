@@ -17,7 +17,6 @@ let allowedOrigins:string[];
 const start = async () => {
 
     const fastify = require('fastify')({
-      trustProxy: config.USE_PROXY,
       logger: {
         level: 'warn',
         //level: 'info',
@@ -33,6 +32,18 @@ const start = async () => {
     
     console.log("adding some security headers");
     await fastify.register(require('fastify-helmet'));
+
+    await fastify.register(require('fastify-rate-limit'), {
+      max: 100,
+      timeWindow: '1 minute'
+    });
+
+    await fastify.setErrorHandler(function (error, request, reply) {
+      if (reply.statusCode === 429) {
+        error.message = 'You hit the rate limit! Please try again later!'
+      }
+      reply.send(error)
+    });
     
     await fastify.register(require('fastify-swagger'), {
       mode: 'static',
@@ -104,7 +115,7 @@ const start = async () => {
             !(request.raw.url === '/api/v1/webhook'))
         {
           if(!request.headers.origin)
-            reply.code(500).send('Please provide an origin header. Calls without origin are not allowed');
+            reply.code(400).send('Please provide an origin header. Calls without origin are not allowed');
           else
             done()
         } else {
