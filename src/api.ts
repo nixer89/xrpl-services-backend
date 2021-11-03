@@ -1265,7 +1265,7 @@ async function handleWebhookRequest(request:any): Promise<any> {
 
             //check escrow payment
             if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == 'payment' && payloadInfo.custom_meta && payloadInfo.custom_meta.blob) {
-                handleEscrowPayment(payloadInfo,origin);
+                handleEscrowPayment(payloadInfo,request,origin);
             }
 
             //check trustline
