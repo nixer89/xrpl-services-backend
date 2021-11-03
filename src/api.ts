@@ -20,7 +20,14 @@ export async function registerRoutes(fastify, opts, next) {
     await db.initDb("api");
     await special.init();
     
-    fastify.post('/api/v1/platform/payload', async (request, reply) => {
+    fastify.post('/api/v1/platform/payload', {
+        config: {
+          rateLimit: {
+            max: 10,
+            timeWindow: '1 minute'
+          }
+        }
+      }, async (request, reply) => {
         //console.log("post payload headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
         if(!request.body.payload)
@@ -115,7 +122,14 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
-    fastify.post('/api/v1/platform/xapp/event', async (request, reply) => {
+    fastify.post('/api/v1/platform/xapp/event', {
+        config: {
+          rateLimit: {
+            max: 10,
+            timeWindow: '1 minute'
+          }
+        }
+      }, async (request, reply) => {
         //console.log("post xApp event headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
         if(!request.body.user_token || !request.body.subtitle)
@@ -132,7 +146,14 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
-    fastify.post('/api/v1/platform/xapp/push', async (request, reply) => {
+    fastify.post('/api/v1/platform/xapp/push',  {
+        config: {
+          rateLimit: {
+            max: 10,
+            timeWindow: '1 minute'
+          }
+        }
+      }, async (request, reply) => {
         //console.log("post xApp push headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
         if(!request.body.user_token || !request.body.subtitle)
@@ -149,7 +170,14 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
-    fastify.get('/api/v1/initiate/simplePayment', async (request, reply) => {
+    fastify.get('/api/v1/initiate/simplePayment', {
+        config: {
+          rateLimit: {
+            max: 10,
+            timeWindow: '1 minute'
+          }
+        }
+      }, async (request, reply) => {
         //console.log("simplePayment headers: " + JSON.stringify(request.headers));
         //console.log("simplePayment request.params: " + JSON.stringify(request.params));
         //console.log("body: " + JSON.stringify(request.body));
@@ -193,7 +221,14 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
-    fastify.get('/api/v1/initiate/simplePayment/:deviceType', async (request, reply) => {
+    fastify.get('/api/v1/initiate/simplePayment/:deviceType', {
+        config: {
+          rateLimit: {
+            max: 10,
+            timeWindow: '1 minute'
+          }
+        }
+      }, async (request, reply) => {
         //console.log("simplePayment/ headers: " + JSON.stringify(request.headers));
         //console.log("simplePayment/ request.params: " + JSON.stringify(request.params));
         //console.log("body: " + JSON.stringify(request.body));
@@ -240,7 +275,14 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
-    fastify.get('/api/v1/initiate/simplePaymentRedirect', async (request, reply) => {
+    fastify.get('/api/v1/initiate/simplePaymentRedirect', {
+        config: {
+          rateLimit: {
+            max: 10,
+            timeWindow: '1 minute'
+          }
+        }
+      }, async (request, reply) => {
         //console.log("simplePayment headers: " + JSON.stringify(request.headers));
         //console.log("simplePayment request.params: " + JSON.stringify(request.params));
         //console.log("body: " + JSON.stringify(request.body));
