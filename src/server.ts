@@ -35,6 +35,14 @@ const start = async () => {
 
     await fastify.register(require('fastify-rate-limit'), {
       global: false,
+      cache: 50000,
+      skipOnError: true,
+      keyGenerator: function(req) {
+        return req.headers['x-real-ip'] // nginx
+        || req.headers['x-client-ip'] // apache
+        || req.headers['x-forwarded-for'] // use this only if you trust the header
+        || req.ip // fallback to default
+      }
     });
 
     await fastify.setErrorHandler(function (error, request, reply) {
