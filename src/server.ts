@@ -45,9 +45,16 @@ const start = async () => {
       }
     });
 
-    await fastify.setErrorHandler(function (error, request, reply) {
+    await fastify.setErrorHandler(function (error, req, reply) {
       if (reply.statusCode === 429) {
-        console.log("RATE LIMIT HIT")
+
+        let ip = req.headers['x-real-ip'] // nginx
+              || req.headers['x-client-ip'] // apache
+              || req.headers['x-forwarded-for'] // use this only if you trust the header
+              || req.ip // fallback to default
+
+        console.log("RATE LIMIT HIT BY: " + ip);
+        
         error.message = 'You are generating too many transactions in a short period of time. Please calm down and try again later :-)'
       }
       reply.send(error)
