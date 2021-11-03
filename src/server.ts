@@ -34,13 +34,13 @@ const start = async () => {
     await fastify.register(require('fastify-helmet'));
 
     await fastify.register(require('fastify-rate-limit'), {
-      max: 100,
-      timeWindow: '1 minute'
+      global: false,
     });
 
     await fastify.setErrorHandler(function (error, request, reply) {
       if (reply.statusCode === 429) {
-        error.message = 'You hit the rate limit! Please try again later!'
+        console.log("RATE LIMIT HIT")
+        error.message = 'You are generating too many transactions in a short period of time. Please calm down and try again later :-)'
       }
       reply.send(error)
     });
