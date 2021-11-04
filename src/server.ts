@@ -9,6 +9,15 @@ require('console-stamp')(console, {
   format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 });
 
+const Redis = require('ioredis')
+const redis = new Redis({
+  connectionName: 'xumm-backend',
+  host: process.env.DB_IP || '127.0.0.1',
+  port: 6379,
+  connectTimeout: 500,
+  maxRetriesPerRequest: 1
+})
+
 let mongo = new DB.DB();
 let xummBackend:Xumm.Xumm = new Xumm.Xumm();
 let allowedOrigins:string[];
@@ -35,7 +44,7 @@ const start = async () => {
 
     await fastify.register(require('fastify-rate-limit'), {
       global: false,
-      cache: 50000,
+      redis: redis,
       skipOnError: true,
       keyGenerator: function(req) {
         return req.headers['x-real-ip'] // nginx
@@ -142,7 +151,7 @@ const start = async () => {
         // Some code
         if(request['start']) {
           let responseTime = Date.now() - request['start'];
-          if(responseTime > 1500) {
+          if(responseTime > 2000) {
             console.log("response time: " + responseTime + ' ms.')
             fs.appendFileSync('./longRunners.txt', JSON.stringify({
               time: responseTime, 

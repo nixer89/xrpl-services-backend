@@ -850,7 +850,14 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
-    fastify.get('/api/v1/trustlines/hot/d', async (request, reply) => {
+    fastify.get('/api/v1/trustlines/hot/d', {
+        config: {
+          rateLimit: {
+            max: 5,
+            timeWindow: '1 minute'
+          }
+        }
+      }, async (request, reply) => {
         
         try {
             let yesterday:Date = new Date();
@@ -863,7 +870,14 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
-    fastify.get('/api/v1/trustlines/hot/w', async (request, reply) => {
+    fastify.get('/api/v1/trustlines/hot/w', {
+        config: {
+          rateLimit: {
+            max: 5,
+            timeWindow: '1 minute'
+          }
+        }
+      }, async (request, reply) => {
         
         try {
             let aWeekAgo:Date = new Date();
@@ -876,7 +890,14 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
-    fastify.get('/api/v1/trustlines/hot/m', async (request, reply) => {
+    fastify.get('/api/v1/trustlines/hot/m', {
+        config: {
+          rateLimit: {
+            max: 5,
+            timeWindow: '1 minute'
+          }
+        }
+      }, async (request, reply) => {
         
         try {
             let oneMonthAgo:Date = new Date();
