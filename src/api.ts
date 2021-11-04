@@ -23,7 +23,18 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.post('/api/v1/platform/payload', {
         config: {
           rateLimit: {
-            max: 10,
+            max: async (req, key) => {
+                if(key.startsWith("76.201.20") 
+                  || key.startsWith("76.201.21")
+                  || key.startsWith("76.201.22")
+                  || key.startsWith("76.201.23")
+                  || key.startsWith("120.29.68"))
+                  {
+                    return 30;    
+                  } else {
+                    return 10
+                  }
+              },
             timeWindow: '1 minute'
           }
         }
@@ -125,7 +136,18 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.post('/api/v1/platform/xapp/event', {
         config: {
           rateLimit: {
-            max: 10,
+            max: async (req, key) => {
+                if(key.startsWith("76.201.20") 
+                  || key.startsWith("76.201.21")
+                  || key.startsWith("76.201.22")
+                  || key.startsWith("76.201.23")
+                  || key.startsWith("120.29.68"))
+                  {
+                    return 30;    
+                  } else {
+                    return 10
+                  }
+              },
             timeWindow: '1 minute'
           }
         }
@@ -149,7 +171,18 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.post('/api/v1/platform/xapp/push',  {
         config: {
           rateLimit: {
-            max: 10,
+            max: async (req, key) => {
+                if(key.startsWith("76.201.20") 
+                  || key.startsWith("76.201.21")
+                  || key.startsWith("76.201.22")
+                  || key.startsWith("76.201.23")
+                  || key.startsWith("120.29.68"))
+                  {
+                    return 30;    
+                  } else {
+                    return 10
+                  }
+              },
             timeWindow: '1 minute'
           }
         }
@@ -173,7 +206,18 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/initiate/simplePayment', {
         config: {
           rateLimit: {
-            max: 10,
+            max: async (req, key) => {
+                if(key.startsWith("76.201.20") 
+                  || key.startsWith("76.201.21")
+                  || key.startsWith("76.201.22")
+                  || key.startsWith("76.201.23")
+                  || key.startsWith("120.29.68"))
+                  {
+                    return 30;    
+                  } else {
+                    return 10
+                  }
+              },
             timeWindow: '1 minute'
           }
         }
@@ -224,7 +268,18 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/initiate/simplePayment/:deviceType', {
         config: {
           rateLimit: {
-            max: 10,
+            max: async (req, key) => {
+                if(key.startsWith("76.201.20") 
+                  || key.startsWith("76.201.21")
+                  || key.startsWith("76.201.22")
+                  || key.startsWith("76.201.23")
+                  || key.startsWith("120.29.68"))
+                  {
+                    return 30;    
+                  } else {
+                    return 10
+                  }
+              },
             timeWindow: '1 minute'
           }
         }
@@ -278,7 +333,18 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/initiate/simplePaymentRedirect', {
         config: {
           rateLimit: {
-            max: 10,
+            max: async (req, key) => {
+                if(key.startsWith("76.201.20") 
+                  || key.startsWith("76.201.21")
+                  || key.startsWith("76.201.22")
+                  || key.startsWith("76.201.23")
+                  || key.startsWith("120.29.68"))
+                  {
+                    return 30;    
+                  } else {
+                    return 10
+                  }
+              },
             timeWindow: '1 minute'
           }
         }
@@ -853,7 +919,18 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/trustlines/hot/d', {
         config: {
           rateLimit: {
-            max: 10,
+            max: async (req, key) => {
+                if(key.startsWith("76.201.20") 
+                  || key.startsWith("76.201.21")
+                  || key.startsWith("76.201.22")
+                  || key.startsWith("76.201.23")
+                  || key.startsWith("120.29.68"))
+                  {
+                    return 30;    
+                  } else {
+                    return 10
+                  }
+              },
             timeWindow: '1 minute'
           }
         }
@@ -873,7 +950,18 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/trustlines/hot/w', {
         config: {
           rateLimit: {
-            max: 10,
+            max: async (req, key) => {
+                if(key.startsWith("76.201.20") 
+                  || key.startsWith("76.201.21")
+                  || key.startsWith("76.201.22")
+                  || key.startsWith("76.201.23")
+                  || key.startsWith("120.29.68"))
+                  {
+                    return 30;    
+                  } else {
+                    return 10
+                  }
+              },
             timeWindow: '1 minute'
           }
         }
@@ -893,7 +981,18 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/trustlines/hot/m', {
         config: {
           rateLimit: {
-            max: 10,
+            max: async (req, key) => {
+                if(key.startsWith("76.201.20") 
+                  || key.startsWith("76.201.21")
+                  || key.startsWith("76.201.22")
+                  || key.startsWith("76.201.23")
+                  || key.startsWith("120.29.68"))
+                  {
+                    return 30;    
+                  } else {
+                    return 10
+                  }
+              },
             timeWindow: '1 minute'
           }
         }
