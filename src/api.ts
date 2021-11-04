@@ -23,7 +23,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.post('/api/v1/platform/payload', {
         config: {
           rateLimit: {
-            max: 5,
+            max: 10,
             timeWindow: '1 minute'
           }
         }
@@ -125,7 +125,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.post('/api/v1/platform/xapp/event', {
         config: {
           rateLimit: {
-            max: 5,
+            max: 10,
             timeWindow: '1 minute'
           }
         }
@@ -149,7 +149,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.post('/api/v1/platform/xapp/push',  {
         config: {
           rateLimit: {
-            max: 5,
+            max: 10,
             timeWindow: '1 minute'
           }
         }
@@ -173,7 +173,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/initiate/simplePayment', {
         config: {
           rateLimit: {
-            max: 5,
+            max: 10,
             timeWindow: '1 minute'
           }
         }
@@ -224,7 +224,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/initiate/simplePayment/:deviceType', {
         config: {
           rateLimit: {
-            max: 5,
+            max: 10,
             timeWindow: '1 minute'
           }
         }
@@ -278,7 +278,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/initiate/simplePaymentRedirect', {
         config: {
           rateLimit: {
-            max: 5,
+            max: 10,
             timeWindow: '1 minute'
           }
         }
@@ -853,7 +853,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/trustlines/hot/d', {
         config: {
           rateLimit: {
-            max: 5,
+            max: 10,
             timeWindow: '1 minute'
           }
         }
@@ -873,7 +873,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/trustlines/hot/w', {
         config: {
           rateLimit: {
-            max: 5,
+            max: 10,
             timeWindow: '1 minute'
           }
         }
@@ -893,7 +893,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/trustlines/hot/m', {
         config: {
           rateLimit: {
-            max: 5,
+            max: 10,
             timeWindow: '1 minute'
           }
         }
