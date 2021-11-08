@@ -18,6 +18,9 @@ export class Special {
     private mainNodes:string[] = ['wss://s1.ripple.com','wss://xrplcluster.com'];
     private testNodes:string[] = ['wss://s.altnet.rippletest.net', 'wss://testnet.xrpl-labs.com'];
 
+    private currentMainNode:number = 0;
+    private currentTestNode:number = 0;
+
     private mainnetApi:RippleAPI = new RippleAPI({server: this.mainNodes[0]});
     private testnetApi:RippleAPI = new RippleAPI({server: this.testNodes[0]});
 
@@ -210,11 +213,30 @@ export class Special {
                     }
                 } else {
 
-                    return {
-                        success: false,
-                        testnet: isTestNet,
-                        account: payloadInfo.response.account,
-                        originalPayload: payloadInfo
+                    //retry another node
+                    let timeString = (isTestNet ? "Switch_Test_" : "Main_") + trxHash;
+                    console.time(timeString);
+
+                    await this.switchNodes(isTestNet);
+                    let found = await this.callXrplAndValidate(trxHash, isTestNet, destinationAccount, payloadInfo.payload.request_json.Amount);
+
+                    console.timeEnd(timeString);
+
+                    if(found) {
+                        return {
+                            success: true,
+                            testnet: isTestNet,
+                            txid: trxHash,
+                            account: payloadInfo.response.account,
+                            originalPayload: payloadInfo
+                        }
+                    } else {
+                        return {
+                            success: false,
+                            testnet: isTestNet,
+                            account: payloadInfo.response.account,
+                            originalPayload: payloadInfo
+                        }
                     }
                 }
             }
@@ -290,17 +312,17 @@ export class Special {
                     await apiToUse.connect();
                 }
             } catch(err) {
-                console.log("could not connect to: " + (testnet ? this.testNodes[0] : this.mainNodes[0]));
+                console.log("could not connect to: " + (testnet ? this.testNodes[this.currentTestNode] : this.mainNodes[this.currentMainNode]));
                 try {
-                    apiToUse = new RippleAPI({server: (testnet ? this.testNodes[1] : this.mainNodes[1])});
-                    await apiToUse.connect();
+                    await this.switchNodes(testnet);
+                    let apiToUse:RippleAPI = testnet ? this.testnetApi : this.mainnetApi
 
                     if(!apiToUse.isConnected()) {
-                        console.log("could not connect 2nd try to: " + (testnet ? this.testNodes[1] : this.mainNodes[1]));
+                        console.log("could not connect 2nd try to: " + (testnet ? this.testNodes[this.currentTestNode] : this.mainNodes[this.currentMainNode]));
                         return this.callBithompAndValidate(trxHash, testnet, destinationAccount, amount);
                     }
                 } catch(err) {
-                    console.log("ERROR! could not connect 2nd try to: " + (testnet ? this.testNodes[1] : this.mainNodes[1]));
+                    console.log("ERROR! could not connect 2nd try to: " + (testnet ? this.testNodes[this.currentTestNode] : this.mainNodes[this.currentMainNode]));
                     return this.callBithompAndValidate(trxHash, testnet, destinationAccount, amount);
                 }
             }
@@ -341,9 +363,32 @@ export class Special {
                 return false;
             }
         } catch(err) {
-            console.log("Transaction not found on " +(testnet ? this.testNodes[0] : this.mainNodes[0]));
+            console.log("Transaction not found on " +(testnet ? this.testNodes[this.currentTestNode] : this.mainNodes[this.currentMainNode]));
             console.log(JSON.stringify(err));
             return false;
+        }
+    }
+
+    async switchNodes(testnet:boolean): Promise<void> {        
+        if(testnet) {
+            if(this.currentTestNode == 0)
+                this.currentTestNode = 1;
+            else 
+                this.currentTestNode = 0;
+
+            await this.testnetApi.disconnect();
+            this.testnetApi = new RippleAPI({server: this.testNodes[this.currentTestNode]});
+            await this.testnetApi.connect();
+
+        } else {
+            if(this.currentMainNode == 0)
+                this.currentMainNode = 1;
+            else 
+                this.currentMainNode = 0;
+
+            await this.mainnetApi.disconnect();
+            this.mainnetApi = new RippleAPI({server: this.mainNodes[this.currentMainNode]});
+            await this.mainnetApi.connect();
         }
     }
 
