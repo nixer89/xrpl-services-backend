@@ -183,6 +183,16 @@ export class Xumm {
         return ottData;
     }
 
+    async getxAppOTTRefetch(origin: string, token: string, hash: string): Promise<any> {
+        let appId:string = await this.db.getAppIdForOrigin(origin);
+        if(!appId)
+            return null;
+
+        let ottData = await this.callXumm(appId, "xapp/ott/"+token+"/"+hash, "GET");
+        //console.log("getxAppOTT response: " + JSON.stringify(ottData))
+        return ottData;
+    }
+
     async sendxAppEvent(origin: string, data: any): Promise<any> {
         let appId:string = await this.db.getAppIdForOrigin(origin);
         if(!appId)

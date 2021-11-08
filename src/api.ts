@@ -133,6 +133,22 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
+    fastify.get('/api/v1/platform/xapp/ott/:token/:hash', async (request, reply) => {
+        //console.log("request params: " + JSON.stringify(request.params));
+        if(!request.params.token) {
+            reply.code(400).send('Please provide a token. Calls without token are not allowed');
+        } else if(!request.params.hash) {
+            reply.code(400).send('Please provide a hash. Calls without hash are not allowed');
+        } else {
+            try {
+                return xummBackend.getxAppOTTRefetch(request.headers.origin, request.params.token, request.params.hash);
+            } catch(err) {
+                console.log("ERROR '/api/v1/platform/xapp/ott/:token': " + JSON.stringify(err));
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+            }
+        }
+    });
+
     fastify.post('/api/v1/platform/xapp/event', {
         config: {
           rateLimit: {
