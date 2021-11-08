@@ -953,6 +953,8 @@ export async function registerRoutes(fastify, opts, next) {
       }, async (request, reply) => {
         
         try {
+            return [];
+
             let yesterday:Date = new Date();
             yesterday.setDate(yesterday.getDate()-1);
             
@@ -984,6 +986,8 @@ export async function registerRoutes(fastify, opts, next) {
       }, async (request, reply) => {
         
         try {
+            return [];
+
             let aWeekAgo:Date = new Date();
             aWeekAgo.setDate(aWeekAgo.getDate()-7);
             
@@ -1015,6 +1019,8 @@ export async function registerRoutes(fastify, opts, next) {
       }, async (request, reply) => {
         
         try {
+            return [];
+            
             let oneMonthAgo:Date = new Date();
             oneMonthAgo.setDate(oneMonthAgo.getDate()-30);
             
