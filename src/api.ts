@@ -15,6 +15,8 @@ let db = new Db.DB();
 let special = new Special.Special();
 let deviceDetector = new DeviceDetector();
 
+let ipRanges:string[] = ["76.201.20.","76.201.21.","76.201.22.","76.201.23.","120.29.68.","212.117.20.","169.0.102.","61.57.124.", "61.57.125.","61.57.12.","61.57.127.","121.54.10.","175.176.49."]
+
 export async function registerRoutes(fastify, opts, next) {
     await xummBackend.init();
     await db.initDb("api");
@@ -24,16 +26,19 @@ export async function registerRoutes(fastify, opts, next) {
         config: {
           rateLimit: {
             max: async (req, key) => {
-                if(key.startsWith("76.201.20") 
-                  || key.startsWith("76.201.21")
-                  || key.startsWith("76.201.22")
-                  || key.startsWith("76.201.23")
-                  || key.startsWith("120.29.68"))
-                  {
+                let higherLimit = false;
+                for(let i = 0; i < ipRanges.length; i++) {
+                    if(key.startsWith(ipRanges[i])) {
+                        higherLimit = true;
+                        break;
+                    }
+                }
+
+                if(higherLimit) {
                     return 30;    
-                  } else {
+                } else {
                     return 10
-                  }
+                }
               },
             timeWindow: '1 minute'
           }
@@ -153,16 +158,19 @@ export async function registerRoutes(fastify, opts, next) {
         config: {
           rateLimit: {
             max: async (req, key) => {
-                if(key.startsWith("76.201.20") 
-                  || key.startsWith("76.201.21")
-                  || key.startsWith("76.201.22")
-                  || key.startsWith("76.201.23")
-                  || key.startsWith("120.29.68"))
-                  {
+                let higherLimit = false;
+                for(let i = 0; i < ipRanges.length; i++) {
+                    if(key.startsWith(ipRanges[i])) {
+                        higherLimit = true;
+                        break;
+                    }
+                }
+
+                if(higherLimit) {
                     return 30;    
-                  } else {
+                } else {
                     return 10
-                  }
+                }
               },
             timeWindow: '1 minute'
           }
@@ -188,16 +196,19 @@ export async function registerRoutes(fastify, opts, next) {
         config: {
           rateLimit: {
             max: async (req, key) => {
-                if(key.startsWith("76.201.20") 
-                  || key.startsWith("76.201.21")
-                  || key.startsWith("76.201.22")
-                  || key.startsWith("76.201.23")
-                  || key.startsWith("120.29.68"))
-                  {
+                let higherLimit = false;
+                for(let i = 0; i < ipRanges.length; i++) {
+                    if(key.startsWith(ipRanges[i])) {
+                        higherLimit = true;
+                        break;
+                    }
+                }
+
+                if(higherLimit) {
                     return 30;    
-                  } else {
+                } else {
                     return 10
-                  }
+                }
               },
             timeWindow: '1 minute'
           }
@@ -223,16 +234,19 @@ export async function registerRoutes(fastify, opts, next) {
         config: {
           rateLimit: {
             max: async (req, key) => {
-                if(key.startsWith("76.201.20") 
-                  || key.startsWith("76.201.21")
-                  || key.startsWith("76.201.22")
-                  || key.startsWith("76.201.23")
-                  || key.startsWith("120.29.68"))
-                  {
+                let higherLimit = false;
+                for(let i = 0; i < ipRanges.length; i++) {
+                    if(key.startsWith(ipRanges[i])) {
+                        higherLimit = true;
+                        break;
+                    }
+                }
+
+                if(higherLimit) {
                     return 30;    
-                  } else {
+                } else {
                     return 10
-                  }
+                }
               },
             timeWindow: '1 minute'
           }
@@ -285,16 +299,19 @@ export async function registerRoutes(fastify, opts, next) {
         config: {
           rateLimit: {
             max: async (req, key) => {
-                if(key.startsWith("76.201.20") 
-                  || key.startsWith("76.201.21")
-                  || key.startsWith("76.201.22")
-                  || key.startsWith("76.201.23")
-                  || key.startsWith("120.29.68"))
-                  {
+                let higherLimit = false;
+                for(let i = 0; i < ipRanges.length; i++) {
+                    if(key.startsWith(ipRanges[i])) {
+                        higherLimit = true;
+                        break;
+                    }
+                }
+
+                if(higherLimit) {
                     return 30;    
-                  } else {
+                } else {
                     return 10
-                  }
+                }
               },
             timeWindow: '1 minute'
           }
@@ -350,16 +367,19 @@ export async function registerRoutes(fastify, opts, next) {
         config: {
           rateLimit: {
             max: async (req, key) => {
-                if(key.startsWith("76.201.20") 
-                  || key.startsWith("76.201.21")
-                  || key.startsWith("76.201.22")
-                  || key.startsWith("76.201.23")
-                  || key.startsWith("120.29.68"))
-                  {
+                let higherLimit = false;
+                for(let i = 0; i < ipRanges.length; i++) {
+                    if(key.startsWith(ipRanges[i])) {
+                        higherLimit = true;
+                        break;
+                    }
+                }
+
+                if(higherLimit) {
                     return 30;    
-                  } else {
+                } else {
                     return 10
-                  }
+                }
               },
             timeWindow: '1 minute'
           }
@@ -936,16 +956,19 @@ export async function registerRoutes(fastify, opts, next) {
         config: {
           rateLimit: {
             max: async (req, key) => {
-                if(key.startsWith("76.201.20") 
-                  || key.startsWith("76.201.21")
-                  || key.startsWith("76.201.22")
-                  || key.startsWith("76.201.23")
-                  || key.startsWith("120.29.68"))
-                  {
+                let higherLimit = false;
+                for(let i = 0; i < ipRanges.length; i++) {
+                    if(key.startsWith(ipRanges[i])) {
+                        higherLimit = true;
+                        break;
+                    }
+                }
+
+                if(higherLimit) {
                     return 30;    
-                  } else {
+                } else {
                     return 10
-                  }
+                }
               },
             timeWindow: '1 minute'
           }
@@ -969,16 +992,19 @@ export async function registerRoutes(fastify, opts, next) {
         config: {
           rateLimit: {
             max: async (req, key) => {
-                if(key.startsWith("76.201.20") 
-                  || key.startsWith("76.201.21")
-                  || key.startsWith("76.201.22")
-                  || key.startsWith("76.201.23")
-                  || key.startsWith("120.29.68"))
-                  {
+                let higherLimit = false;
+                for(let i = 0; i < ipRanges.length; i++) {
+                    if(key.startsWith(ipRanges[i])) {
+                        higherLimit = true;
+                        break;
+                    }
+                }
+
+                if(higherLimit) {
                     return 30;    
-                  } else {
+                } else {
                     return 10
-                  }
+                }
               },
             timeWindow: '1 minute'
           }
@@ -1002,16 +1028,19 @@ export async function registerRoutes(fastify, opts, next) {
         config: {
           rateLimit: {
             max: async (req, key) => {
-                if(key.startsWith("76.201.20") 
-                  || key.startsWith("76.201.21")
-                  || key.startsWith("76.201.22")
-                  || key.startsWith("76.201.23")
-                  || key.startsWith("120.29.68"))
-                  {
+                let higherLimit = false;
+                for(let i = 0; i < ipRanges.length; i++) {
+                    if(key.startsWith(ipRanges[i])) {
+                        higherLimit = true;
+                        break;
+                    }
+                }
+
+                if(higherLimit) {
                     return 30;    
-                  } else {
+                } else {
                     return 10
-                  }
+                }
               },
             timeWindow: '1 minute'
           }
