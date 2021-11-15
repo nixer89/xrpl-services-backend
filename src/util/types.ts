@@ -93,3 +93,13 @@ export interface TrustSetCollection {
     sourceAccount: string,
     updated: Date
 }
+
+export interface PaymentsCollection {
+    applicationId: string,
+    origin: string,
+    xrplAccount: string,
+    escrow: string[],
+    tokens: string[],
+    blackhole: string[],
+    updated: Date
+}

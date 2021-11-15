@@ -1,5 +1,5 @@
 import { MongoClient, Collection } from 'mongodb';
-import { AllowedOrigins, ApplicationApiKeys, UserIdCollection, FrontendIdPayloadCollection, XummIdPayloadCollection, XrplAccountPayloadCollection, StatisticsCollection, TrustSetCollection } from './util/types';
+import { AllowedOrigins, ApplicationApiKeys, UserIdCollection, FrontendIdPayloadCollection, XummIdPayloadCollection, XrplAccountPayloadCollection, StatisticsCollection, TrustSetCollection, PaymentsCollection } from './util/types';
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 });
@@ -16,6 +16,7 @@ export class DB {
     tmpInfoTable:Collection = null;
     statisticsCollection:Collection<StatisticsCollection> = null;
     trustsetCollection:Collection<TrustSetCollection> = null;
+    paymentsCollection:Collection<PaymentsCollection> = null;
 
     allowedOriginCache:AllowedOrigins[] = null;
     applicationApiKeysCache:ApplicationApiKeys[] = null;
@@ -32,6 +33,7 @@ export class DB {
         this.tmpInfoTable = await this.getNewDbModel("TmpInfoTable");
         this.statisticsCollection = await this.getNewDbModel("StatisticsCollection");
         this.trustsetCollection = await this.getNewDbModel("TrustSetCollection");
+        this.paymentsCollection = await this.getNewDbModel("paymentsCollection");
         
         return Promise.resolve();
     }
@@ -407,6 +409,62 @@ export class DB {
         }
     }
 
+    async storePayment(origin:string, applicationId: string, xrplAccount:string, payloadId: string, type: string): Promise<void> {
+        //console.log("[DB]: storePayloadForFrontendId:" + " origin: " + origin + " referer: " + referer + " frontendUserId: " + frontendUserId + " payloadId: " + payloadId + " payloadType: " + payloadType);
+        try {
+            let setToAdd:any = {};
+            setToAdd[type] = payloadId;
+
+            await this.paymentsCollection.updateOne({origin: origin, applicationId: applicationId, xrplAccount: xrplAccount}, {
+                $addToSet: setToAdd,
+                $currentDate: {
+                   "updated": { $type: "timestamp" }
+                }                
+              }, {upsert: true});
+
+            return Promise.resolve();
+        } catch(err) {
+            console.log("[DB]: error storePayment");
+            console.log(JSON.stringify(err));
+        }
+    }
+
+    async getPayments(origin: string, applicationId: string, xrplAccount:string, type: string): Promise<string[]> {
+        //console.log("[DB]: getPayloadIdsByXrplAccountForApplicationAndReferer: referer: " + referer + " applicationId: " + applicationId +" xrplAccount: " + xrplAccount + " payloadType: " + payloadType);
+        try {
+            let findResult:PaymentsCollection = await this.paymentsCollection.findOne({origin:origin, applicationId: applicationId, xrplAccount: xrplAccount});
+
+            if(findResult)
+                return findResult[type];
+            else
+                return [];
+        } catch(err) {
+            console.log("[DB]: error getPayments");
+            console.log(JSON.stringify(err));
+            return [];
+        }
+    }
+
+    async deletePayment(origin:string, applicationId: string, xrplAccount:string, type: string): Promise<void> {
+        //console.log("[DB]: storePayloadForFrontendId:" + " origin: " + origin + " referer: " + referer + " frontendUserId: " + frontendUserId + " payloadId: " + payloadId + " payloadType: " + payloadType);
+        try {
+            let setToDelete:any = {};
+            setToDelete[type] = 1;
+
+            await this.paymentsCollection.updateOne({origin: origin, applicationId: applicationId, xrplAccount: xrplAccount}, {
+                $pop: setToDelete,
+                $currentDate: {
+                   "updated": { $type: "timestamp" }
+                }                
+              }, {upsert: true});
+
+            return Promise.resolve();
+        } catch(err) {
+            console.log("[DB]: error storePayloadForFrontendId");
+            console.log(JSON.stringify(err));
+        }
+    }
+
     async saveTempInfo(anyInfo: any): Promise<any> {
         //console.log("[DB]: saveTempInfo");
         try {
@@ -672,6 +730,13 @@ export class DB {
             //tmpInfoTable
             if(!(await this.tmpInfoTable.indexExists("applicationId_1_payloadId_1")))
                 await this.tmpInfoTable.createIndex({applicationId: 1, payloadId: 1}, {unique: true});
+
+            //payments collection
+            if(!(await this.paymentsCollection.indexExists("applicationId_1")))
+                await this.paymentsCollection.createIndex({applicationId: 1});
+
+            if(!(await this.paymentsCollection.indexExists("xrplAccount_1")))
+                await this.paymentsCollection.createIndex({xrplAccount: 1});
 
 
         } catch(err) {
