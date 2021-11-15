@@ -15,7 +15,7 @@ export class Special {
     xummBackend = new Xumm.Xumm();
     db = new DB.DB();
 
-    private mainNodes:string[] = ['wss://s1.ripple.com','wss://xrplcluster.com'];
+    private mainNodes:string[] = ['wss://xrplcluster.com', 'wss://s2.ripple.com'];
     private testNodes:string[] = ['wss://s.altnet.rippletest.net', 'wss://testnet.xrpl-labs.com'];
 
     private currentMainNode:number = 0;
@@ -301,7 +301,7 @@ export class Special {
         return found;
     }
 
-    async callXrplAndValidate(trxHash:string, testnet: boolean, destinationAccount?:any, amount?:any): Promise<boolean> {
+    async callXrplAndValidate(trxHash:string, testnet: boolean, destinationAccount?:any, amount?:any, retry?: boolean): Promise<boolean> {
         try {
             //console.log("checking bithomp with trxHash: " + trxHash);
             //console.log("checking transaction with testnet: " + testnet + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount));
@@ -365,7 +365,12 @@ export class Special {
         } catch(err) {
             console.log("Transaction not found on " +(testnet ? this.testNodes[this.currentTestNode] : this.mainNodes[this.currentMainNode]));
             console.log(JSON.stringify(err));
-            return false;
+            console.log("switching nodes and trying again")
+            await this.switchNodes(testnet);
+            if(!retry)
+                return this.callXrplAndValidate(trxHash, testnet, destinationAccount, amount, true);
+            else
+                return false;
         }
     }
 
