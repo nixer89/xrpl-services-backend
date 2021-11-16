@@ -88,7 +88,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
-                return xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.id);
+                return xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.id, "get_endpoint");
             } catch(err) {
                 console.log("ERROR '/api/v1/platform/payload/:id': " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -460,7 +460,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
-                let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
+                let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, "check_payment_payloadid_endpoint");
 
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
                     let validation = await special.validateTransactionOnLedger(payloadInfo);
@@ -510,7 +510,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
-                let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
+                let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, "check_payment_referer__endpoint");
 
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
                     let validation = await special.validateTransactionOnLedger(payloadInfo);
@@ -566,7 +566,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
-                let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
+                let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, "timed_payment_payload_endpoint");
 
                 if(payloadInfo) {
                     let refererURL:string = request.headers.referer;
@@ -628,7 +628,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
-                let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId);
+                let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, "timed_payment_referer_payload");
 
                 if(payloadInfo) {
                     let refererURL:string = request.query.referer ? request.query.referer : request.headers.referer;
@@ -691,7 +691,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
-                let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId);
+                let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId, "check_signin_payload_endpoint");
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
                     return {success: true, account: payloadInfo.response.account}
@@ -785,7 +785,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
-                let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId)
+                let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, "xrpl_validatetx_payloadid_endpoint")
 
                 //console.log(JSON.stringify(payloadInfo));
                 if(payloadInfo && payloadInfo.response && payloadInfo.response.txid) {
@@ -812,7 +812,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
-                let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId)
+                let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, "escrow_validatepayment_payloadid")
 
                 //console.log("escrow/validatepayment PAYLOAD: " + JSON.stringify(payloadInfo));
 
@@ -874,7 +874,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         else {
             try {
-                let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId);
+                let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId, "escrow_signinToDeleteEscrow_payloadid_endpoint");
 
                 //console.log("escrow/signinToDeleteEscrow PAYLOAD: " + JSON.stringify(payloadInfo));
 
@@ -1094,7 +1094,7 @@ async function handleWebhookRequest(request:any): Promise<any> {
     
     try {
         let webhookRequest:XummTypes.XummWebhookBody = request.body;
-        let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByAppId(webhookRequest.meta.application_uuidv4, webhookRequest.meta.payload_uuidv4);
+        let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByAppId(webhookRequest.meta.application_uuidv4, webhookRequest.meta.payload_uuidv4, "websocket");
         
         //check if we have to store the user
         try {

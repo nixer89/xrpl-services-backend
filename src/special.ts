@@ -48,7 +48,7 @@ export class Special {
     
     async getPayloadInfoForFrontendId(origin: string, requestParams:any, payloadType: string, referer?: string): Promise<XummTypes.XummGetPayloadResponse> {
         if(await this.validFrontendUserIdToPayload(origin, requestParams,payloadType, referer)) {
-            return this.xummBackend.getPayloadInfoByOrigin(origin, requestParams.payloadId)
+            return this.xummBackend.getPayloadInfoByOrigin(origin, requestParams.payloadId, "getPayloadInfoForFrontendId")
         } else {
             return null;
         }
@@ -81,7 +81,7 @@ export class Special {
         //console.log("signInToValidate: siginPayloadId: " + siginPayloadId + " origin: " + origin + " referer: " + referer);
         try {
             if(siginPayloadId) {
-                let payloadInfo:XummTypes.XummGetPayloadResponse = await this.xummBackend.getPayloadInfoByOrigin(origin, siginPayloadId);
+                let payloadInfo:XummTypes.XummGetPayloadResponse = await this.xummBackend.getPayloadInfoByOrigin(origin, siginPayloadId, "checkSignInToValidatePayment");
 
                 //console.log("signInPayloadInfo:" + JSON.stringify(payloadInfo));
                 if(payloadInfo && this.successfullSignInPayloadValidation(payloadInfo)) {
@@ -94,7 +94,7 @@ export class Special {
                         payloadIds = payloadIds.reverse();
                         let validationInfo:any = {success: false};
                         for(let i = 0; i < payloadIds.length; i++) {
-                            validationInfo = await this.validateTimedPaymentPayload(origin, referer, await this.xummBackend.getPayloadInfoByOrigin(origin, payloadIds[i]));
+                            validationInfo = await this.validateTimedPaymentPayload(origin, referer, await this.xummBackend.getPayloadInfoByOrigin(origin, payloadIds[i], "checkSignInToValidatePayment_"));
                             //console.log("validationInfo: " + JSON.stringify(validationInfo));
 
                             if(validationInfo.success || validationInfo.payloadExpired)
@@ -367,10 +367,13 @@ export class Special {
             console.log(JSON.stringify(err));
             console.log("switching nodes and trying again")
             await this.switchNodes(testnet);
-            if(!retry)
+            if(!retry) {
+                console.log("no retry, trying again with new node")
                 return this.callXrplAndValidate(trxHash, testnet, destinationAccount, amount, true);
-            else
+            } else {
+                console.log("is retry, could not find connection on either node.")
                 return false;
+            }
         }
     }
 
@@ -382,6 +385,8 @@ export class Special {
                 this.currentTestNode = 0;
 
             await this.testnetApi.disconnect();
+
+            console.log("connecting to " + this.testNodes[this.currentTestNode]);
             this.testnetApi = new RippleAPI({server: this.testNodes[this.currentTestNode]});
             await this.testnetApi.connect();
 
@@ -392,6 +397,8 @@ export class Special {
                 this.currentMainNode = 0;
 
             await this.mainnetApi.disconnect();
+
+            console.log("connecting to " + this.mainNodes[this.currentMainNode]);
             this.mainnetApi = new RippleAPI({server: this.mainNodes[this.currentMainNode]});
             await this.mainnetApi.connect();
         }
