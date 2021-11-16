@@ -156,7 +156,7 @@ export class Xumm {
     }
 
     async getPayloadInfoByAppId(applicationId:string, payload_id:string, addInfo:string): Promise<XummTypes.XummGetPayloadResponse> {
-        let payloadResponse:XummTypes.XummGetPayloadResponse = await this.callXumm(applicationId, addInfo+"_payload/"+payload_id, "GET");
+        let payloadResponse:XummTypes.XummGetPayloadResponse = await this.callXumm(applicationId, "payload/"+payload_id, "GET", null, addInfo);
         //console.log("getPayloadInfo response: " + JSON.stringify(payloadResponse))
         return payloadResponse;
     }
@@ -225,7 +225,7 @@ export class Xumm {
         return xappPushResponse;
     }
 
-    async callXumm(applicationId:string, path:string, method:string, body?:any): Promise<any> {
+    async callXumm(applicationId:string, path:string, method:string, body?:any, addInfo? :string): Promise<any> {
         let xummResponse:fetch.Response = null;
         try {
             let appSecret:string = await this.db.getApiSecretForAppId(applicationId);
@@ -253,7 +253,7 @@ export class Xumm {
                     try {
                         if(xummResponse && xummResponse.body) {
                             console.log("ERROR calling XUMM:")
-                            console.log("input params: applicationId: " + applicationId + " path: " + path + " method: " + method+ " body: " + JSON.stringify(body));
+                            console.log("input params: applicationId: " + applicationId + " path: " + path + " method: " + method+ " body: " + JSON.stringify(body) + "addInfo: " + addInfo);
 
                             let bodyResponse = await xummResponse.text()
                             console.log(JSON.stringify(bodyResponse))
