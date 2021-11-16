@@ -72,6 +72,12 @@ export class Xumm {
                         //console.log("latestPayloadInfo: " + JSON.stringify(latestPayloadInfo));
                         if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token) {
                             payload.user_token = latestPayloadInfo.application.issued_user_token;
+                        } else {
+                            let possibleError:any = latestPayloadInfo;
+                            if(possibleError && possibleError.error && possibleError.error.code && possibleError.error.code == 404) {
+                                this.db.deletePayloadIdsByXrplAccountForApplication(appId, xrplAccount, 'signin')
+                                console.log("emptied payloads for " + xrplAccount + " and transaction SignIn");
+                            }
                         }
                     }
 
@@ -86,6 +92,12 @@ export class Xumm {
                             //console.log("latestPayloadInfo: " + JSON.stringify(latestPayloadInfo));
                             if(latestPayloadInfo && latestPayloadInfo.application && latestPayloadInfo.application.issued_user_token) {
                                 payload.user_token = latestPayloadInfo.application.issued_user_token;
+                            } else {
+                                let possibleError:any = latestPayloadInfo;
+                                if(possibleError && possibleError.error && possibleError.error.code && possibleError.error.code == 404) {
+                                    await this.db.deletePayloadIdsByXrplAccountForApplication(appId, xrplAccount, payload.txjson.TransactionType)
+                                    console.log("emptied payloads for " + xrplAccount + " and transaction " + payload.txjson.TransactionType);
+                                }
                             }
                         }
                     }

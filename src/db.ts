@@ -233,6 +233,24 @@ export class DB {
         }
     }
 
+    async deletePayloadIdsByXrplAccountForApplication(applicationId: string, xrplAccount:string, transaction:string) {
+        //console.log("[DB]: errordeletePayloadForXRPLAccount:" + " origin: " + origin + " xrplAccount: " + xrplAccount + " xummId: " + xummId + " payloadId: " + payloadId + " payloadType: " + payloadType);
+        try {
+            let toUnset = {};
+            toUnset[transaction.toLowerCase()] = "";
+
+            return this.xrplAccountPayloadCollection.updateOne({applicationId: applicationId, xrplAccount: xrplAccount}, {
+                $unset: toUnset,
+                $currentDate: {
+                   "updated": { $type: "timestamp" }
+                }                
+              }, {upsert: true});
+        } catch(err) {
+            console.log("[DB]: errordeletePayloadForXRPLAccount");
+            console.log(JSON.stringify(err));
+        }
+    }
+
     async getPayloadIdsByXrplAccountForApplicationAndType(applicationId: string, xrplAccount:string, payloadType: string): Promise<string[]> {
         //console.log("[DB]: getPayloadIdsByXrplAccountForApplicationAndType:" + " applicationId: " + applicationId + " xrplAccount: " + xrplAccount + " payloadType: " + payloadType);
         try {
