@@ -310,12 +310,24 @@ export class Special {
                 if(!apiToUse.isConnected()) {
                     console.log("wss not connected for " + (testnet ? "testnet" : "mainnet" + ". Connecting..."))
                     await apiToUse.connect();
+
+                    if(apiToUse.isConnected()) {
+                        if(testnet)
+                            console.log("connecting to " + this.testNodes[this.currentTestNode]);
+                        else
+                            console.log("connecting to " + this.mainNodes[this.currentMainNode]);
+                    } else {
+                        console.log("could not connect! switching nodes!")
+                        await this.switchNodes(testnet);
+                        apiToUse = testnet ? this.testnetApi : this.mainnetApi
+                    }
+
                 }
             } catch(err) {
                 console.log("could not connect to: " + (testnet ? this.testNodes[this.currentTestNode] : this.mainNodes[this.currentMainNode]));
                 try {
                     await this.switchNodes(testnet);
-                    let apiToUse:RippleAPI = testnet ? this.testnetApi : this.mainnetApi
+                    apiToUse = testnet ? this.testnetApi : this.mainnetApi
 
                     if(!apiToUse.isConnected()) {
                         console.log("could not connect 2nd try to: " + (testnet ? this.testNodes[this.currentTestNode] : this.mainNodes[this.currentMainNode]));
