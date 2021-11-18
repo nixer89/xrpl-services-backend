@@ -339,8 +339,6 @@ export class DB {
             console.log("[DB]: error getAppIdForOrigin");
             console.log(JSON.stringify(err));
             console.log("input origin: " + origin);
-            console.log("known origins: ");
-            console.table(this.allowedOriginCache);
 
             return null;
         }
