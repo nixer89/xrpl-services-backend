@@ -6,7 +6,6 @@ import {verifySignature} from 'verify-xrpl-signature'
 import { XummTypes } from 'xumm-sdk';
 import { TransactionValidation } from './util/types';
 import { Client, TxRequest, TxResponse, TransactionAndMetadata } from 'xrpl'
-import { isNumber } from 'util';
 //import { FormattedTransactionType, RippleAPI } from 'ripple-lib';
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
@@ -306,26 +305,43 @@ export class Special {
                     if(!destinationAccount || (transaction.result.Destination === destinationAccount.account
                         && (!destinationAccount.tag || transaction.result.DestinationTag == destinationAccount.tag)) && transaction.result.meta && typeof(transaction.result.meta) === 'object' && transaction.result.meta.TransactionResult === 'tesSUCCESS') {
 
-                            const transactionMeta = transaction.result.meta;
-                            if(!amount) {
-                                //no amount in request. Accept any amount then
-                                return true;
-                            }
-                            //validate delivered amount
-                            else if(!isNaN(amount)) {
-                                //handle XRP amount
-                                return typeof(transactionMeta.delivered_amount) === 'string' && transactionMeta.delivered_amount === amount);
+                            const transactionMetaObject = typeof(transaction.result.meta) === 'object' ? transaction.result.meta : null;
+
+                            if(transactionMetaObject) {
+
+                                if(!amount) {
+                                    //no amount in request. Accept any amount then
+                                    return true;
+                                }
+                                //validate delivered amount
+                                else if(!isNaN(amount) && typeof(transactionMetaObject.delivered_amount) === 'string') {
+                                    //handle XRP amount
+                                    return transactionMetaObject.delivered_amount === amount;
+
+                                } else if(typeof(transactionMetaObject.delivered_amount) === 'object') {
+                                    //amount not a number so it must be a IOU
+                                    return transactionMetaObject.delivered_amount === amount.currency //check currency
+                                        && transactionMetaObject.delivered_amount.issuer === amount.issuer //check issuer
+                                            && transactionMetaObject.delivered_amount.value === amount.value; //check value
+
+                                } else {
+                                    console.log("something is wrong here!");
+                                    console.log(JSON.stringify(transaction))
+                                    return false;
+                                }
                             } else {
-                                //amount not a number so it must be a IOU
-                                return transaction.outcome.deliveredAmount.currency === amount.currency //check currency
-                                    && transaction.outcome.deliveredAmount.counterparty === amount.issuer //check issuer
-                                        && transaction.outcome.deliveredAmount.value === amount.value; //check value
+                                console.log("something is wrong here 2!");
+                                console.log(JSON.stringify(transaction))
+                                return false;
                             }
+
                     } else {
+                        console.log("something is wrong here 3!");
+                        console.log(JSON.stringify(transaction))
                         return false;
                     }
 
-                } else if( transaction && transaction.outcome  && transaction.outcome.result === 'tesSUCCESS') {
+                } else if( transaction && transaction.result.meta && typeof(transaction.result.meta) === 'object' && transaction.result.meta.TransactionResult === 'tesSUCCESS') {
                     return true;
                 } else {
                     //transaction not valid
