@@ -488,10 +488,10 @@ export class DB {
         }
     }
 
-    async getTransactions(appId: string): Promise<any> {
+    async getTransactions(origin: string, appId: string): Promise<any> {
         //console.log("[DB]: getTransactions: [ " + origin + " , "  + appId + " ]");
         try {
-            let transactions:any[] = await this.statisticsCollection.find({applicationId: appId, type: "transactions"}).toArray();
+            let transactions:any[] = await this.statisticsCollection.find({origin: origin, applicationId: appId, type: "transactions"}).toArray();
             if(transactions && transactions.length >= 1)
                 return transactions[0].stats
             else

@@ -915,7 +915,7 @@ export async function registerRoutes(fastify, opts, next) {
         try {
             let origin = request && request.query && request.query.origin ? request.query.origin : request.headers.origin;
             let appId = await db.getAppIdForOrigin(origin);
-            let transactionStats:any = await db.getTransactions(appId);
+            let transactionStats:any = await db.getTransactions(origin, appId);
             return transactionStats;                
         } catch(err) {
             console.log("ERROR '/api/v1/statistics/transactions': " + JSON.stringify(err));
