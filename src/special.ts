@@ -376,7 +376,7 @@ export class Special {
 
                                 } else if(typeof(transactionMetaObject.delivered_amount) === 'object') {
                                     //amount not a number so it must be a IOU
-                                    return transactionMetaObject.delivered_amount === amount.currency //check currency
+                                    return transactionMetaObject.delivered_amount.currency === amount.currency //check currency
                                         && transactionMetaObject.delivered_amount.issuer === amount.issuer //check issuer
                                             && transactionMetaObject.delivered_amount.value === amount.value; //check value
 
