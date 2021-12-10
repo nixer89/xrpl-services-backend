@@ -41,6 +41,7 @@
     "node-schedule": "^2.0.0",
     "ripple-lib": "^1.10.0",
     "verify-xrpl-signature": "^0.3.0",
+    "xrpl": "^2.0.0-beta.4",
     "xumm-sdk": "^0.6.0"
   },
   "devDependencies": {
