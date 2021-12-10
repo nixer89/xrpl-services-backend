@@ -1,5 +1,5 @@
 {
-  "name": "generic-xumm-backend",
+  "name": "xrpl-services-backend",
   "version": "3.6.4",
   "description": "provides a generic backend, connected to xumm. Easy access of user tokens for push",
   "main": "src/server.ts",
@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nixer89/gerneric-xumm-backend.git"
+    "url": "git+https://github.com/nixer89/xrpl-services-backend.git"
   },
   "keywords": [
     "xumm",
@@ -22,9 +22,9 @@
   "author": "nixer89",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/nixer89/gerneric-xumm-backend/issues"
+    "url": "https://github.com/nixer89/xrpl-services-backend/issues"
   },
-  "homepage": "https://github.com/nixer89/gerneric-xumm-backend#readme",
+  "homepage": "https://github.com/nixer89/xrpl-services-backend#readme",
   "dependencies": {
     "console-stamp": "^3.0.3",
     "device-detector-js": "^2.2.10",
@@ -39,7 +39,6 @@
     "mongodb": "^3.7.3",
     "node-fetch": "^2.6.6",
     "node-schedule": "^2.0.0",
-    "ripple-lib": "^1.10.0",
     "verify-xrpl-signature": "^0.3.0",
     "xrpl": "^2.0.0-beta.4",
     "xumm-sdk": "^0.6.0"
