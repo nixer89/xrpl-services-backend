@@ -1,3 +1,4 @@
+import * as fetch from 'node-fetch';
 import * as Xumm from './xumm';
 import * as Db from './db';
 import * as Special from './special';
@@ -17,6 +18,14 @@ let deviceDetector = new DeviceDetector();
 
 let ipRanges:string[] = ["76.201.20.","76.201.21.","76.201.22.","76.201.23.","120.29.68.","212.117.20.","169.0.102.","61.57.124.", "61.57.125.","61.57.12.","61.57.127.","121.54.10.","175.176.49.", "211.176.124.", "211.176.125.",
                          "211.176.126.", "211.176.127.","94.129.197.","182.0.237.", "175.176.92.","110.54.129.", "80.229.222.", "80.229.223."]
+
+let appIdsForPaymentCheck:string[] = [  "cc3cc9da-67f3-4b63-9cc8-2ea869cee7a9", //blackhole xApp
+                                        "e9e1fbfd-c58b-4bf9-823d-4fe748a65d4c", //nftcreate xApp
+                                        "b42f7609-3cc1-476d-9b29-af1d7ded8eac", //escrow create xApp
+                                        "dd1e8d7e-8017-4375-9afa-9a67678f0974", //token create xApp
+                                        "9ea0a9e1-3e5c-4b71-8b3e-d0f39f26e084", //xrpl.services
+                                        "5e69b042-1cb4-4c07-b5c8-6cadafab4b1d"  //localhost xrpl.services
+                                    ]; 
 
 export async function registerRoutes(fastify, opts, next) {
     await xummBackend.init();
@@ -69,7 +78,7 @@ export async function registerRoutes(fastify, opts, next) {
                     refererURL = refererURL.substring(0, refererURL.indexOf('?'));
                 }
 
-                let payloadResponse = await xummBackend.submitPayload(request.body.payload, request.headers.origin, refererURL, request.body.options);
+                let payloadResponse = await xummBackend.submitPayload(request.body.payload, request.headers.origin, refererURL, request, request.body.options);
                 
                 return payloadResponse;
             } catch (err) {
@@ -284,7 +293,7 @@ export async function registerRoutes(fastify, opts, next) {
                 refererURL = refererURL.substring(0, refererURL.indexOf('?'));
             }
 
-            let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, genericPayloadOptions);
+            let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, request, genericPayloadOptions);
             return payloadResponse;
         } catch(err) {
             console.log("ERROR '/api/v1/initiate/simplePayment': " + JSON.stringify(err));
@@ -353,7 +362,7 @@ export async function registerRoutes(fastify, opts, next) {
                 refererURL = refererURL.substring(0, refererURL.indexOf('?'));
             }
 
-            let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, genericPayloadOptions);
+            let payloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, request, genericPayloadOptions);
             return payloadResponse;
         } catch(err) {
             console.log("ERROR '/api/v1/initiate/simplePayment/:deviceType': " + JSON.stringify(err));
@@ -417,7 +426,7 @@ export async function registerRoutes(fastify, opts, next) {
                 refererURL = refererURL.substring(0, refererURL.indexOf('?'));
             }
 
-            let payload:XummTypes.XummPostPayloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, genericPayloadOptions);
+            let payload:XummTypes.XummPostPayloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, request, genericPayloadOptions);
 
             if(payload && payload.next && payload.next.always) {
                 reply.redirect(307, payload.next.always);
@@ -1117,7 +1126,20 @@ async function handleWebhookRequest(request:any): Promise<any> {
             if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == 'trustset'
                 && payloadInfo.response && payloadInfo.response.dispatched_nodetype == "MAINNET" && payloadInfo.response.dispatched_result =="tesSUCCESS") {
                     saveTrustlineInfo(payloadInfo);
+            }
+
+            try {
+                if(payloadInfo && appIdsForPaymentCheck.includes(payloadInfo.meta.uuid) && payloadInfo.custom_meta?.blob?.ip && payloadInfo.response && payloadInfo.response.dispatched_nodetype == "MAINNET" && payloadInfo.response.dispatched_result =="tesSUCCESS") {
+                    //check transaction on ledger
+                    let transactionCheck = await special.validateTransactionOnLedger(payloadInfo);
+                    if(transactionCheck && transactionCheck.success && !transactionCheck.testnet) {
+                        handlePaymentToSevdesk(payloadInfo);                    
+                    }
                 }
+            } catch(err) {
+                console.log("ERROR HANDLING BEFORE SEVDESK");
+                console.log(err);
+            }
 
             if(tmpInfo) {
                 if(payloadInfo && payloadInfo.application && payloadInfo.application.issued_user_token) {
@@ -1198,4 +1220,252 @@ async function saveTrustlineInfo(payloadInfo: XummGetPayloadResponse) {
         console.log(JSON.stringify(err));
     }
 }
+
+async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
+    try {
+        //payment went through!
+        let ip = payloadInfo.custom_meta.blob.ip;
+        let date = new Date().toLocaleDateString('de');
+        let account = payloadInfo.response.account;
+        let txhash = payloadInfo.response.txid;
+        let xrp:any = payloadInfo.payload.request_json.Amount;
+        xrp = Number(xrp)/1000000;
+
+        let exchangeResponse = await getEurAmountFromXrp(xrp, date);
+        let eurAmount = exchangeResponse[0];
+        let exchangeRate = exchangeResponse[1];
+
+        let countryCode = null;
+        let countryName = null;
+        let countryCodeResponse = await fetch.default("http://ip-api.com/json/"+ip);
+        
+        if(countryCodeResponse && countryCodeResponse.ok) {
+            let jsonResponse = await countryCodeResponse.json();
+            if(jsonResponse && jsonResponse.status === "success" && jsonResponse.countryCode && jsonResponse.country) {
+                countryCode = jsonResponse.countryCode;
+                countryName = jsonResponse.country;
+            }
+        }
+
+        await sendToSevDesk(date, txhash, xrp, eurAmount, exchangeRate, countryName, countryCode, account);
+    } catch(err) {
+        console.log("ERROR SEVDESK INTEGRATION")
+        console.log(err);
+    }
+}
+
+async function getEurAmountFromXrp(xrp:number, date: string): Promise<any> {
+    let amountEur = null;
+    let exchangerate = null;
+
+    
+    console.log("calling API coingecko.com: ");
+    let callstring = "https://api.coingecko.com/api/v3/coins/ripple/history?date="+date.replace('.','-');
+    console.log("CALLSTRING: " + callstring);
+
+    let exchangeResponse = await fetch.default(callstring);
+
+    if(exchangeResponse && exchangeResponse.ok) {
+        let jsonResponse:any = await exchangeResponse.json();
+        //console.log("exchangeResponse: " + JSON.stringify(exchangeResponse));
+        if(jsonResponse) {
+            if(jsonResponse?.market_data?.current_price?.["eur"]) {
+                exchangerate = jsonResponse.market_data.current_price["eur"]
+                console.log("EXCHANGE RATE: " + exchangerate)
+
+                amountEur = xrp * parseFloat(exchangerate);
+
+                return [amountEur, exchangerate];
+            }
+        }
+
+        return [null, null];
+    }
+}
+
+let taxRates:any = {
+    "AT": "55472",
+    "BE": "55473",
+    "BG": "55474",
+    "CY": "55475",
+    "CZ": "55476",
+    "DK": "55477",
+    "EE": "55478",
+    "EL": "55479",
+    "ES": "55480",
+    "FI": "55481",
+    "FR": "55482",
+    "GB": "55483",
+    "HR": "55484",
+    "HU": "55485",
+    "IE": "55486",
+    "IT": "55487",
+    "LT": "55489",
+    "LU": "55490",
+    "LV": "55491",
+    "MT": "55492",
+    "NL": "55493",
+    "PL": "55494",
+    "PT": "55495",
+    "RO": "55496",
+    "SE": "55497",
+    "SI": "55498",
+    "SK": "55499"
+}
+
+async function sendToSevDesk(date, hash, xrp, eur, exchangerate, countryName, countryCode, account) {
+
+    //acc type id deutschland: 26
+    //acc type EU-Land: 714106
+    //acc type id drittland: 714098
+    
+    xrp = Math.floor(xrp * 1000000) / 1000000;
+
+    eur = Math.floor(eur * 100) / 100;
+
+    exchangerate = Math.floor(exchangerate * 10000) / 10000;
+
+    let taxType:string = "default";
+    let taxRate:number = 19;
+    let taxSet:any = null;
+    let accountingType:number = 26;
+
+    //check if we are EU rate
+    if(taxRates[countryCode] != null) {
+        let taxSetId = taxRates[countryCode];
+        //get tax set
+        let result = await fetch.default("https://my.sevdesk.de/api/v1/TaxSet?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}});
+
+        if(result && result.ok) {
+            let jsonResult = await result.json();
+            let receivedRates:any[] = jsonResult.objects
+            taxSet = receivedRates.filter(set => set.id === taxSetId)[0];
+
+            if(taxSet != null) {
+                taxType = "custom";
+                taxRate = taxSet.taxRate
+                accountingType = 714106;
+            }
+        }
+    } else {
+        taxSet = null
+        //are we germany?
+        if(countryCode === 'DE') {
+            taxType = "default";
+            taxRate = 19;
+            accountingType = 26;
+
+        } else {
+            taxType = "noteu";
+            taxRate = 0;
+            accountingType = 714098;
+            
+        }
+    }
+
+    console.log("hash: " + hash);
+    console.log("date: " + date);
+    console.log("amountEur: " + eur);
+    console.log("amountXrp: " + xrp);
+    console.log("exchangerate: " + exchangerate);
+    console.log("taxType: " + taxType);
+    console.log("taxSet: " + JSON.stringify(taxSet));
+    console.log("taxRate: " + taxRate);
+    console.log("accountingType: " + accountingType);
+    console.log("account: " + account);
+
+    if(config.IMPORT_SEVDESK) {
+
+        //call sevDesk API for automatic import
+        let voucher = {
+            "voucherDate": date,
+            "supplierName": account,
+            "description": hash,
+            "status": 100,
+            "showNet": "1",
+            "taxType": taxType,
+            "taxRate": taxRate,
+            "creditDebit": "D",
+            "voucherType": "VOU",
+            "taxSet": taxSet,
+            "deliveryDate": date,
+            "supplierNameAtSave": account,
+            "mapAll": "true",
+            "objectName": "Voucher"
+        }
+
+        let beleg = {
+        "voucher": voucher,
+        "voucherPosSave": [
+            {
+            "accountingType": {
+                "id": accountingType,
+                "objectName": "AccountingType"
+            },
+            "taxRate": taxRate,
+            "voucher": voucher,
+            "sum": eur,
+            "net": "false",
+            "isAsset": "false",
+            "sumGross": eur,
+            "comment": xrp + " XRP zu " + exchangerate + " EUR.",
+            "mapAll": "true",
+            "objectName": "VoucherPos"
+            }
+        ],
+        "voucherPosDelete": null,
+        "filename": null
+        }
+
+        let result = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/Factory/saveVoucher?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "POST", body: JSON.stringify(beleg)});
+        
+        let resultJson = await result.json();
+        console.log("result: " + JSON.stringify(resultJson));
+
+        let voucherId = resultJson.objects.voucher.id;
+
+        //create transaction
+        let transaction = {
+        "checkAccount": {
+            "id": 5056439,
+            "objectName": "CheckAccount"  
+        },
+        "valueDate": date,
+        "entryDate": date,
+        "status": "100",
+        "amount": eur,
+        "paymentPurpose": "XRP Ledger Services and Tools",
+        "payeePayerName": "XRP Ledger"
+        }
+
+        let transactionResult = await fetch.default("https://my.sevdesk.de/api/v1/CheckAccountTransaction?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL",}, method: "POST", body: JSON.stringify(transaction)});
+        
+        let transactionResultJson = await transactionResult.json();
+        console.log("transactionResult: " + JSON.stringify(transactionResultJson));
+
+        let checkTransactionId = transactionResultJson.objects.id;
+
+        //also create the transaction/booking
+        let booking = {
+
+        "amount": eur,
+        "date": date,
+        "type": "N",
+        "checkAccount": {
+            "id": 5056439,
+            "objectName": "CheckAccount"  
+        },
+        "checkAccountTransaction": {
+            "id": checkTransactionId,
+            "objectName": "CheckAccountTransaction"
+        },
+        "createFeed": true
+        }
+
+        let bookResult = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount?token="+config.SEVDESK_TOKEN,{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "PUT", body: JSON.stringify(booking)});
+
+        let bookingResultJson = await bookResult.json();
+        console.log("bookResult: " + JSON.stringify(bookingResultJson));
+    }
+  }
 

@@ -11,6 +11,14 @@ export class Xumm {
 
     db = new DB.DB();
 
+    appIdsForPaymentCheck:string[] = [  "cc3cc9da-67f3-4b63-9cc8-2ea869cee7a9", //blackhole xApp
+                                        "e9e1fbfd-c58b-4bf9-823d-4fe748a65d4c", //nftcreate xApp
+                                        "b42f7609-3cc1-476d-9b29-af1d7ded8eac", //escrow create xApp
+                                        "dd1e8d7e-8017-4375-9afa-9a67678f0974", //token create xApp
+                                        "9ea0a9e1-3e5c-4b71-8b3e-d0f39f26e084", //xrpl.services
+                                        "5e69b042-1cb4-4c07-b5c8-6cadafab4b1d"  //localhost xrpl.services
+                                    ]; 
+
     async init() {
         await this.db.initDb("xumm");
     }
@@ -25,7 +33,7 @@ export class Xumm {
         return pingResponse && pingResponse.pong;
     }
 
-    async submitPayload(payload:XummTypes.XummPostPayloadBodyJson, origin:string, referer: string, options?:GenericBackendPostRequestOptions): Promise<XummTypes.XummPostPayloadResponse> {
+    async submitPayload(payload:XummTypes.XummPostPayloadBodyJson, origin:string, referer: string, req:any, options?:GenericBackendPostRequestOptions): Promise<XummTypes.XummPostPayloadResponse> {
         //trying to resolve xumm user if from given frontendId:
         //console.log("received payload: " + JSON.stringify(payload));
         //console.log("received options: " + JSON.stringify(options));
@@ -105,6 +113,22 @@ export class Xumm {
             }
 
             payload = await this.adaptOriginProperties(origin, appId, payload, referer, options);
+
+            //store IP address
+            if(payload.txjson.TransactionType === 'Payment' && this.appIdsForPaymentCheck.includes(appId) && payload.txjson.Destination === "rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF") {
+                let ip = req.headers['x-real-ip'] // nginx
+                        || req.headers['x-client-ip'] // apache
+                        || req.headers['x-forwarded-for'] // use this only if you trust the header
+                        || req.ip // fallback to default
+
+                if(!payload.custom_meta)
+                    payload.custom_meta = {};
+
+                if(!payload.custom_meta.blob)
+                    payload.custom_meta.blob = {};
+
+                payload.custom_meta.blob.ip = ip;
+            }
             
         } catch(err) {
             console.log("err creating payload request")
