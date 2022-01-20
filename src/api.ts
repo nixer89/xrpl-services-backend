@@ -1388,7 +1388,7 @@ async function sendToSevDesk(date, hash, xrp, eur, exchangerate, countryName, co
     console.log("accountingType: " + accountingType);
     console.log("account: " + account);
 
-    if(config.IMPORT_SEVDESK) {
+    if(config.IMPORT_SEVDESK === "true") {
 
         //call sevDesk API for automatic import
         let voucher = {
