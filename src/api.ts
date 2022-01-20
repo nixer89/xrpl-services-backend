@@ -1242,40 +1242,58 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
         let date = new Date().toLocaleDateString('de');
         let account = payloadInfo.response.account;
         let txhash = payloadInfo.response.txid;
-        let xrp:any = payloadInfo.payload.request_json.Amount;
-        xrp = Number(xrp)/1000000;
+        let xrp:any = payloadInfo.payload.request_json.Amount
 
-        let exchangeResponse = await getEurAmountFromXrp(xrp, date);
+        if(!xrp) {
+            //no amount set by request, must be a donation! resolve amount from xrpl
+            let payload = {
+                "method": "tx",
+                "params": [
+                    {
+                        "transaction": txhash,
+                        "binary": false
+                    }
+                ]
+            }
+
+            let transaction = await fetch.default("https://xrplcluster.com", {method: "POST", body: JSON.stringify(payloadInfo)});
+
+            if(transaction && transaction.ok) {
+                let jsonResponse = await transaction.json();
+
+                xrp = jsonResponse?.result?.Amount;
+            }
+        }
+
+        xrp = Number(xrp) / 1000000;
+        console.log("request json: " + payloadInfo.payload.request_json);
+
+        let exchangeResponse = await getEurAmountFromXrp(xrp)
         let eurAmount = exchangeResponse[0];
         let exchangeRate = exchangeResponse[1];
 
         let countryCode = null;
-        let countryName = null;
         let countryCodeResponse = await fetch.default("http://ip-api.com/json/"+ip);
         
         if(countryCodeResponse && countryCodeResponse.ok) {
             let jsonResponse = await countryCodeResponse.json();
             if(jsonResponse && jsonResponse.status === "success" && jsonResponse.countryCode && jsonResponse.country) {
                 countryCode = jsonResponse.countryCode;
-                countryName = jsonResponse.country;
             }
         }
 
-        await sendToSevDesk(date, txhash, xrp, eurAmount, exchangeRate, countryName, countryCode, account);
+        await sendToSevDesk(date, txhash, xrp, eurAmount, exchangeRate, countryCode, account);
     } catch(err) {
         console.log("ERROR SEVDESK INTEGRATION")
         console.log(err);
     }
 }
 
-async function getEurAmountFromXrp(xrp:number, date: string): Promise<any> {
+async function getEurAmountFromXrp(xrp:number): Promise<any> {
     let amountEur = null;
     let exchangerate = null;
 
-    
-    console.log("calling API coingecko.com: ");
-    let callstring = "https://api.coingecko.com/api/v3/coins/ripple/history?date="+date.replace('.','-').replace('.','-');
-    console.log("CALLSTRING: " + callstring);
+    let callstring = "https://api.coingecko.com/api/v3/coins/ripple";
 
     let exchangeResponse = await fetch.default(callstring);
 
@@ -1327,7 +1345,7 @@ let taxRates:any = {
     "SK": "55499"
 }
 
-async function sendToSevDesk(date, hash, xrp, eur, exchangerate, countryName, countryCode, account) {
+async function sendToSevDesk(date, hash, xrp, eur, exchangerate, countryCode, account) {
 
     //acc type id deutschland: 26
     //acc type EU-Land: 714106
