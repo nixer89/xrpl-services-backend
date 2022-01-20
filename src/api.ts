@@ -1129,18 +1129,17 @@ async function handleWebhookRequest(request:any): Promise<any> {
             }
 
             try {
-                console.log("checking sevdesk");
-                console.log("appid included: " + appIdsForPaymentCheck.includes(payloadInfo.meta.uuid));
-                console.log("has ip: " + payloadInfo.custom_meta?.blob?.ip);
+                //sevdesk only for payments!
+                if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type === "Payment") {
+                    if(appIdsForPaymentCheck.includes(payloadInfo.meta.uuid) && payloadInfo.custom_meta?.blob?.ip && payloadInfo.response && payloadInfo.response.dispatched_nodetype === "MAINNET" && payloadInfo.response.dispatched_result === "tesSUCCESS") {
+                        //check transaction on ledger
+                        let transactionCheck = await special.validateTransactionOnLedger(payloadInfo);
+                        console.log("transaction validation:");
+                        console.log(transactionCheck);
 
-                if(payloadInfo && appIdsForPaymentCheck.includes(payloadInfo.meta.uuid) && payloadInfo.custom_meta?.blob?.ip && payloadInfo.response && payloadInfo.response.dispatched_nodetype === "MAINNET" && payloadInfo.response.dispatched_result === "tesSUCCESS") {
-                    //check transaction on ledger
-                    let transactionCheck = await special.validateTransactionOnLedger(payloadInfo);
-                    console.log("transaction validation:");
-                    console.log(transactionCheck);
-
-                    if(transactionCheck && transactionCheck.success && !transactionCheck.testnet) {
-                        handlePaymentToSevdesk(payloadInfo);                    
+                        if(transactionCheck && transactionCheck.success && !transactionCheck.testnet) {
+                            handlePaymentToSevdesk(payloadInfo);                    
+                        }
                     }
                 }
             } catch(err) {
