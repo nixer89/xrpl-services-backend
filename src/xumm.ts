@@ -116,10 +116,15 @@ export class Xumm {
 
             //store IP address
             if(payload.txjson.TransactionType === 'Payment' && this.appIdsForPaymentCheck.includes(appId) && payload.txjson.Destination === "rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF") {
-                let ip = req.headers['x-real-ip'] // nginx
+                let ip:string = req.headers['x-real-ip'] // nginx
                         || req.headers['x-client-ip'] // apache
                         || req.headers['x-forwarded-for'] // use this only if you trust the header
                         || req.ip // fallback to default
+
+                let cleanedIp = ip.split(",");
+                if(cleanedIp && cleanedIp.length > 0 && cleanedIp[0] != null) {
+                    ip = cleanedIp[0].trim();
+                }
 
                 if(!payload.custom_meta)
                     payload.custom_meta = {};
