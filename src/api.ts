@@ -1244,6 +1244,8 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
         let txhash = payloadInfo.response.txid;
         let xrp:any = payloadInfo.payload.request_json.Amount
 
+        console.log("XRP BEFORE: " + xrp);
+
         if(!xrp) {
             //no amount set by request, must be a donation! resolve amount from xrpl
             let payload = {
@@ -1256,7 +1258,7 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
                 ]
             }
 
-            let transaction = await fetch.default("https://xrplcluster.com", {method: "POST", body: JSON.stringify(payloadInfo)});
+            let transaction = await fetch.default("https://xrplcluster.com", {method: "POST", body: JSON.stringify(payload)});
 
             if(transaction && transaction.ok) {
                 let jsonResponse = await transaction.json();
@@ -1264,6 +1266,8 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
                 xrp = jsonResponse?.result?.Amount;
             }
         }
+
+        console.log("XRP AFTER: " + xrp);
 
         xrp = Number(xrp) / 1000000;
         console.log("request json: " + payloadInfo.payload.request_json);
