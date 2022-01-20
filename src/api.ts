@@ -1142,10 +1142,10 @@ async function handleWebhookRequest(request:any): Promise<any> {
                     if(appIdsForPaymentCheck.includes(payloadInfo.application.uuidv4) && payloadInfo.custom_meta?.blob?.ip && payloadInfo.response && payloadInfo.response.dispatched_nodetype === "MAINNET" && payloadInfo.response.dispatched_result === "tesSUCCESS") {
                         //check transaction on ledger
                         let transactionCheck = await special.validateTransactionOnLedger(payloadInfo);
-                        console.log("transaction validation:");
-                        console.log(transactionCheck);
+                        //console.log(transactionCheck);
 
                         if(transactionCheck && transactionCheck.success && !transactionCheck.testnet) {
+                            console.log("transaction successfull");
                             handlePaymentToSevdesk(payloadInfo);                    
                         }
                     }
@@ -1274,7 +1274,7 @@ async function getEurAmountFromXrp(xrp:number, date: string): Promise<any> {
 
     
     console.log("calling API coingecko.com: ");
-    let callstring = "https://api.coingecko.com/api/v3/coins/ripple/history?date="+date.replace('.','-');
+    let callstring = "https://api.coingecko.com/api/v3/coins/ripple/history?date="+date.replace('.','-').replace('.','-');
     console.log("CALLSTRING: " + callstring);
 
     let exchangeResponse = await fetch.default(callstring);
