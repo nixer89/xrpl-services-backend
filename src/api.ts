@@ -1131,7 +1131,15 @@ async function handleWebhookRequest(request:any): Promise<any> {
             try {
                 //sevdesk only for payments!
                 if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type === "Payment") {
-                    if(appIdsForPaymentCheck.includes(payloadInfo.meta.uuid) && payloadInfo.custom_meta?.blob?.ip && payloadInfo.response && payloadInfo.response.dispatched_nodetype === "MAINNET" && payloadInfo.response.dispatched_result === "tesSUCCESS") {
+
+                    console.log("checking sevdesk");
+                    console.log("appid: " + payloadInfo.application.uuidv4)
+                    console.log("appid included: " + appIdsForPaymentCheck.includes(payloadInfo.application.uuidv4));
+                    console.log("has ip: " + payloadInfo.custom_meta?.blob?.ip);
+                    console.log(payloadInfo.response.dispatched_nodetype);
+                    console.log(payloadInfo.response.dispatched_result)
+
+                    if(appIdsForPaymentCheck.includes(payloadInfo.application.uuidv4) && payloadInfo.custom_meta?.blob?.ip && payloadInfo.response && payloadInfo.response.dispatched_nodetype === "MAINNET" && payloadInfo.response.dispatched_result === "tesSUCCESS") {
                         //check transaction on ledger
                         let transactionCheck = await special.validateTransactionOnLedger(payloadInfo);
                         console.log("transaction validation:");
