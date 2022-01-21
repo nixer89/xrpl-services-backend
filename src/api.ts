@@ -1533,7 +1533,7 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
         "status": "100",
         "amount": eur,
         "paymentPurpose": "XRP Ledger Services and Tools",
-        "payeePayerName": "XRP Ledger"
+        "payeePayerName": account + " (" + countryCode + ")"
         }
 
         let transactionResult = await fetch.default("https://my.sevdesk.de/api/v1/CheckAccountTransaction?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL",}, method: "POST", body: JSON.stringify(transaction)});
