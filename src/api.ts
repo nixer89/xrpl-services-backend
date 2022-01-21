@@ -1476,7 +1476,7 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
         //call sevDesk API for automatic import
         let voucher = {
             "voucherDate": date,
-            "supplierName": account + "(" + countryCode + ")",
+            "supplierName": account + " (" + countryCode + ")",
             "description": hash,
             "status": 100,
             "showNet": "1",
@@ -1501,9 +1501,10 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
             },
             "taxRate": taxRate,
             "voucher": voucher,
-            "sum": eur,
+            "sum": null,
             "net": "false",
             "isAsset": "false",
+            "sumNet": null,
             "sumGross": eur,
             "comment": xrp + " XRP zu " + exchangerate + " EUR.",
             "mapAll": "true",
