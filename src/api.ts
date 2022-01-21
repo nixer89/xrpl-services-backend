@@ -1429,6 +1429,7 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
 
     //check if we are EU rate
     if(taxRates[countryCode] != null) {
+        console.log("EU TAX");
         let taxSetId = taxRates[countryCode];
         //get tax set
         let result = await fetch.default("https://my.sevdesk.de/api/v1/TaxSet?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}});
@@ -1452,11 +1453,13 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
         
         //are we germany?
         if(countryCode === 'DE') {
+            console.log("GERMAN TAX");
             taxType = "default";
             taxRate = 19;
             accountingType = 26;
 
         } else {
+            console.log("DRITTLAND TAX");
             taxType = "noteu";
             taxRate = 0;
             accountingType = 714094;
