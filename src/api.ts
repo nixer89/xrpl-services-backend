@@ -1414,7 +1414,7 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
 
     //acc type id deutschland: 26
     //acc type EU-Land: 714106
-    //acc type id drittland: 714098
+    //acc type id drittland: 714094
     
     xrp = Math.floor(xrp * 1000000) / 1000000;
 
@@ -1454,7 +1454,7 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
 
         } else {
             taxRate = 0;
-            accountingType = 714098;
+            accountingType = 714094;
             
         }
     }
