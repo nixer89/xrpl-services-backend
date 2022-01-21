@@ -1438,6 +1438,9 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
             let receivedRates:any[] = jsonResult.objects
             taxSet = receivedRates.filter(set => set.id === taxSetId)[0];
 
+            console.log("taxSetId: " + taxSetId);
+            console.log("TAX SET: " + JSON.stringify(taxSet));
+
             if(taxSet != null) {
                 taxType = "custom";
                 taxRate = taxSet.taxRate
