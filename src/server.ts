@@ -136,7 +136,9 @@ const start = async () => {
             !request.raw.url.startsWith('/api/resetCache/') &&
             !request.raw.url.startsWith('/api/resetOrigins/') &&
             !request.raw.url.startsWith('/api/v1/webhook/') &&
-            !(request.raw.url === '/api/v1/webhook'))
+            !(request.raw.url === '/api/v1/webhook') &&
+            !request.raw.url.startsWith('/api/v1/sevdesk/getKnownTransactions') &&
+            !request.raw.url.startsWith('/api/v1/sevdesk/hasTransaction'))
         {
           if(!request.headers.origin)
             reply.code(400).send('Please provide an origin header. Calls without origin are not allowed');
