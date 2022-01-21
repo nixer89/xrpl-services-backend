@@ -1,5 +1,5 @@
 import { MongoClient, Collection } from 'mongodb';
-import { AllowedOrigins, ApplicationApiKeys, UserIdCollection, FrontendIdPayloadCollection, XummIdPayloadCollection, XrplAccountPayloadCollection, StatisticsCollection, TrustSetCollection } from './util/types';
+import { AllowedOrigins, ApplicationApiKeys, UserIdCollection, FrontendIdPayloadCollection, XummIdPayloadCollection, XrplAccountPayloadCollection, StatisticsCollection, TrustSetCollection, TransactionSevdeskCollection } from './util/types';
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 });
@@ -16,6 +16,7 @@ export class DB {
     tmpInfoTable:Collection = null;
     statisticsCollection:Collection<StatisticsCollection> = null;
     trustsetCollection:Collection<TrustSetCollection> = null;
+    transactionSevdeskCollection:Collection<TransactionSevdeskCollection> = null;
 
     allowedOriginCache:AllowedOrigins[] = null;
     applicationApiKeysCache:ApplicationApiKeys[] = null;
@@ -32,6 +33,7 @@ export class DB {
         this.tmpInfoTable = await this.getNewDbModel("TmpInfoTable");
         this.statisticsCollection = await this.getNewDbModel("StatisticsCollection");
         this.trustsetCollection = await this.getNewDbModel("TrustSetCollection");
+        this.transactionSevdeskCollection = await this.getNewDbModel("TransactionSevdeskCollection");
         
         return Promise.resolve();
     }
@@ -551,6 +553,40 @@ export class DB {
         }
     }
 
+    async saveSevdeskTransaction(txid: string, account: string, ip: string, country: string, date: Date): Promise<any> {
+        //console.log("[DB]: saveUser:" + " origin: " + origin + " userId: " + userId + " xummId: " + xummId);
+        try {
+            if((await this.transactionSevdeskCollection.find({txid: txid}).toArray()).length == 0) {
+                return this.transactionSevdeskCollection.insertOne({txid: txid, account: account, ip: ip, country: country, date: date});
+            } else {
+                return Promise.resolve();
+            }
+        } catch(err) {
+            console.log("[DB]: error saveSevdeskTransaction");
+            console.log(JSON.stringify(err));
+        }
+    }
+
+    async hasSevdeskTransactionId(txid: string): Promise<any> {
+        //console.log("[DB]: saveUser:" + " origin: " + origin + " userId: " + userId + " xummId: " + xummId);
+        try {
+            return (await(await this.transactionSevdeskCollection.find({txid: txid})).toArray()).length > 0;
+        } catch(err) {
+            console.log("[DB]: error saveSevdeskTransaction");
+            console.log(JSON.stringify(err));
+        }
+    }
+
+    async getSevdeskTransactions(startDate:Date, endDate:Date): Promise<TransactionSevdeskCollection[]> {
+        try {
+            //add new validated ledger if not existent yet. or update if exists but newly received ledger has more validations than existing one
+            return this.transactionSevdeskCollection.find({$and: [{date : {$gte: startDate}},{date : {$lte: endDate}}]}).sort({date:-1}).toArray();
+        } catch(err) {
+            console.log("error getSevdeskTransactions");
+            console.log(err);
+        }
+    }
+
     async cleanupTrustlineCollection(): Promise<void> {
         //console.log("[DB]: getTempInfo: " + JSON.stringify(anyFilter));
         try {
@@ -689,6 +725,13 @@ export class DB {
             if(!(await this.tmpInfoTable.indexExists("applicationId_1_payloadId_1")))
                 await this.tmpInfoTable.createIndex({applicationId: 1, payloadId: 1}, {unique: true});
 
+
+            //transactionSevdeskCollection
+            if(!(await this.transactionSevdeskCollection.indexExists("txid_-1")))
+                await this.transactionSevdeskCollection.createIndex({txid: -1}, {unique: true});
+
+            if(!(await this.transactionSevdeskCollection.indexExists("date_-1")))
+                await this.transactionSevdeskCollection.createIndex({date: -1});
 
         } catch(err) {
             console.log("ERR creating indexes");

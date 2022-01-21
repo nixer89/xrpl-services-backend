@@ -121,10 +121,14 @@ export class Xumm {
                         || req.headers['x-forwarded-for'] // use this only if you trust the header
                         || req.ip // fallback to default
 
+                console.log("original ip: " + ip);
+
                 let cleanedIp = ip.split(",");
                 if(cleanedIp && cleanedIp.length > 0 && cleanedIp[0] != null) {
                     ip = cleanedIp[0].trim();
                 }
+
+                console.log("cleaned ip: " + ip);
 
                 if(!payload.custom_meta)
                     payload.custom_meta = {};

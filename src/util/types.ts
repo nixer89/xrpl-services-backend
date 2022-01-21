@@ -93,3 +93,11 @@ export interface TrustSetCollection {
     sourceAccount: string,
     updated: Date
 }
+
+export interface TransactionSevdeskCollection {
+    txid: string,
+    account: string,
+    ip: string,
+    country: string,
+    date: Date
+}

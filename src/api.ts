@@ -1130,14 +1130,14 @@ async function handleWebhookRequest(request:any): Promise<any> {
 
             try {
                 //sevdesk only for payments!
-                if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type === "Payment") {
+                if(payloadInfo?.payload?.tx_type === "Payment" && payloadInfo?.payload?.request_json?.Destination === "rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF" && payloadInfo.meta.signed) {
 
                     console.log("checking sevdesk");
                     console.log("appid: " + payloadInfo.application.uuidv4)
                     console.log("appid included: " + appIdsForPaymentCheck.includes(payloadInfo.application.uuidv4));
                     console.log("has ip: " + payloadInfo.custom_meta?.blob?.ip);
-                    console.log(payloadInfo.response.dispatched_nodetype);
-                    console.log(payloadInfo.response.dispatched_result)
+                    console.log(payloadInfo?.response?.dispatched_nodetype);
+                    console.log(payloadInfo?.response?.dispatched_result)
 
                     if(appIdsForPaymentCheck.includes(payloadInfo.application.uuidv4) && payloadInfo.custom_meta?.blob?.ip && payloadInfo.response && payloadInfo.response.dispatched_nodetype === "MAINNET" && payloadInfo.response.dispatched_result === "tesSUCCESS") {
                         //check transaction on ledger
@@ -1270,23 +1270,24 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
         console.log("XRP AFTER: " + xrp);
 
         xrp = Number(xrp) / 1000000;
+
         console.log("request json: " + payloadInfo.payload.request_json);
 
-        let exchangeResponse = await getEurAmountFromXrp(xrp)
-        let eurAmount = exchangeResponse[0];
-        let exchangeRate = exchangeResponse[1];
+        if(xrp && xrp >= 1) { //only handle transactions where XRP >= 1 !
 
-        let countryCode = null;
-        let countryCodeResponse = await fetch.default("http://ip-api.com/json/"+ip);
-        
-        if(countryCodeResponse && countryCodeResponse.ok) {
-            let jsonResponse = await countryCodeResponse.json();
-            if(jsonResponse && jsonResponse.status === "success" && jsonResponse.countryCode && jsonResponse.country) {
-                countryCode = jsonResponse.countryCode;
+            let exchangeResponse = await getEurAmountFromXrp(xrp)
+            let eurAmount = exchangeResponse[0];
+            let exchangeRate = exchangeResponse[1];
+
+            let countryCodeResponse = await fetch.default("http://ip-api.com/json/"+ip);
+            
+            if(countryCodeResponse && countryCodeResponse.ok) {
+                let jsonResponse = await countryCodeResponse.json();
+                if(jsonResponse && jsonResponse.status === "success" && jsonResponse.countryCode && jsonResponse.country) {
+                    await sendToSevDesk(date, txhash, xrp, eurAmount, exchangeRate, jsonResponse.countryCode, account);
+                }
             }
         }
-
-        await sendToSevDesk(date, txhash, xrp, eurAmount, exchangeRate, countryCode, account);
     } catch(err) {
         console.log("ERROR SEVDESK INTEGRATION")
         console.log(err);
