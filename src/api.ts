@@ -21,8 +21,11 @@ let ipRanges:string[] = ["76.201.20.","76.201.21.","76.201.22.","76.201.23.","12
 
 let appIdsForPaymentCheck:string[] = [  "cc3cc9da-67f3-4b63-9cc8-2ea869cee7a9", //blackhole xApp
                                         "e9e1fbfd-c58b-4bf9-823d-4fe748a65d4c", //nftcreate xApp
+                                        "0517bec0-abf8-4e66-aeb2-f667bbf23e7d", //nftcreate TEST xApp
                                         "b42f7609-3cc1-476d-9b29-af1d7ded8eac", //escrow create xApp
+                                        "96a32b48-206f-433d-9e32-a6634c712139", //escrow create TEST xApp
                                         "dd1e8d7e-8017-4375-9afa-9a67678f0974", //token create xApp
+                                        "16a3660a-2852-4d0e-84bb-f88b1baf6dee", //token create TEST xApp
                                         "9ea0a9e1-3e5c-4b71-8b3e-d0f39f26e084", //xrpl.services
                                         "5e69b042-1cb4-4c07-b5c8-6cadafab4b1d"  //localhost xrpl.services
                                     ]; 
@@ -919,6 +922,52 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
+    fastify.post('/api/v1/sevdesk/hasTransaction', async (request, reply) => {
+        //console.log("body params escrow: " + JSON.stringify(request.body));
+        if(!request.body || !request.body.token || !request.body.txid) {
+            reply.code(400).send('Not all parameters set. Request blocked.');
+        } else {
+            try {
+                if(config.SEVDESK_TOKEN === request.body.token) {
+                    let hasTxid = await db.hasSevdeskTransactionId(request.body.txid);
+                    return {
+                        hasTransaction: hasTxid
+                    }
+                } else {
+                    return {
+                        "error": "something is wrong"
+                    }
+                }
+            } catch(err) {
+                console.log("ERROR '/api/v1/sevdesk/hasTransaction': " + JSON.stringify(err));
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+            }
+        }
+    });
+
+    fastify.post('/api/v1/sevdesk/getKnownTransactions', async (request, reply) => {
+        //console.log("body params escrow: " + JSON.stringify(request.body));
+        if(!request.body || !request.body.token || !request.body.from || !request.body.to) {
+            reply.code(400).send('Not all parameters set. Request blocked.');
+        } else {
+            try {
+                if(config.SEVDESK_TOKEN === request.body.token) {
+                    let hasTxid = await db.getSevdeskTransactions(new Date(request.body.from), new Date(request.body.to));
+                    return {
+                        hasTransaction: hasTxid
+                    }
+                } else {
+                    return {
+                        "error": "something is wrong"
+                    }
+                }
+            } catch(err) {
+                console.log("ERROR '/api/v1/sevdesk/hasTransaction': " + JSON.stringify(err));
+                return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+            }
+        }
+    });
+
     fastify.get('/api/v1/statistics/transactions', async (request, reply) => {
         
         try {
@@ -1247,7 +1296,7 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
         let txhash = payloadInfo.response.txid;
         let xrp:any = payloadInfo.payload.request_json.Amount
 
-        console.log("XRP BEFORE: " + xrp);
+        console.log("DROPS BEFORE: " + xrp);
 
         if(!xrp) {
             //no amount set by request, must be a donation! resolve amount from xrpl
@@ -1270,11 +1319,9 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
             }
         }
 
-        console.log("XRP AFTER: " + xrp);
+        console.log("DROPS AFTER: " + xrp);
 
         xrp = Number(xrp) / 1000000;
-
-        console.log("request json: " + payloadInfo.payload.request_json);
 
         if(xrp && xrp >= 1) { //only handle transactions where XRP >= 1 !
 
@@ -1295,9 +1342,11 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
             }
 
             if(ip && countryCode) {
-                await sendToSevDesk(date, txhash, xrp, eurAmount, exchangeRate, countryCode, account);
+                await sendToSevDesk(date, txhash, ip, xrp, eurAmount, exchangeRate, countryCode, account);
             }
             
+        } else {
+            console.log("XRP Amount too small!");
         }
     } catch(err) {
         console.log("ERROR SEVDESK INTEGRATION")
@@ -1361,7 +1410,7 @@ let taxRates:any = {
     "SK": "55499"
 }
 
-async function sendToSevDesk(date, hash, xrp, eur, exchangerate, countryCode, account) {
+async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode, account) {
 
     //acc type id deutschland: 26
     //acc type EU-Land: 714106
@@ -1514,6 +1563,9 @@ async function sendToSevDesk(date, hash, xrp, eur, exchangerate, countryCode, ac
 
         let bookingResultJson = await bookResult.json();
         console.log("bookResult: " + JSON.stringify(bookingResultJson));
+
+        await db.saveSevdeskTransaction(hash, account, ip, countryCode, date);
+        console.log("SEVDESK TRANSACTION STORED");
     }
   }
 

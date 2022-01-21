@@ -579,6 +579,8 @@ export class DB {
 
     async getSevdeskTransactions(startDate:Date, endDate:Date): Promise<TransactionSevdeskCollection[]> {
         try {
+            console.log("SEVDESK FROM: " + startDate.toLocaleString());
+            console.log("SEVDESK TO: " + endDate.toLocaleString());
             //add new validated ledger if not existent yet. or update if exists but newly received ledger has more validations than existing one
             return this.transactionSevdeskCollection.find({$and: [{date : {$gte: startDate}},{date : {$lte: endDate}}]}).sort({date:-1}).toArray();
         } catch(err) {
