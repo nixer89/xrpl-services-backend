@@ -121,6 +121,8 @@ export class Xumm {
                         || req.headers['x-forwarded-for'] // use this only if you trust the header
                         || req.ip // fallback to default
 
+                console.log("headers: " + JSON.stringify(req.headers));
+
                 console.log("original ip: " + ip);
 
                 let cleanedIp = ip.split(",");
