@@ -1291,7 +1291,7 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
         //payment went through!
         let ip = payloadInfo.custom_meta.blob.ip;
         let countryCode = payloadInfo?.custom_meta?.blob?.countryCode;
-        let date = new Date().toLocaleDateString('de');
+        let date = new Date().toLocaleString('de');
         let account = payloadInfo.response.account;
         let txhash = payloadInfo.response.txid;
         let xrp:any = payloadInfo.payload.request_json.Amount
