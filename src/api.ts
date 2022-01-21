@@ -1453,7 +1453,6 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
             accountingType = 26;
 
         } else {
-            taxType = "noteu";
             taxRate = 0;
             accountingType = 714098;
             
