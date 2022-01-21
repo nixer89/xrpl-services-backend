@@ -1413,7 +1413,7 @@ let taxRates:any = {
 async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode, account) {
 
     //acc type id deutschland: 26
-    //acc type EU-Land: 714106
+    //acc type id EU-Land: 714106
     //acc type id drittland: 714094
     
     xrp = Math.floor(xrp * 1000000) / 1000000;
@@ -1446,13 +1446,15 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
         }
     } else {
         taxSet = null
-        taxType = "default";
+        
         //are we germany?
         if(countryCode === 'DE') {
+            taxType = "default";
             taxRate = 19;
             accountingType = 26;
 
         } else {
+            taxType = "noteu";
             taxRate = 0;
             accountingType = 714094;
             
@@ -1519,7 +1521,7 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
                   "id": accountingType,
                   "objectName": "AccountingType"
                 },
-                "taxRate": 19,
+                "taxRate": taxRate,
                 "sum": null,
                 "net": "false",
                 "isAsset": "false",
