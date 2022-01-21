@@ -1474,45 +1474,41 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
     if(config.IMPORT_SEVDESK === "true") {
 
         //call sevDesk API for automatic import
-        let voucher = {
-            "voucherDate": date,
-            "supplierName": account + " (" + countryCode + ")",
-            "description": hash,
-            "status": 100,
-            "showNet": "1",
-            "taxType": taxType,
-            "taxRate": taxRate,
-            "creditDebit": "C",
-            "voucherType": "VOU",
-            "taxSet": taxSet,
-            "deliveryDate": date,
-            "supplierNameAtSave": account + "(" + countryCode + ")",
-            "mapAll": "true",
-            "objectName": "Voucher"
-        }
-
         let beleg = {
-        "voucher": voucher,
-        "voucherPosSave": [
-            {
-            "accountingType": {
-                "id": accountingType,
-                "objectName": "AccountingType"
+            "voucher": {
+              "voucherDate": date,
+              "supplierName": account + " (" + countryCode + ")",
+              "description": hash,
+              "status": 100,
+              "showNet": "1",
+              "taxType": taxType,
+              "creditDebit": "C",
+              "voucherType": "VOU",
+              "taxSet": taxSet,
+              "supplierNameAtSave": account + " (" + countryCode + ")",
+              "deliveryDate": date,
+              "mapAll": "true",
+              "objectName": "Voucher"
             },
-            "taxRate": taxRate,
-            "voucher": voucher,
-            "sum": null,
-            "net": "false",
-            "isAsset": "false",
-            "sumNet": null,
-            "sumGross": eur,
-            "comment": xrp + " XRP zu " + exchangerate + " EUR.",
-            "mapAll": "true",
-            "objectName": "VoucherPos"
-            }
-        ],
-        "voucherPosDelete": null,
-        "filename": null
+            "voucherPosSave": [
+              {
+                "accountingType": {
+                  "id": accountingType,
+                  "objectName": "AccountingType"
+                },
+                "taxRate": taxRate,
+                "sum": null,
+                "net": "false",
+                "isAsset": "false",
+                "sumNet": null,
+                "sumGross": eur,
+                "comment": xrp + " XRP zu " + exchangerate + " EUR.",
+                "mapAll": "true",
+                "objectName": "VoucherPos"
+              }
+            ],
+            "voucherPosDelete": null,
+            "filename": null
         }
 
         let result = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/Factory/saveVoucher?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "POST", body: JSON.stringify(beleg)});
