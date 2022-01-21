@@ -1446,9 +1446,9 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
         }
     } else {
         taxSet = null
+        taxType = "default";
         //are we germany?
         if(countryCode === 'DE') {
-            taxType = "default";
             taxRate = 19;
             accountingType = 26;
 
@@ -1487,7 +1487,7 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
               "status": 100,
               "showNet": "1",
               "taxType": taxType,
-              "creditDebit": "C",
+              "creditDebit": "D",
               "hidden": null,
               "costCentre": null,
               "voucherType": "VOU",
