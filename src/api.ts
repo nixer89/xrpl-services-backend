@@ -1477,16 +1477,40 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
         let beleg = {
             "voucher": {
               "voucherDate": date,
+              "supplier": null,
               "supplierName": account + " (" + countryCode + ")",
               "description": hash,
+              "document": null,
+              "resultDisdar": null,
+              "documentPreview": null,
+              "payDate": null,
               "status": 100,
               "showNet": "1",
               "taxType": taxType,
               "creditDebit": "C",
+              "hidden": null,
+              "costCentre": null,
               "voucherType": "VOU",
+              "recurringIntervall": null,
+              "recurringInterval": null,
+              "recurringStartDate": null,
+              "recurringNextVoucher": null,
+              "recurringLastVoucher": null,
+              "recurringEndDate": null,
+              "enshrined": null,
+              "inSource": null,
               "taxSet": taxSet,
+              "iban": null,
+              "accountingSpecialCase": null,
+              "paymentDeadline": null,
+              "tip": null,
+              "mileageRate": null,
+              "selectedForPaymentFile": null,
               "supplierNameAtSave": account + " (" + countryCode + ")",
+              "taxmaroStockAccount": null,
+              "vatNumber": null,
               "deliveryDate": date,
+              "deliveryDateUntil": null,
               "mapAll": "true",
               "objectName": "Voucher"
             },
@@ -1496,7 +1520,7 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
                   "id": accountingType,
                   "objectName": "AccountingType"
                 },
-                "taxRate": taxRate,
+                "taxRate": 19,
                 "sum": null,
                 "net": "false",
                 "isAsset": "false",
@@ -1510,6 +1534,7 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
             "voucherPosDelete": null,
             "filename": null
         }
+
 
         let result = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/Factory/saveVoucher?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "POST", body: JSON.stringify(beleg)});
         
@@ -1539,21 +1564,23 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
 
         let checkTransactionId = transactionResultJson.objects.id;
 
+        console.log("transaction id: " + checkTransactionId);
+
         //also create the transaction/booking
         let booking = {
 
-        "amount": eur,
-        "date": date,
-        "type": "N",
-        "checkAccount": {
-            "id": 5056439,
-            "objectName": "CheckAccount"  
-        },
-        "checkAccountTransaction": {
-            "id": checkTransactionId,
-            "objectName": "CheckAccountTransaction"
-        },
-        "createFeed": true
+            "amount": eur,
+            "date": date,
+            "type": "N",
+            "checkAccount": {
+                "id": 5056439,
+                "objectName": "CheckAccount"  
+            },
+            "checkAccountTransaction": {
+                "id": checkTransactionId,
+                "objectName": "CheckAccountTransaction"
+            },
+            "createFeed": true
         }
 
         let bookResult = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount?token="+config.SEVDESK_TOKEN,{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "PUT", body: JSON.stringify(booking)});
