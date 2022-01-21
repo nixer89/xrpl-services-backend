@@ -1135,9 +1135,11 @@ async function handleWebhookRequest(request:any): Promise<any> {
                     console.log("checking sevdesk");
                     console.log("appid: " + payloadInfo.application.uuidv4)
                     console.log("appid included: " + appIdsForPaymentCheck.includes(payloadInfo.application.uuidv4));
-                    console.log("has ip: " + payloadInfo.custom_meta?.blob?.ip);
-                    console.log(payloadInfo?.response?.dispatched_nodetype);
-                    console.log(payloadInfo?.response?.dispatched_result)
+                    console.log("has ip: " + payloadInfo?.custom_meta?.blob?.ip);
+                    console.log("countrycode: " + payloadInfo?.custom_meta?.blob?.countryCode)
+
+                    console.log("nodetype: " + payloadInfo?.response?.dispatched_nodetype);
+                    console.log("trx result: " + payloadInfo?.response?.dispatched_result)
 
                     if(appIdsForPaymentCheck.includes(payloadInfo.application.uuidv4) && payloadInfo.custom_meta?.blob?.ip && payloadInfo.response && payloadInfo.response.dispatched_nodetype === "MAINNET" && payloadInfo.response.dispatched_result === "tesSUCCESS") {
                         //check transaction on ledger
@@ -1239,6 +1241,7 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
     try {
         //payment went through!
         let ip = payloadInfo.custom_meta.blob.ip;
+        let countryCode = payloadInfo?.custom_meta?.blob?.countryCode;
         let date = new Date().toLocaleDateString('de');
         let account = payloadInfo.response.account;
         let txhash = payloadInfo.response.txid;
@@ -1279,14 +1282,22 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
             let eurAmount = exchangeResponse[0];
             let exchangeRate = exchangeResponse[1];
 
-            let countryCodeResponse = await fetch.default("http://ip-api.com/json/"+ip);
-            
-            if(countryCodeResponse && countryCodeResponse.ok) {
-                let jsonResponse = await countryCodeResponse.json();
-                if(jsonResponse && jsonResponse.status === "success" && jsonResponse.countryCode && jsonResponse.country) {
-                    await sendToSevDesk(date, txhash, xrp, eurAmount, exchangeRate, jsonResponse.countryCode, account);
+            if(!countryCode) {
+                console.log("RESOLVING COUNTRY CODE BECAUSE IT WAS NOT GIVEN!")
+                let countryCodeResponse = await fetch.default("http://ip-api.com/json/"+ip);
+                
+                if(countryCodeResponse && countryCodeResponse.ok) {
+                    let jsonResponse = await countryCodeResponse.json();
+
+                    if(jsonResponse && jsonResponse.status === "success" && jsonResponse.countryCode )
+                        countryCode = jsonResponse.countryCode;
                 }
             }
+
+            if(ip && countryCode) {
+                await sendToSevDesk(date, txhash, xrp, eurAmount, exchangeRate, countryCode, account);
+            }
+            
         }
     } catch(err) {
         console.log("ERROR SEVDESK INTEGRATION")

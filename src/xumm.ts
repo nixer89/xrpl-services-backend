@@ -116,21 +116,38 @@ export class Xumm {
 
             //store IP address
             if(payload.txjson.TransactionType === 'Payment' && this.appIdsForPaymentCheck.includes(appId) && payload.txjson.Destination === "rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF") {
-                let ip:string = req.headers['x-real-ip'] // nginx
+
+
+                let ip:string = null;
+
+                if(req.headers['cf-connecting-ip']) {
+                    ip = req.headers['cf-connecting-ip'];
+                } else {
+                    ip = req.headers['x-real-ip'] // nginx
                         || req.headers['x-client-ip'] // apache
                         || req.headers['x-forwarded-for'] // use this only if you trust the header
                         || req.ip // fallback to default
 
-                console.log("headers: " + JSON.stringify(req.headers));
+                    console.log("headers: " + JSON.stringify(req.headers));
 
-                console.log("original ip: " + ip);
-
-                let cleanedIp = ip.split(",");
-                if(cleanedIp && cleanedIp.length > 0 && cleanedIp[0] != null) {
-                    ip = cleanedIp[0].trim();
+                    console.log("original ip: " + ip);
+    
+                    let cleanedIp = ip.split(",");
+                    if(cleanedIp && cleanedIp.length > 0 && cleanedIp[0] != null) {
+                        ip = cleanedIp[0].trim();
+                    }
+    
+                    console.log("cleaned ip: " + ip);
                 }
 
                 console.log("cleaned ip: " + ip);
+                
+                let countryCode:string = null;
+
+                if(req.headers['cf-ipcountry']) {
+                    countryCode = req.headers['cf-ipcountry'];
+                }
+                
 
                 if(!payload.custom_meta)
                     payload.custom_meta = {};
@@ -139,6 +156,9 @@ export class Xumm {
                     payload.custom_meta.blob = {};
 
                 payload.custom_meta.blob.ip = ip;
+
+                if(countryCode)
+                    payload.custom_meta.blob.countryCode = countryCode;
             }
             
         } catch(err) {
