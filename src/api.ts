@@ -1289,11 +1289,11 @@ async function saveTrustlineInfo(payloadInfo: XummGetPayloadResponse) {
 async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
     try {
         //payment went through!
-        let ip = payloadInfo.custom_meta.blob.ip;
-        let countryCode = payloadInfo?.custom_meta?.blob?.countryCode;
-        let date = new Date().toLocaleString('de');
-        let account = payloadInfo.response.account;
-        let txhash = payloadInfo.response.txid;
+        let ip:any = payloadInfo.custom_meta.blob.ip;
+        let countryCode:any = payloadInfo?.custom_meta?.blob?.countryCode;
+        let date = new Date();
+        let account:string = payloadInfo.response.account;
+        let txhash:string = payloadInfo.response.txid;
         let xrp:any = payloadInfo.payload.request_json.Amount
 
         console.log("DROPS BEFORE: " + xrp);
@@ -1410,7 +1410,7 @@ let taxRates:any = {
     "SK": "55499"
 }
 
-async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode, account) {
+async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, eur: number, exchangerate: number, countryCode: string, account: string) {
 
     //acc type id deutschland: 26
     //acc type id EU-Land: 714106
@@ -1426,6 +1426,7 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
     let taxRate:number = 19;
     let taxSet:any = null;
     let accountingType:number = 26;
+    let dateString = date.toLocaleDateString("de");
 
     //check if we are EU rate
     if(taxRates[countryCode] != null) {
@@ -1468,7 +1469,7 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
     }
 
     console.log("hash: " + hash);
-    console.log("date: " + date);
+    console.log("date: " + dateString);
     console.log("amountEur: " + eur);
     console.log("amountXrp: " + xrp);
     console.log("exchangerate: " + exchangerate);
@@ -1483,7 +1484,7 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
         //call sevDesk API for automatic import
         let beleg = {
             "voucher": {
-              "voucherDate": date,
+              "voucherDate": dateString,
               "supplier": null,
               "supplierName": account + " (" + countryCode + ")",
               "description": hash,
@@ -1516,7 +1517,7 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
               "supplierNameAtSave": account + " (" + countryCode + ")",
               "taxmaroStockAccount": null,
               "vatNumber": null,
-              "deliveryDate": date,
+              "deliveryDate": dateString,
               "deliveryDateUntil": null,
               "mapAll": "true",
               "objectName": "Voucher"
@@ -1556,8 +1557,8 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
             "id": 5056439,
             "objectName": "CheckAccount"  
         },
-        "valueDate": date,
-        "entryDate": date,
+        "valueDate": dateString,
+        "entryDate": dateString,
         "status": "100",
         "amount": eur,
         "paymentPurpose": "XRP Ledger Services and Tools",
@@ -1577,7 +1578,7 @@ async function sendToSevDesk(date, hash, ip, xrp, eur, exchangerate, countryCode
         let booking = {
 
             "amount": eur,
-            "date": date,
+            "date": dateString,
             "type": "N",
             "checkAccount": {
                 "id": 5056439,
