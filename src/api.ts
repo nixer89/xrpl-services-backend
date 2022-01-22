@@ -954,8 +954,6 @@ export async function registerRoutes(fastify, opts, next) {
         } else {
             try {
                 let xHash = crypto.createHash('sha256').update(config.SEVDESK_TOKEN).digest("hex");
-                console.log("xHash: " + xHash);
-                
                 if(xHash === request.body.token) {
                     let transactionIds = await db.getSevdeskTransactions(new Date(request.body.from), new Date(request.body.to));
                     return {
