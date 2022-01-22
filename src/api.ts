@@ -7,6 +7,7 @@ import { XummTypes } from 'xumm-sdk';
 import DeviceDetector = require("device-detector-js");
 import { AllowedOrigins, GenericBackendPostRequestOptions, TransactionValidation } from './util/types';
 import { XummGetPayloadResponse } from 'xumm-sdk/dist/src/types';
+import * as crypto from 'crypto';
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 });
@@ -928,7 +929,8 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(400).send('Not all parameters set. Request blocked.');
         } else {
             try {
-                if(config.SEVDESK_TOKEN === request.body.token) {
+                let xHash = crypto.createHash('sha256').update(config.SEVDESK_TOKEN).digest("hex");
+                if(xHash === request.body.token) {
                     let hasTxid = await db.hasSevdeskTransactionId(request.body.txid);
                     return {
                         hasTransaction: hasTxid
@@ -951,10 +953,11 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(400).send('Not all parameters set. Request blocked.');
         } else {
             try {
-                if(config.SEVDESK_TOKEN === request.body.token) {
-                    let hasTxid = await db.getSevdeskTransactions(new Date(request.body.from), new Date(request.body.to));
+                let xHash = crypto.createHash('sha256').update(config.SEVDESK_TOKEN).digest("hex");
+                if(xHash === request.body.token) {
+                    let transactionIds = await db.getSevdeskTransactions(new Date(request.body.from), new Date(request.body.to));
                     return {
-                        hasTransaction: hasTxid
+                        transactions: transactionIds
                     }
                 } else {
                     return {
