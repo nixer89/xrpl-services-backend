@@ -29,7 +29,9 @@ let appIdsForPaymentCheck:string[] = [  "cc3cc9da-67f3-4b63-9cc8-2ea869cee7a9", 
                                         "16a3660a-2852-4d0e-84bb-f88b1baf6dee", //token create TEST xApp
                                         "9ea0a9e1-3e5c-4b71-8b3e-d0f39f26e084", //xrpl.services
                                         "5e69b042-1cb4-4c07-b5c8-6cadafab4b1d"  //localhost xrpl.services
-                                    ]; 
+                                    ];
+
+let globalVatRates:any = {};
 
 export async function registerRoutes(fastify, opts, next) {
     await xummBackend.init();
@@ -1465,8 +1467,18 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         } else {
             console.log("DRITTLAND TAX");
             taxType = "noteu";
-            taxRate = 0;
             accountingType = 714094;
+
+            if(globalVatRates && globalVatRates[countryCode] && typeof globalVatRates[countryCode] === 'number') {
+                taxRate = globalVatRates[countryCode];
+            } else {
+                let vatRate = await retrieveVatRate(countryCode);
+
+                if(typeof vatRate === 'number')
+                    taxRate = vatRate;
+                else
+                    taxRate = 0;
+            }
             
         }
     }
@@ -1603,4 +1615,23 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         console.log("SEVDESK TRANSACTION STORED");
     }
   }
+
+async function retrieveVatRate(countryCode: string): Promise<number> {
+    let vatRatesResponse = await fetch.default("https://api.vatstack.com/v1/rates?country_code="+countryCode, { headers: {"X-API-KEY": config.VAT_RATES_KEY, "content-type": "application/json"}, method: "GET"});
+
+    let vatRatesJson = await vatRatesResponse.json();
+    console.log("vatRatesJson: " + JSON.stringify(vatRatesJson));
+
+    if(vatRatesJson?.rates && vatRatesJson.rates[0] && vatRatesJson.rates[0].standard_rate) {
+        let vat = vatRatesJson.rates[0].standard_rate;
+        if(!globalVatRates[countryCode] || globalVatRates[countryCode] != vat) {
+            globalVatRates[countryCode] = vat;
+        }
+
+        return vat;
+    }
+
+    //something is wrong
+    return 0;
+}
 
