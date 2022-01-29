@@ -99,6 +99,5 @@ export interface TransactionSevdeskCollection {
     account: string,
     ip: string,
     country_code: string,
-    country:string,
     date: Date
 }
