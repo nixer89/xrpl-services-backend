@@ -117,8 +117,7 @@ export class Xumm {
             //store IP address
             if(payload.txjson.TransactionType === 'Payment' && this.appIdsForPaymentCheck.includes(appId) && payload.txjson.Destination === "rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF") {
 
-
-                console.log("request headers: " + JSON.stringify(req.headers));
+                //console.log("request headers: " + JSON.stringify(req.headers));
 
                 let ip:string = null;
 
