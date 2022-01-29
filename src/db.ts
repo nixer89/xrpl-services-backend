@@ -553,11 +553,11 @@ export class DB {
         }
     }
 
-    async saveSevdeskTransaction(txid: string, account: string, ip: string, country: string, date: Date): Promise<any> {
+    async saveSevdeskTransaction(txid: string, account: string, ip: string, country_code: string, country:string, date: Date): Promise<any> {
         //console.log("[DB]: saveUser:" + " origin: " + origin + " userId: " + userId + " xummId: " + xummId);
         try {
             if((await this.transactionSevdeskCollection.find({txid: txid}).toArray()).length == 0) {
-                return this.transactionSevdeskCollection.insertOne({txid: txid, account: account, ip: ip, country: country, date: date});
+                return this.transactionSevdeskCollection.insertOne({txid: txid, account: account, ip: ip, country_code: country_code, country: country, date: date});
             } else {
                 return Promise.resolve();
             }

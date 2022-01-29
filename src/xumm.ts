@@ -118,6 +118,8 @@ export class Xumm {
             if(payload.txjson.TransactionType === 'Payment' && this.appIdsForPaymentCheck.includes(appId) && payload.txjson.Destination === "rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF") {
 
 
+                console.log("request headers: " + JSON.stringify(req.headers));
+
                 let ip:string = null;
 
                 if(req.headers['cf-connecting-ip']) {

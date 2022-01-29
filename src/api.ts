@@ -1296,6 +1296,7 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
         //payment went through!
         let ip:any = payloadInfo.custom_meta.blob.ip;
         let countryCode:any = payloadInfo?.custom_meta?.blob?.countryCode;
+        let countryName:any = payloadInfo?.custom_meta?.blob?.countryName;
         let date = new Date();
         let account:string = payloadInfo.response.account;
         let txhash:string = payloadInfo.response.txid;
@@ -1347,7 +1348,7 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
             }
 
             if(ip && countryCode) {
-                await sendToSevDesk(date, txhash, ip, xrp, eurAmount, exchangeRate, countryCode, account);
+                await sendToSevDesk(date, txhash, ip, xrp, eurAmount, exchangeRate, countryCode, countryName, account);
             }
             
         } else {
@@ -1415,7 +1416,7 @@ let taxRates:any = {
     "SK": "55499"
 }
 
-async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, eur: number, exchangerate: number, countryCode: string, account: string) {
+async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, eur: number, exchangerate: number, countryCode: string, countryname:string,  account: string) {
 
     //acc type id deutschland: 26
     //acc type id EU-Land: 714106
@@ -1491,6 +1492,8 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
     console.log("taxType: " + taxType);
     console.log("taxSet: " + JSON.stringify(taxSet));
     console.log("taxRate: " + taxRate);
+    console.log("countrycode: " + countryCode);
+    console.log("countryname: " + countryname);
     console.log("accountingType: " + accountingType);
     console.log("account: " + account);
 
@@ -1611,19 +1614,20 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         let bookingResultJson = await bookResult.json();
         console.log("bookResult: " + JSON.stringify(bookingResultJson));
 
-        await db.saveSevdeskTransaction(hash, account, ip, countryCode, date);
+        await db.saveSevdeskTransaction(hash, account, ip, countryCode, null, date);
         console.log("SEVDESK TRANSACTION STORED");
     }
   }
 
 async function retrieveVatRate(countryCode: string): Promise<number> {
-    let vatRatesResponse = await fetch.default("https://api.vatstack.com/v1/rates?country_code="+countryCode, { headers: {"X-API-KEY": config.VAT_RATES_KEY, "content-type": "application/json"}, method: "GET"});
+    let basicAuth:string = "Basic " + Buffer.from("info@xrpl.services:"+config.VAT_RATES_KEY).toString('base64');
+    let vatRatesResponse = await fetch.default("https://api.vatsense.com/1.0/rates?country_code="+countryCode, { headers: {"Authorization": basicAuth, "content-type": "application/json"}, method: "GET"});
 
     let vatRatesJson = await vatRatesResponse.json();
     console.log("vatRatesJson: " + JSON.stringify(vatRatesJson));
 
-    if(vatRatesJson?.rates && vatRatesJson.rates[0] && vatRatesJson.rates[0].standard_rate) {
-        let vat = vatRatesJson.rates[0].standard_rate;
+    if(vatRatesJson?.success && vatRatesJson.data?.standard && typeof vatRatesJson.data.standard.rate === 'number') {
+        let vat = vatRatesJson.data.standard.rate;
         if(!globalVatRates[countryCode] || globalVatRates[countryCode] != vat) {
             globalVatRates[countryCode] = vat;
         }
