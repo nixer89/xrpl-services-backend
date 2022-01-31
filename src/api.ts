@@ -1612,7 +1612,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         let bookingResultJson = await bookResult.json();
         console.log("bookResult: " + JSON.stringify(bookingResultJson));
 
-        await db.saveSevdeskTransaction(hash, account, ip, countryCode, date);
+        await db.saveSevdeskTransaction(hash, account, ip, countryCode, xrp, eur, date);
         console.log("SEVDESK TRANSACTION STORED");
     }
   }
