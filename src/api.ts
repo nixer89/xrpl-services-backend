@@ -1489,8 +1489,11 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
                     taxRate = vatRate;
                 else
                     taxRate = 0;
+
+                if(redis) {
+                    redis.set(countryCode, taxRate);
+                }
             }
-            
         }
     }
 
@@ -1637,10 +1640,6 @@ async function retrieveVatRate(countryCode: string): Promise<number> {
 
     if(vatRatesJson?.success && vatRatesJson.data?.standard && typeof vatRatesJson.data.standard.rate === 'number') {
         let vat = vatRatesJson.data.standard.rate;
-
-        if(redis) {
-            redis.set(countryCode, vat);
-        }
         
         return vat;
     }
