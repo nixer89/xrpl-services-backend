@@ -31,7 +31,14 @@ let appIdsForPaymentCheck:string[] = [  "cc3cc9da-67f3-4b63-9cc8-2ea869cee7a9", 
                                         "5e69b042-1cb4-4c07-b5c8-6cadafab4b1d"  //localhost xrpl.services
                                     ];
 
-let globalVatRates:any = {};
+const Redis = require('ioredis')
+const redis = new Redis({
+  connectionName: 'xumm-backend',
+  host: process.env.DB_IP || '127.0.0.1',
+  port: 6379,
+  connectTimeout: 500,
+  maxRetriesPerRequest: 1
+})
 
 export async function registerRoutes(fastify, opts, next) {
     await xummBackend.init();
@@ -1468,10 +1475,15 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
             taxType = "noteu";
             accountingType = 714094;
 
-            if(globalVatRates && globalVatRates[countryCode] && typeof globalVatRates[countryCode] === 'number') {
-                taxRate = globalVatRates[countryCode];
+            let redisRate = await redis.get(countryCode);
+
+            if(redisRate && typeof redisRate === 'number') {
+                console.log("vat taken from redis. Country: " + countryCode + " Rate: " + redisRate);
+                taxRate = redisRate;
             } else {
                 let vatRate = await retrieveVatRate(countryCode);
+
+                console.log("vat resolved from API. Country: " + countryCode + " Rate: " + vatRate);
 
                 if(typeof vatRate === 'number')
                     taxRate = vatRate;
@@ -1625,10 +1637,11 @@ async function retrieveVatRate(countryCode: string): Promise<number> {
 
     if(vatRatesJson?.success && vatRatesJson.data?.standard && typeof vatRatesJson.data.standard.rate === 'number') {
         let vat = vatRatesJson.data.standard.rate;
-        if(!globalVatRates[countryCode] || globalVatRates[countryCode] != vat) {
-            globalVatRates[countryCode] = vat;
-        }
 
+        if(redis) {
+            redis.set(countryCode, vat);
+        }
+        
         return vat;
     }
 
