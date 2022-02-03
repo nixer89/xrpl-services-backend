@@ -1460,11 +1460,10 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
                 accountingType = 714106;
             }
         }
-    } else {
-        taxSet = null
-        
+    } else {        
         //are we germany?
         if(countryCode === 'DE') {
+            taxSet = null
             console.log("GERMAN TAX");
             taxType = "default";
             taxRate = 19;
@@ -1475,24 +1474,44 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
             taxType = "noteu";
             accountingType = 714094;
 
-            let redisRate = await redis.get(countryCode);
-            console.log("REDISRATE: " + redisRate)
+            let result = await fetch.default("https://my.sevdesk.de/api/v1/TaxSet?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}});
 
-            if(redisRate) {
-                console.log("vat taken from redis. Country: " + countryCode + " Rate: " + redisRate);
-                taxRate = parseInt(redisRate+"");
+            if(result && result.ok) {
+                let jsonResult = await result.json();
+                let receivedRates:any[] = jsonResult.objects
+                
+                taxSet = receivedRates.filter(set => set.id === "56609")[0];
+
+                if(taxSet != null)
+                    taxType = "custom";
+            }
+
+            if(countryCode === 'US') {
+                taxRate = 10;
+            } else if(countryCode === 'CA') {
+                taxRate = 5;
+            } else if(countryCode === 'AM') {
+                taxRate = 20;
             } else {
-                let vatRate = await retrieveVatRate(countryCode);
+                let redisRate = await redis.get(countryCode);
+                console.log("REDISRATE: " + redisRate)
 
-                console.log("vat resolved from API. Country: " + countryCode + " Rate: " + vatRate);
+                if(redisRate) {
+                    console.log("vat taken from redis. Country: " + countryCode + " Rate: " + redisRate);
+                    taxRate = parseInt(redisRate+"");
+                } else {
+                    let vatRate = await retrieveVatRate(countryCode);
 
-                if(typeof vatRate === 'number')
-                    taxRate = vatRate;
-                else
-                    taxRate = 0;
+                    console.log("vat resolved from API. Country: " + countryCode + " Rate: " + vatRate);
 
-                if(redis) {
-                    redis.set(countryCode, taxRate);
+                    if(typeof vatRate === 'number')
+                        taxRate = vatRate;
+                    else
+                        taxRate = 0;
+
+                    if(redis) {
+                        redis.set(countryCode, taxRate);
+                    }
                 }
             }
         }
