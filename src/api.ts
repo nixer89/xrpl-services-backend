@@ -1479,14 +1479,14 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
             if(result && result.ok) {
                 let jsonResult = await result.json();
                 let receivedRates:any[] = jsonResult.objects
-                
+
                 taxSet = receivedRates.filter(set => set.id === "56609")[0];
 
                 if(taxSet != null)
                     taxType = "custom";
             }
 
-            if(countryCode === 'US') {
+            if(countryCode === 'US' || countryCode === 'JP') {
                 taxRate = 10;
             } else if(countryCode === 'CA') {
                 taxRate = 5;
