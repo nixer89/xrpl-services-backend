@@ -1476,10 +1476,11 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
             accountingType = 714094;
 
             let redisRate = await redis.get(countryCode);
+            console.log("REDISRATE: " + redisRate)
 
-            if(redisRate && typeof redisRate === 'number') {
+            if(redisRate) {
                 console.log("vat taken from redis. Country: " + countryCode + " Rate: " + redisRate);
-                taxRate = redisRate;
+                taxRate = parseInt(redisRate+"");
             } else {
                 let vatRate = await retrieveVatRate(countryCode);
 
