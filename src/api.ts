@@ -1307,6 +1307,13 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
         let account:string = payloadInfo.response.account;
         let txhash:string = payloadInfo.response.txid;
         let xrp:any = payloadInfo.payload.request_json.Amount
+        let purpose:any = payloadInfo?.custom_meta?.blob?.purpose;
+
+        if(purpose && (typeof purpose === 'string')) {
+            purpose = purpose + " -> ";
+        } else {
+            purpose = "";
+        }
 
         console.log("DROPS BEFORE: " + xrp);
 
@@ -1354,7 +1361,11 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
             }
 
             if(ip && countryCode) {
-                await sendToSevDesk(date, txhash, ip, xrp, eurAmount, exchangeRate, countryCode, account);
+                await sendToSevDesk(date, txhash, ip, xrp, eurAmount, exchangeRate, countryCode, account, purpose);
+            } else {
+                console.log("NO COUNTRY CODE OR IP!")
+                console.log("IP: " + ip);
+                console.log("COUNTRYCODE: " + countryCode);
             }
             
         } else {
@@ -1421,7 +1432,7 @@ let taxRates:any = {
     "SK": "55499"
 }
 
-async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, eur: number, exchangerate: number, countryCode: string, account: string) {
+async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, eur: number, exchangerate: number, countryCode: string, account: string, purpose: string) {
 
     //acc type id deutschland: 26
     //acc type id EU-Land: 714106
@@ -1584,7 +1595,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
                 "isAsset": "false",
                 "sumNet": null,
                 "sumGross": eur,
-                "comment": xrp + " XRP zu " + exchangerate + " EUR.",
+                "comment": purpose + xrp + " XRP zu " + exchangerate + " EUR.",
                 "mapAll": "true",
                 "objectName": "VoucherPos"
               }
