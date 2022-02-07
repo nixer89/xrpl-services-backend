@@ -1499,7 +1499,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
 
             if(countryCode === 'US' || countryCode === 'JP') {
                 taxRate = 10;
-            } else if(countryCode === 'CA') {
+            } else if(countryCode === 'CA' || countryCode === 'QA') {
                 taxRate = 5;
             } else if(countryCode === 'AM') {
                 taxRate = 20;
