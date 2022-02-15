@@ -11,12 +11,13 @@ export class Xumm {
 
     db = new DB.DB();
 
-    appIdsForPaymentCheck:string[] = [  "cc3cc9da-67f3-4b63-9cc8-2ea869cee7a9", //blackhole xApp
-                                        "e9e1fbfd-c58b-4bf9-823d-4fe748a65d4c", //nftcreate xApp
-                                        "b42f7609-3cc1-476d-9b29-af1d7ded8eac", //escrow create xApp
-                                        "dd1e8d7e-8017-4375-9afa-9a67678f0974", //token create xApp
-                                        "9ea0a9e1-3e5c-4b71-8b3e-d0f39f26e084", //xrpl.services
-                                        "5e69b042-1cb4-4c07-b5c8-6cadafab4b1d"  //localhost xrpl.services
+    appIdsForPaymentCheck:string[] = [  "cc3cc9da-67f3-4b63-9cc8-2ea869cee7a9", // blackhole xApp
+                                        "e9e1fbfd-c58b-4bf9-823d-4fe748a65d4c", // nftcreate xApp
+                                        "b42f7609-3cc1-476d-9b29-af1d7ded8eac", // escrow create xApp
+                                        "dd1e8d7e-8017-4375-9afa-9a67678f0974", // token create xApp
+                                        "9ea0a9e1-3e5c-4b71-8b3e-d0f39f26e084", // xrpl.services
+                                        "5e69b042-1cb4-4c07-b5c8-6cadafab4b1d", // localhost xrpl.services
+                                        "282206ef-7b2b-473a-85ba-4f1fc6b17266"  // Token Trasher xApp
                                     ]; 
 
     async init() {

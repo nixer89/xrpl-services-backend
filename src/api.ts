@@ -1210,6 +1210,8 @@ async function handleWebhookRequest(request:any): Promise<any> {
                         if(transactionCheck && transactionCheck.success && !transactionCheck.testnet) {
                             console.log("transaction successfull");
                             handlePaymentToSevdesk(payloadInfo);                    
+                        } else {
+                            console.log("TRANSACTION COULD NOT BE VALIDATED!")
                         }
                     }
                 }
