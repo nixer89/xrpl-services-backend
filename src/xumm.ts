@@ -121,7 +121,8 @@ export class Xumm {
             payload = await this.adaptOriginProperties(origin, appId, payload, referer, options);
 
             //store IP address
-            if(payload.txjson.TransactionType === 'Payment' && this.appIdsForPaymentCheck.includes(appId) && payload.txjson.Destination === "rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF") {
+            if(payload.txjson.TransactionType === 'Payment' && this.appIdsForPaymentCheck.includes(appId) && payload.txjson.Destination === "rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF"
+                && (!payload.txjson.Amount || (payload.txjson.Amount && typeof payload.txjson.Amount === 'string' && parseInt(payload.txjson.Amount) > 100000))) {
 
                 //console.log("request headers: " + JSON.stringify(req.headers));
 
