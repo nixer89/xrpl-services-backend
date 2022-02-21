@@ -23,14 +23,15 @@ let ipRanges:string[] = ["76.201.20.","76.201.21.","76.201.22.","76.201.23.","12
 let appIdsForPaymentCheck:string[] = [
                                         "cc3cc9da-67f3-4b63-9cc8-2ea869cee7a9", //blackhole xApp
                                         "e9e1fbfd-c58b-4bf9-823d-4fe748a65d4c", //nftcreate xApp
-                                        "0517bec0-abf8-4e66-aeb2-f667bbf23e7d", //nftcreate TEST xApp
+                                        "0517bec0-abf8-4e66-aeb2-f667bbf23e7d", //nftcreate xApp TEST
                                         "b42f7609-3cc1-476d-9b29-af1d7ded8eac", //escrow create xApp
-                                        "96a32b48-206f-433d-9e32-a6634c712139", //escrow create TEST xApp
+                                        "96a32b48-206f-433d-9e32-a6634c712139", //escrow create xApp TEST
                                         "dd1e8d7e-8017-4375-9afa-9a67678f0974", //token create xApp
-                                        "16a3660a-2852-4d0e-84bb-f88b1baf6dee", //token create TEST xApp
+                                        "16a3660a-2852-4d0e-84bb-f88b1baf6dee", //token create xApp TEST
                                         "9ea0a9e1-3e5c-4b71-8b3e-d0f39f26e084", //xrpl.services
                                         "5e69b042-1cb4-4c07-b5c8-6cadafab4b1d", //localhost xrpl.services
-                                        "282206ef-7b2b-473a-85ba-4f1fc6b17266"  // Token Trasher xApp
+                                        "282206ef-7b2b-473a-85ba-4f1fc6b17266", // Token Trasher xApp
+                                        "8dee4e57-c128-4803-9494-c23743d97e7e"  // Token Trasher xApp TEST
                                     ];
 
 const Redis = require('ioredis')
@@ -1346,7 +1347,7 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
 
         xrp = Number(xrp) / 1000000;
 
-        if(xrp && xrp >= 1) { //only handle transactions where XRP >= 1 !
+        if(xrp && xrp >= 0.1) { //only handle transactions where XRP >= 0.1 !
 
             let exchangeResponse = await getEurAmountFromXrp(xrp)
             let eurAmount = exchangeResponse[0];
