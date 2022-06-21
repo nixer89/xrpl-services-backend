@@ -37,10 +37,10 @@ const start = async () => {
     await fastify.register(require('middie'))
     
     console.log("adding response compression");
-    await fastify.register(require('fastify-compress'));
+    await fastify.register(require('@fastify/compress'));
     
     console.log("adding some security headers");
-    await fastify.register(require('fastify-helmet'));
+    await fastify.register(require('@fastify/helmet'));
 
     await fastify.register(require('@fastify/rate-limit'), {
       global: false,
@@ -69,7 +69,7 @@ const start = async () => {
       reply.send(error)
     });
     
-    await fastify.register(require('fastify-swagger'), {
+    await fastify.register(require('@fastify/swagger'), {
       mode: 'static',
       specification: {
         path: './src/doc/swagger-doc.yaml'
