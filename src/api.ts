@@ -1220,9 +1220,9 @@ async function handleWebhookRequest(request:any): Promise<any> {
 
                     if(payloadInfo?.payload?.request_json?.Amount && typeof payloadInfo?.payload?.request_json?.Amount == 'string') {
                         let amount = parseInt(payloadInfo?.payload?.request_json?.Amount);
-                        
+
                         if(amount < 100000)
-                            console.log("Amount to small for processing: " + amount + " drops.");
+                            console.log("Amount too small for processing: " + amount + " drops.");
                     }
                 }
             } catch(err) {

@@ -16,8 +16,8 @@ export class Special {
     xummBackend = new Xumm.Xumm();
     db = new DB.DB();
 
-    private mainNodes:string[] = ['wss://xrplcluster.com', 'wss://s2.ripple.com'];
-    private testNodes:string[] = ['wss://s.altnet.rippletest.net', 'wss://testnet.xrpl-labs.com'];
+    private mainNodes:string[] = ['wss://hooks-testnet.xrpl-labs.com', 'wss://hooks-testnet.xrpl-labs.com'];
+    private testNodes:string[] = ['wss://hooks-testnet.xrpl-labs.comt', 'wss://hooks-testnet.xrpl-labs.com'];
 
     private currentMainNode:number = 0;
     private currentTestNode:number = 0;
