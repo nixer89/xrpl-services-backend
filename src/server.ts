@@ -42,7 +42,7 @@ const start = async () => {
     console.log("adding some security headers");
     await fastify.register(require('fastify-helmet'));
 
-    await fastify.register(require('fastify-rate-limit'), {
+    await fastify.register(require('@fastify/rate-limit'), {
       global: false,
       redis: redis,
       skipOnError: true,
@@ -94,7 +94,7 @@ const start = async () => {
       allowedOrigins = await mongo.getAllowedOriginsAsArray();
 
       console.log("setting allowed origins: " + allowedOrigins);
-      await fastify.register(require('fastify-cors'), {
+      await fastify.register(require('@fastify/cors'), {
         origin: (origin, cb) => {
 
           //console.log("checking request with origin: " + origin);
