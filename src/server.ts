@@ -210,7 +210,7 @@ const start = async () => {
         console.log("finished declaring routes");
 
         try {
-          await fastify.listen(4443, '0.0.0.0');
+          await fastify.listen({port: 4443, host: '0.0.0.0'})
 
           console.log("http://localhost:4443/");
 
