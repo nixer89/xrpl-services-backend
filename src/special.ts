@@ -203,6 +203,7 @@ export class Special {
                 let found = await this.callXrplAndValidate(trxHash, isTestNet, destinationAccount, payloadInfo.payload.request_json.Amount);
                 //console.log("Checked " + (isTestNet ? "Testnet:" : "Mainnet:"));
                 console.timeEnd(timeString);
+                console.log(timeString +  ": " + found);
 
                 if(found) {
                     return {
@@ -215,13 +216,14 @@ export class Special {
                 } else {
 
                     //retry another node
-                    let timeString = (isTestNet ? "Switch_Test_" : "Main_") + trxHash;
+                    let timeString = (isTestNet ? "SWITCH_Test_" : "SWITCH_Main_") + trxHash;
                     console.time(timeString);
 
                     await this.switchNodes(isTestNet);
                     let found = await this.callXrplAndValidate(trxHash, isTestNet, destinationAccount, payloadInfo.payload.request_json.Amount);
 
-                    console.timeEnd(timeString);
+                    console.timeEnd(timeString,);
+                    console.log(timeString +  ": " + found);
 
                     if(found) {
                         return {
@@ -421,7 +423,8 @@ export class Special {
         }
     }
 
-    async switchNodes(testnet:boolean): Promise<void> {        
+    async switchNodes(testnet:boolean): Promise<void> {
+        console.log("SWITCHING NODES!!!");
         if(testnet) {
             if(this.currentTestNode == 0)
                 this.currentTestNode = 1;
