@@ -1327,7 +1327,7 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
             purpose = "";
         }
 
-        console.log("DROPS BEFORE: " + xrp);
+        //console.log("DROPS BEFORE: " + xrp);
 
         if(!xrp) {
             //no amount set by request, must be a donation! resolve amount from xrpl
@@ -1350,7 +1350,7 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
             }
         }
 
-        console.log("DROPS AFTER: " + xrp);
+        //console.log("DROPS AFTER: " + xrp);
 
         xrp = Number(xrp) / 1000000;
 
@@ -1361,7 +1361,7 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
             let exchangeRate = exchangeResponse[1];
 
             if(!countryCode) {
-                console.log("RESOLVING COUNTRY CODE BECAUSE IT WAS NOT GIVEN FOR IP: " + ip);
+                //console.log("RESOLVING COUNTRY CODE BECAUSE IT WAS NOT GIVEN FOR IP: " + ip);
                 let countryCodeResponse = await fetch.default("http://ip-api.com/json/"+ip);
                 
                 if(countryCodeResponse && countryCodeResponse.ok) {
@@ -1403,7 +1403,7 @@ async function getEurAmountFromXrp(xrp:number): Promise<any> {
         if(jsonResponse) {
             if(jsonResponse?.market_data?.current_price?.["eur"]) {
                 exchangerate = jsonResponse.market_data.current_price["eur"]
-                console.log("EXCHANGE RATE: " + exchangerate)
+                //console.log("EXCHANGE RATE: " + exchangerate)
 
                 amountEur = xrp * parseFloat(exchangerate);
 
@@ -1464,7 +1464,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
 
     //check if we are EU rate
     if(taxRates[countryCode] != null) {
-        console.log("EU TAX");
+        //console.log("EU TAX");
         let taxSetId = taxRates[countryCode];
         //get tax set
         let result = await fetch.default("https://my.sevdesk.de/api/v1/TaxSet?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}});
@@ -1474,8 +1474,8 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
             let receivedRates:any[] = jsonResult.objects
             taxSet = receivedRates.filter(set => set.id === taxSetId)[0];
 
-            console.log("taxSetId: " + taxSetId);
-            console.log("TAX SET: " + JSON.stringify(taxSet));
+            //console.log("taxSetId: " + taxSetId);
+            //console.log("TAX SET: " + JSON.stringify(taxSet));
 
             if(taxSet != null) {
                 taxType = "custom";
@@ -1487,13 +1487,13 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         //are we germany?
         if(countryCode === 'DE') {
             taxSet = null
-            console.log("GERMAN TAX");
+            //console.log("GERMAN TAX");
             taxType = "default";
             taxRate = 19;
             accountingType = 26;
 
         } else {
-            console.log("DRITTLAND TAX");
+            //console.log("DRITTLAND TAX");
             taxType = "noteu";
             accountingType = 714094;
 
@@ -1540,17 +1540,17 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         }
     }
 
-    console.log("hash: " + hash);
-    console.log("date: " + dateString);
-    console.log("amountEur: " + eur);
-    console.log("amountXrp: " + xrp);
-    console.log("exchangerate: " + exchangerate);
-    console.log("taxType: " + taxType);
-    console.log("taxSet: " + JSON.stringify(taxSet));
-    console.log("taxRate: " + taxRate);
-    console.log("countrycode: " + countryCode);
-    console.log("accountingType: " + accountingType);
-    console.log("account: " + account);
+    //console.log("hash: " + hash);
+    //console.log("date: " + dateString);
+    //console.log("amountEur: " + eur);
+    //console.log("amountXrp: " + xrp);
+    //console.log("exchangerate: " + exchangerate);
+    //console.log("taxType: " + taxType);
+    //console.log("taxSet: " + JSON.stringify(taxSet));
+    //console.log("taxRate: " + taxRate);
+    //console.log("countrycode: " + countryCode);
+    //console.log("accountingType: " + accountingType);
+    //console.log("account: " + account);
 
     if(config.IMPORT_SEVDESK === "true") {
 
@@ -1664,13 +1664,16 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
             "createFeed": true
         }
 
-        let bookResult = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount?token="+config.SEVDESK_TOKEN,{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "PUT", body: JSON.stringify(booking)});
+        //let bookResult = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount?token="+config.SEVDESK_TOKEN,{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "PUT", body: JSON.stringify(booking)});
 
-        let bookingResultJson = await bookResult.json();
+        //let bookingResultJson = await bookResult.json();
         //console.log("bookResult: " + JSON.stringify(bookingResultJson));
 
+        //store booking
+        await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount?token="+config.SEVDESK_TOKEN,{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "PUT", body: JSON.stringify(booking)});
+        
         await db.saveSevdeskTransaction(hash, account, ip, countryCode, xrp, eur, date);
-        console.log("SEVDESK TRANSACTION STORED");
+        console.log("SEVDESK TRANSACTION STORED: - IP: " + ip + " - countryCode: " + countryCode + " - XRP: " + xrp + " - EUR: " + eur + " - date: " + date.toLocaleString() + " - HASH: " + hash);
     }
   }
 
