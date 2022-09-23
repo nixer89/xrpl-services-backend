@@ -1196,14 +1196,14 @@ async function handleWebhookRequest(request:any): Promise<any> {
                 //sevdesk only for payments!
                 if(payloadInfo?.payload?.tx_type === "Payment" && payloadInfo?.payload?.request_json?.Destination === "rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF" && payloadInfo.meta.signed) {
 
-                    console.log("checking sevdesk");
-                    console.log("appid: " + payloadInfo.application.uuidv4)
-                    console.log("appid included: " + appIdsForPaymentCheck.includes(payloadInfo.application.uuidv4));
-                    console.log("has ip: " + payloadInfo?.custom_meta?.blob?.ip);
-                    console.log("countrycode: " + payloadInfo?.custom_meta?.blob?.countryCode)
+                    //console.log("checking sevdesk");
+                    //console.log("appid: " + payloadInfo.application.uuidv4)
+                    //console.log("appid included: " + appIdsForPaymentCheck.includes(payloadInfo.application.uuidv4));
+                    //console.log("has ip: " + payloadInfo?.custom_meta?.blob?.ip);
+                    //console.log("countrycode: " + payloadInfo?.custom_meta?.blob?.countryCode)
 
-                    console.log("nodetype: " + payloadInfo?.response?.dispatched_nodetype);
-                    console.log("trx result: " + payloadInfo?.response?.dispatched_result)
+                    //console.log("nodetype: " + payloadInfo?.response?.dispatched_nodetype);
+                    //console.log("trx result: " + payloadInfo?.response?.dispatched_result)
 
                     if(appIdsForPaymentCheck.includes(payloadInfo.application.uuidv4) && payloadInfo.custom_meta?.blob?.ip && payloadInfo.response && payloadInfo.response.dispatched_nodetype === "MAINNET" && payloadInfo.response.dispatched_result === "tesSUCCESS") {
                         //check transaction on ledger
@@ -1211,7 +1211,7 @@ async function handleWebhookRequest(request:any): Promise<any> {
                         //console.log(transactionCheck);
 
                         if(transactionCheck && transactionCheck.success && !transactionCheck.testnet) {
-                            console.log("transaction successfull");
+                            //console.log("transaction successfull");
                             handlePaymentToSevdesk(payloadInfo);                    
                         } else {
                             console.log("TRANSACTION COULD NOT BE VALIDATED!")
@@ -1517,10 +1517,10 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
                 taxRate = 20;
             } else {
                 let redisRate = await redis.get(countryCode);
-                console.log("REDISRATE: " + redisRate)
+                //console.log("REDISRATE: " + redisRate)
 
                 if(redisRate) {
-                    console.log("vat taken from redis. Country: " + countryCode + " Rate: " + redisRate);
+                    //console.log("vat taken from redis. Country: " + countryCode + " Rate: " + redisRate);
                     taxRate = parseInt(redisRate+"");
                 } else {
                     let vatRate = await retrieveVatRate(countryCode);
@@ -1673,7 +1673,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount?token="+config.SEVDESK_TOKEN,{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "PUT", body: JSON.stringify(booking)});
         
         await db.saveSevdeskTransaction(hash, account, ip, countryCode, xrp, eur, date);
-        console.log("SEVDESK TRANSACTION STORED: - IP: " + ip + " - countryCode: " + countryCode + " - XRP: " + xrp + " - EUR: " + eur + " - date: " + date.toLocaleString() + " - HASH: " + hash);
+        console.log("SEVDESK TRANSACTION STORED: - IP: " + ip + " - countryCode: " + countryCode + " - TaxRate: " + taxRate + " - XRP: " + xrp + " - EUR: " + eur + " - date: " + date.toLocaleString() + " - HASH: " + hash);
     }
   }
 
