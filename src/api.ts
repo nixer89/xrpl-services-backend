@@ -1151,11 +1151,11 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
-    fastify.get('/api/tools/unlchecker/:url', async (request, reply) => {
+    fastify.post('/api/tools/unlchecker/:url', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
         try {
-            if(request.params.url) {
-                return (await fetch.default(request.params.url)).json();
+            if(request?.body?.url) {
+                return (await fetch.default(request.body.url)).json();
             } else
                 return {success: false }
         } catch(err) {
