@@ -1151,6 +1151,19 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
+    fastify.get('/api/tools/unlchecker/:url', async (request, reply) => {
+        //console.log("request params: " + JSON.stringify(request.params));
+        try {
+            if(request.params.url) {
+                return (await fetch.default(request.params.url)).json();
+            } else
+                return {success: false }
+        } catch(err) {
+            console.log("ERROR '/api/tools/unlchecker/:url': " + JSON.stringify(err));
+            return { success : false, error: true, message: 'Something went wrong. Please check your request'};
+        }
+    });
+
     fastify.post('/api/v1/webhook', async (request, reply) => {
         return handleWebhookRequest(request);
     });
