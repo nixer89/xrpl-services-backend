@@ -1151,7 +1151,7 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
-    fastify.post('/api/tools/unlchecker/:url', async (request, reply) => {
+    fastify.post('/api/tools/unlchecker', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
         try {
             if(request?.body?.url) {
@@ -1159,7 +1159,7 @@ export async function registerRoutes(fastify, opts, next) {
             } else
                 return {success: false }
         } catch(err) {
-            console.log("ERROR '/api/tools/unlchecker/:url': " + JSON.stringify(err));
+            console.log("ERROR '/api/tools/unlchecker/': " + JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
     });
