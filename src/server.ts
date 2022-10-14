@@ -37,12 +37,12 @@ const start = async () => {
     await fastify.register(require('middie'))
     
     console.log("adding response compression");
-    await fastify.register(require('fastify-compress'));
+    await fastify.register(require('@fastify/compress'));
     
     console.log("adding some security headers");
-    await fastify.register(require('fastify-helmet'));
+    await fastify.register(require('@fastify/helmet'));
 
-    await fastify.register(require('fastify-rate-limit'), {
+    await fastify.register(require('@fastify/rate-limit'), {
       global: false,
       redis: redis,
       skipOnError: true,
@@ -69,7 +69,7 @@ const start = async () => {
       reply.send(error)
     });
     
-    await fastify.register(require('fastify-swagger'), {
+    await fastify.register(require('@fastify/swagger'), {
       mode: 'static',
       specification: {
         path: './src/doc/swagger-doc.yaml'
@@ -89,7 +89,7 @@ const start = async () => {
       allowedOrigins = await mongo.getAllowedOriginsAsArray();
 
       console.log("setting allowed origins: " + allowedOrigins);
-      await fastify.register(require('fastify-cors'), {
+      await fastify.register(require('@fastify/cors'), {
         origin: (origin, cb) => {
 
           //console.log("checking request with origin: " + origin);
