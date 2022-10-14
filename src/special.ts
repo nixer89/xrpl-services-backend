@@ -26,7 +26,9 @@ export class Special {
         await this.xummBackend.init();
         await this.db.initDb("special");
 
-        if(!config.ALLOW_CUSTOM_NODES) {
+        console.log("INIT DONE!")
+
+        if(!config.ALLOW_CUSTOM_NODES && config.NODES_TO_USE) {
             this.fixedNodes = config.NODES_TO_USE.split(',');
 
             for(let i = 0; i < this.fixedNodes.length; i++) {
