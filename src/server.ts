@@ -77,11 +77,6 @@ const start = async () => {
       exposeRoute: true,
       routePrefix: '/docs'
     });
-  
-    if(!config.BITHOMP_API_TOKEN) {
-      console.log("No BITHOMP_API_TOKEN set");
-      process.exit(1);
-    }
 
     console.log("starting server");
     try {
@@ -210,9 +205,9 @@ const start = async () => {
         console.log("finished declaring routes");
 
         try {
-          await fastify.listen(4001, '0.0.0.0');
+          await fastify.listen(config.SERVER_PORT, '0.0.0.0');
 
-          console.log("http://localhost:4001/");
+          console.log("http://0.0.0.0:"+config.SERVER_PORT);
 
           fastify.ready(err => {
             if (err) throw err

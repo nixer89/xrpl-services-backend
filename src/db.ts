@@ -1,11 +1,13 @@
 import { MongoClient, Collection } from 'mongodb';
 import { AllowedOrigins, ApplicationApiKeys, UserIdCollection, FrontendIdPayloadCollection, XummIdPayloadCollection, XrplAccountPayloadCollection, StatisticsCollection, TrustSetCollection, TransactionSevdeskCollection } from './util/types';
+import * as config from './util/config';
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 });
 
 export class DB {
-    dbIp = process.env.DB_IP || "127.0.0.1"
+    dbIp = config.DB_IP;
+    dbName = config.DB_NAME;
 
     allowedOriginsCollection:Collection<AllowedOrigins> = null;
     applicationApiKeysCollection:Collection<ApplicationApiKeys> = null;
@@ -610,12 +612,12 @@ export class DB {
             connection.on('error', ()=>{console.log("[DB]: Connection to MongoDB could NOT be established")});
         
             if(connection && connection.isConnected()) {
-                let existingCollections:Collection<any>[] = await connection.db('XummBackend').collections();
+                let existingCollections:Collection<any>[] = await connection.db(this.dbName).collections();
                 //create collection if not exists
                 if(existingCollections.filter(collection => collection.collectionName === collectionName).length == 0)
-                    await connection.db('XummBackend').createCollection(collectionName);
+                    await connection.db(this.dbName).createCollection(collectionName);
 
-                return connection.db('XummBackend').collection(collectionName);
+                return connection.db(this.dbName).collection(collectionName);
             }
             else
                 return null;

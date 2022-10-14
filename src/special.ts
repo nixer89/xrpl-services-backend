@@ -6,6 +6,7 @@ import {verifySignature} from 'verify-xrpl-signature'
 import { XummTypes } from 'xumm-sdk';
 import { TransactionValidation } from './util/types';
 import { Client, TxRequest, TxResponse } from 'xrpl'
+import { XummGetPayloadResponse } from 'xumm-sdk/dist/src/types';
 //import { FormattedTransactionType, RippleAPI } from 'ripple-lib';
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
@@ -16,20 +17,24 @@ export class Special {
     xummBackend = new Xumm.Xumm();
     db = new DB.DB();
 
-    private mainNodes:string[] = ['wss://xrplcluster.com', 'wss://s2.ripple.com'];
-    private testNodes:string[] = ['wss://s.altnet.rippletest.net', 'wss://testnet.xrpl-labs.com'];
+    private fixedNodes:string[];
+    private currentNode:number = 0;
 
-    private currentMainNode:number = 0;
-    private currentTestNode:number = 0;
-
-    private mainnetApi:Client = new Client(this.mainNodes[0]);
-    private testnetApi:Client = new Client(this.testNodes[0]);
+    private xrplClients:Map<string, Client>;
 
     async init() {
         await this.xummBackend.init();
         await this.db.initDb("special");
-        await this.mainnetApi.connect();
-        await this.testnetApi.connect();
+
+        if(!config.ALLOW_CUSTOM_NODES) {
+            this.fixedNodes = config.NODES_TO_USE.split(',');
+
+            for(let i = 0; i < this.fixedNodes.length; i++) {
+                if(this.fixedNodes[i]?.trim().length > 0) {
+                    this.xrplClients.set(this.fixedNodes[i], new Client(this.fixedNodes[i]));
+                }
+            }
+        }
     }
 
     resetDBCache() {
@@ -184,6 +189,9 @@ export class Special {
 
         let isTestNet:boolean = "MAINNET" != payloadInfo.response.dispatched_nodetype;
         let trxHash:string = payloadInfo.response.txid;
+        let nodeType = payloadInfo.response.dispatched_nodetype;
+        let nodeUrl = payloadInfo.response.dispatched_to;
+        let customNodeUrl:string = payloadInfo.custom_meta.blob.custom_node && typeof(payloadInfo.custom_meta.blob.custom_node) === 'string' ? payloadInfo.custom_meta.blob.custom_node : null;
         
         if(trxHash && "tesSUCCESS" === payloadInfo.response.dispatched_result) {
 
@@ -200,7 +208,7 @@ export class Special {
                 //do on ledger verification for non trustset transactions!
                 let timeString = (isTestNet ? "Test_" : "Main_") + trxHash;
                 console.time(timeString);
-                let found = await this.callXrplAndValidate(trxHash, isTestNet, destinationAccount, payloadInfo.payload.request_json.Amount);
+                let found = await this.callXrplAndValidate(trxHash, destinationAccount, payloadInfo.payload.request_json.Amount, customNodeUrl);
                 //console.log("Checked " + (isTestNet ? "Testnet:" : "Mainnet:"));
                 console.timeEnd(timeString);
                 console.log(timeString +  ": " + found);
@@ -214,32 +222,11 @@ export class Special {
                         originalPayload: payloadInfo
                     }
                 } else {
-
-                    //retry another node
-                    let timeString = (isTestNet ? "SWITCH_Test_" : "SWITCH_Main_") + trxHash;
-                    console.time(timeString);
-
-                    await this.switchNodes(isTestNet);
-                    let found = await this.callXrplAndValidate(trxHash, isTestNet, destinationAccount, payloadInfo.payload.request_json.Amount);
-
-                    console.timeEnd(timeString,);
-                    console.log(timeString +  ": " + found);
-
-                    if(found) {
-                        return {
-                            success: true,
-                            testnet: isTestNet,
-                            txid: trxHash,
-                            account: payloadInfo.response.account,
-                            originalPayload: payloadInfo
-                        }
-                    } else {
-                        return {
-                            success: false,
-                            testnet: isTestNet,
-                            account: payloadInfo.response.account,
-                            originalPayload: payloadInfo
-                        }
+                    return {
+                        success: false,
+                        testnet: isTestNet,
+                        account: payloadInfo.response.account,
+                        originalPayload: payloadInfo
                     }
                 }
             }
@@ -253,112 +240,32 @@ export class Special {
         }
     }
 
-    async callBithompAndValidate(trxHash:string, testnet: boolean, destinationAccount?:any, amount?:any): Promise<boolean> {
-        console.time("BITHOMP_"+trxHash)
+    async callXrplAndValidate(trxHash:string, destinationAccount?:any, amount?:any, customNode?:string, retry?: boolean) {
+
         let found:boolean = false;
-        try {
-            //console.log("checking bithomp with trxHash: " + trxHash);
-            //console.log("checking bithomp with testnet: " + testnet + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount));
-            let bithompResponse:any = await fetch.default("https://"+(testnet?'test.':'')+"bithomp.com/api/v2/transaction/"+trxHash, {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN }});
-            if(bithompResponse && bithompResponse.ok) {
-                let ledgerTrx:any = await bithompResponse.json();
-                //console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(ledgerTrx));
+        let clientToUse:Client;
 
-                //standard validation of successfull transaction
-                if(ledgerTrx && ledgerTrx.type && ledgerTrx.type.toLowerCase() === 'payment'
-                    && ledgerTrx.specification && ledgerTrx.specification.destination && (destinationAccount ? ledgerTrx.specification.destination.address === destinationAccount.account : true)
-                        && (destinationAccount && destinationAccount.tag ? ledgerTrx.specification.destination.tag == destinationAccount.tag : true) && ledgerTrx.outcome  && ledgerTrx.outcome.result === 'tesSUCCESS') {
-
-                            if(!amount) {
-                                //no amount in request. Accept any amount then
-                                found = true;
-                            }
-                            //validate delivered amount
-                            else if(Number.isInteger(parseInt(amount))) {
-                                //handle XRP amount
-                                found = ledgerTrx.outcome.deliveredAmount.currency === 'XRP' && (parseFloat(ledgerTrx.outcome.deliveredAmount.value)*1000000 == parseInt(amount));
-                            } else {
-                                //amount not a number so it must be a IOU
-                                found = ledgerTrx.outcome.deliveredAmount.currency === amount.currency //check currency
-                                    && ledgerTrx.outcome.deliveredAmount.counterparty === amount.issuer //check issuer
-                                        && ledgerTrx.outcome.deliveredAmount.value === amount.value; //check value
-                            }
-
-                } else if( ledgerTrx && ledgerTrx.outcome  && ledgerTrx.outcome.result === 'tesSUCCESS') {
-                    found = true;
-                } else {
-                    //transaction not valid
-                    found = false;
-                }
-            } else {
-                found = false;
-            }
-        } catch(err) {
-            console.log("ERR validating with bithomp");
-            console.log(JSON.stringify(err));
-        }
-
-        console.log("Checked Bithomp with " + (testnet ? "testnet" : "mainnet"));
-        console.timeEnd("BITHOMP_"+trxHash)
-
-        return found;
-    }
-
-    async callXrplAndValidate(trxHash:string, testnet: boolean, destinationAccount?:any, amount?:any, retry?: boolean): Promise<boolean> {
         try {
             //console.log("checking bithomp with trxHash: " + trxHash);
             //console.log("checking transaction with testnet: " + testnet + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount));
-            let xrplClient:Client = testnet ? this.testnetApi : this.mainnetApi
-            try {
-                if(!xrplClient.isConnected()) {
-                    console.log("wss not connected for " + (testnet ? "testnet" : "mainnet" + ". Connecting..."))
-                    await xrplClient.connect();
 
-                    if(xrplClient.isConnected()) {
-                        if(testnet)
-                            console.log("connecting to " + this.testNodes[this.currentTestNode]);
-                        else
-                            console.log("connecting to " + this.mainNodes[this.currentMainNode]);
-                    } else {
-                        console.log("could not connect! switching nodes!")
-                        await this.switchNodes(testnet);
-                        xrplClient = testnet ? this.testnetApi : this.mainnetApi
-                    }
-                }
-            } catch(err) {
-                console.log("could not connect to: " + (testnet ? this.testNodes[this.currentTestNode] : this.mainNodes[this.currentMainNode]));
-                try {
-                    await this.switchNodes(testnet);
-
-                    xrplClient = new Client((testnet ? this.testNodes[1] : this.mainNodes[1]));
-                    await xrplClient.connect();
-
-                    if(!xrplClient.isConnected()) {
-                        console.log("could not connect 2nd try to: " + (testnet ? this.testNodes[this.currentTestNode] : this.mainNodes[this.currentMainNode]));
-                        console.log("calling bithomp!")
-                        return this.callBithompAndValidate(trxHash, testnet, destinationAccount, amount);
-                    }
-                } catch(err) {
-                    console.log("ERROR! could not connect 2nd try to: " + (testnet ? this.testNodes[this.currentTestNode] : this.mainNodes[this.currentMainNode]));
-                    console.log("calling bithomp!")
-                    return this.callBithompAndValidate(trxHash, testnet, destinationAccount, amount);
-                }
-            }
+            clientToUse = await this.connectToNode(customNode);
+            
+            if(!clientToUse) //not connected, cancel here!
+                return false;
 
             let transactionRequest:TxRequest = {
                 command: "tx",
                 transaction: trxHash
             }
 
-            let transaction:TxResponse = await xrplClient.request(transactionRequest);
+            let transaction:TxResponse = await clientToUse.request(transactionRequest);
 
             if(transaction && transaction.result) {
                 //console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(transaction));
 
                 //standard validation of successfull transaction
                 if(transaction && transaction.result && transaction.result.TransactionType && transaction.result.TransactionType === "Payment") {
-
-                    
 
                     if(!destinationAccount || (transaction.result.Destination === destinationAccount.account
                         && (!destinationAccount.tag || transaction.result.DestinationTag == destinationAccount.tag)) && transaction.result.meta && typeof(transaction.result.meta) === 'object' && transaction.result.meta.TransactionResult === 'tesSUCCESS') {
@@ -369,86 +276,171 @@ export class Special {
 
                                 if(!amount) {
                                     //no amount in request. Accept any amount then
-                                    return true;
+                                    found = true;
                                 }
                                 //validate delivered amount
                                 else if(!isNaN(amount) && typeof(transactionMetaObject.delivered_amount) === 'string') {
                                     //handle XRP amount
-                                    return transactionMetaObject.delivered_amount === amount;
+                                    found = transactionMetaObject.delivered_amount === amount;
 
                                 } else if(typeof(transactionMetaObject.delivered_amount) === 'object') {
                                     //amount not a number so it must be a IOU
-                                    return transactionMetaObject.delivered_amount.currency === amount.currency //check currency
+                                    found = transactionMetaObject.delivered_amount.currency === amount.currency //check currency
                                         && transactionMetaObject.delivered_amount.issuer === amount.issuer //check issuer
                                             && transactionMetaObject.delivered_amount.value === amount.value; //check value
 
                                 } else {
                                     console.log("something is wrong here!");
                                     console.log(JSON.stringify(transaction))
-                                    return false;
+                                    found = false;
                                 }
                             } else {
                                 console.log("something is wrong here 2!");
                                 console.log(JSON.stringify(transaction))
-                                return false;
+                                found = false;
                             }
 
                     } else {
                         console.log("something is wrong here 3!");
                         console.log(JSON.stringify(transaction))
-                        return false;
+                        found = false;
                     }
 
                 } else if( transaction && transaction.result.meta && typeof(transaction.result.meta) === 'object' && transaction.result.meta.TransactionResult === 'tesSUCCESS') {
-                    return true;
+                    found = true;
                 } else {
                     //transaction not valid
-                    return false;
+                    found = false;
                 }
             } else {
-                return false;
+                found = false;
+            }
+
+            //retry if not found!
+            if(!found) {
+                await this.switchNodes(clientToUse);
+                return this.callXrplAndValidate(trxHash, destinationAccount, amount, customNode, true);
             }
         } catch(err) {
-            console.log("Transaction not found on " +(testnet ? this.testNodes[this.currentTestNode] : this.mainNodes[this.currentMainNode]));
+            console.log("Transaction not found on " + this.fixedNodes[this.currentNode]);
             console.log(JSON.stringify(err));
             console.log("switching nodes and trying again")
-            await this.switchNodes(testnet);
+            await this.switchNodes(clientToUse);
             if(!retry) {
                 console.log("no retry, trying again with new node")
-                return this.callXrplAndValidate(trxHash, testnet, destinationAccount, amount, true);
+                found = await this.callXrplAndValidate(trxHash, destinationAccount, amount, customNode, true);
             } else {
                 console.log("is retry, could not find connection on either node.")
-                return false;
+                found = false;
             }
+        }
+
+        return found;
+    }
+
+    async submitTransaction(payload:XummGetPayloadResponse, customNode?: string): Promise<TxResponse> {
+        try {
+            let clientToUse = await this.connectToNode(customNode);
+
+            let signedBlob = payload.response.hex;
+
+            return clientToUse.submitAndWait(signedBlob);
+        } catch(err) {
+            console.log("FAILED TO SUBMIT TRANSACTION!!!");
+            console.log(err);
         }
     }
 
-    async switchNodes(testnet:boolean): Promise<void> {
-        console.log("SWITCHING NODES!!!");
-        if(testnet) {
-            if(this.currentTestNode == 0)
-                this.currentTestNode = 1;
-            else 
-                this.currentTestNode = 0;
+    async connectToNode(customNode: string): Promise<Client> {
+        let clientToUse:Client;
 
-            await this.testnetApi.disconnect();
+        try {
+            //console.log("checking bithomp with trxHash: " + trxHash);
+            //console.log("checking transaction with testnet: " + testnet + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount));
 
-            console.log("connecting to " + this.testNodes[this.currentTestNode]);
-            this.testnetApi = new Client(this.testNodes[this.currentTestNode]);
-            await this.testnetApi.connect();
+            let nodeToUse:string;
 
-        } else {
-            if(this.currentMainNode == 0)
-                this.currentMainNode = 1;
-            else 
-                this.currentMainNode = 0;
+            if(!config.ALLOW_CUSTOM_NODES) {
+                nodeToUse = this.fixedNodes[this.currentNode];
+                
+            } else {
+                //connect to custom node!
+                if(customNode && customNode.length > 0) {
+                    nodeToUse = customNode;
+                }
+            }
 
-            await this.mainnetApi.disconnect();
+            if(!this.xrplClients.has(nodeToUse)) {
+                this.xrplClients.set(nodeToUse, new Client(nodeToUse));
+            }
 
-            console.log("connecting to " + this.mainNodes[this.currentMainNode]);
-            this.mainnetApi = new Client(this.mainNodes[this.currentMainNode]);
-            await this.mainnetApi.connect();
+            clientToUse = this.xrplClients.get(nodeToUse);
+
+            try {
+                if(!clientToUse.isConnected()) {
+                    console.log("wss not connected to " + clientToUse.url + ". Connecting...");
+                    await clientToUse.connect();
+
+                    if(clientToUse.isConnected()) {
+                        console.log("connecting to " + clientToUse.url);
+                    } else {
+                        console.log("could not connect! switching nodes!")
+                        clientToUse = await this.switchNodes(clientToUse);
+                    }
+                }
+            } catch(err) {
+                console.log("could not connect to: " + clientToUse.url);
+                try {
+                    clientToUse = await this.switchNodes(clientToUse);
+
+                    if(!clientToUse.isConnected()) {
+                        console.log("could not connect 2nd try to: " + clientToUse.url);
+                        console.log("Giving up!")
+                        clientToUse = null;
+                    }
+                } catch(err) {
+                    console.log("ERROR! could not connect 2nd try to: " + clientToUse.url);
+                    console.log("Giving up!")
+                    clientToUse = null;
+                }
+            }
+        } catch(err) {
+            console.log("Somthing serious happened connecting to the node.")
+            clientToUse = null;
         }
+
+        return clientToUse;
+    }
+
+    async switchNodes(originalClient: Client): Promise<Client> {
+        console.log("SWITCHING NODES!!!");
+
+        let newUrl = null;
+
+        if(originalClient) {
+            //fallback to same node
+            newUrl = originalClient.url;
+            //disconnect old client
+            originalClient.disconnect();
+        }
+
+        //only reconnect to different node if we are not a custom node and we have more than 1 fixed nodes available!
+        if(!config.ALLOW_CUSTOM_NODES && this.fixedNodes.length > 1) {
+            //reconnect to different node
+            if(this.currentNode < (this.fixedNodes.length-1))
+                this.currentNode++;
+            else this.currentNode = 0;
+
+            newUrl = this.fixedNodes[this.currentNode]
+        }
+        
+        console.log("connecting to " + newUrl);
+        let newConnection =  new Client(newUrl);
+        await newConnection.connect();
+
+        this.xrplClients.set(newUrl, newConnection);
+
+        return newConnection;
     }
 
     async addEscrow(escrow: any): Promise<any> {

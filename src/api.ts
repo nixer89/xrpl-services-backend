@@ -8,6 +8,7 @@ import DeviceDetector = require("device-detector-js");
 import { AllowedOrigins, GenericBackendPostRequestOptions, TransactionValidation } from './util/types';
 import { XummGetPayloadResponse } from 'xumm-sdk/dist/src/types';
 import * as crypto from 'crypto';
+import { Client, TxResponse } from 'xrpl';
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 });
@@ -1182,6 +1183,21 @@ async function handleWebhookRequest(request:any): Promise<any> {
     try {
         let webhookRequest:XummTypes.XummWebhookBody = request.body;
         let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByAppId(webhookRequest.meta.application_uuidv4, webhookRequest.meta.payload_uuidv4, "websocket");
+
+        //check if we have to actually submit the transaction!
+        if(payloadInfo && !payloadInfo.meta?.submit && payloadInfo.payload.request_json.TransactionType != "SignIn") {
+            console.log("payload to submit:")
+            console.log(JSON.stringify(payloadInfo));
+
+            let nodeUrl:string = payloadInfo.custom_meta.blob.custom_node && typeof(payloadInfo.custom_meta.blob.custom_node) === 'string' ? payloadInfo.custom_meta.blob.custom_node : payloadInfo.response.dispatched_to;
+            let submitResult:TxResponse = await special.submitTransaction(payloadInfo, nodeUrl);
+
+            payloadInfo.response.dispatched_to = nodeUrl;
+            if(typeof(submitResult?.result?.meta) === 'object') {
+                payloadInfo.response.dispatched_result = submitResult.result.meta.TransactionResult;
+                payloadInfo.response.txid = submitResult.result.hash;
+            }
+        }
         
         //check if we have to store the user
         try {
@@ -1195,8 +1211,10 @@ async function handleWebhookRequest(request:any): Promise<any> {
             }
 
             //check escrow payment
-            if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == 'payment' && payloadInfo.custom_meta && payloadInfo.custom_meta.blob && payloadInfo.custom_meta.blob.account) {
-                handleEscrowPayment(payloadInfo);
+            if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == 'payment'
+                && (payloadInfo.response.dispatched_nodetype === 'MAINNET' || payloadInfo.response.dispatched_nodetype === 'TESTNET')
+                    && payloadInfo.custom_meta && payloadInfo.custom_meta.blob && payloadInfo.custom_meta.blob.account) {
+                        handleEscrowPayment(payloadInfo);
             }
 
             //check trustline
