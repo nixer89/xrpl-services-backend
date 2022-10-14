@@ -611,7 +611,7 @@ export class DB {
             let connection:MongoClient = await MongoClient.connect('mongodb://'+this.dbIp+':27017', { useNewUrlParser: true, useUnifiedTopology: true });
             connection.on('error', ()=>{console.log("[DB]: Connection to MongoDB could NOT be established")});
         
-            if(connection && connection.isConnected()) {
+            if(connection) {
                 let existingCollections:Collection<any>[] = await connection.db(this.dbName).collections();
                 //create collection if not exists
                 if(existingCollections.filter(collection => collection.collectionName === collectionName).length == 0)
