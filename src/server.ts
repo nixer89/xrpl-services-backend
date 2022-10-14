@@ -29,7 +29,7 @@ const start = async () => {
       logger: {
         level: 'warn',
         //level: 'info',
-        file: '/home/ubuntu/fastify-logs/fastify.log' // Will use pino.destination()
+        //file: '/home/ubuntu/fastify-logs/fastify.log' // Will use pino.destination()
       }
     });
     
@@ -205,7 +205,7 @@ const start = async () => {
         console.log("finished declaring routes");
 
         try {
-          await fastify.listen(config.SERVER_PORT, '0.0.0.0');
+          await fastify.listen({ port: config.SERVER_PORT, host: '0.0.0.0' });
 
           console.log("http://0.0.0.0:"+config.SERVER_PORT);
 

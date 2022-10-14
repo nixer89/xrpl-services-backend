@@ -1,6 +1,6 @@
 {
   "name": "xrpl-services-backend",
-  "version": "5.0.2",
+  "version": "5.0.3",
   "description": "provides a generic backend, connected to xumm. Easy access of user tokens for push",
   "main": "src/server.ts",
   "scripts": {
