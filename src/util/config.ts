@@ -7,5 +7,5 @@ export const RESET_CACHE_TOKEN = process.env.RESET_CACHE_TOKEN;
 export const SEVDESK_TOKEN = process.env.SEVDESK_TOKEN;
 export const IMPORT_SEVDESK = process.env.IMPORT_SEVDESK;
 export const VAT_RATES_KEY = process.env.VAT_RATES_KEY;
-export const ALLOW_CUSTOM_NODES = process.env.ALLOW_CUSTOM_NODES && process.env.USE_CUSTOM_NODES === 'true';
+export const ALLOW_CUSTOM_NODES = process.env.ALLOW_CUSTOM_NODES === 'true';
 export const NODES_TO_USE = process.env.NODES_TO_USE;
