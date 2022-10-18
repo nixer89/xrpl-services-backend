@@ -112,7 +112,8 @@ export class Special {
                 return {
                         success: false,
                         account: payloadInfo.response.account,
-                        testnet: false
+                        testnet: false,
+                        xummNodeUrl: payloadInfo.response.dispatched_to
                     }
             }
 
@@ -144,13 +145,13 @@ export class Special {
                 if(validationTime == -1 || (transactionDate && transactionDate.setTime(transactionDate.getTime()+validationTime) > Date.now())) {
                     return this.validateTransactionOnLedger(payloadInfo);
                 } else {
-                    return { success: false, payloadExpired : true, testnet: false, account: payloadInfo.response.account};
+                    return { success: false, payloadExpired : true, testnet: false, account: payloadInfo.response.account, xummNodeUrl: payloadInfo.response.dispatched_to};
                 }
             } else {
-                return { success: false, noValidationTimeFrame : true, testnet: false, account: payloadInfo.response.account };
+                return { success: false, noValidationTimeFrame : true, testnet: false, account: payloadInfo.response.account, xummNodeUrl: payloadInfo.response.dispatched_to };
             }
         } else {
-            return { success: false, testnet: false, error: true, message: "invalid payload or transaction not successfull", account: payloadInfo.response.account}
+            return { success: false, testnet: false, error: true, message: "invalid payload or transaction not successfull", account: payloadInfo.response.account, xummNodeUrl: payloadInfo.response.dispatched_to}
         }
     }
 
@@ -202,7 +203,9 @@ export class Special {
                     testnet: isTestNet,
                     txid: trxHash,
                     account: payloadInfo.response.account,
-                    originalPayload: payloadInfo
+                    originalPayload: payloadInfo,
+                    xummNodeUrl: nodeUrl
+                    
                 }
             } else {
                 //do on ledger verification for non trustset transactions!
@@ -219,14 +222,16 @@ export class Special {
                         testnet: isTestNet,
                         txid: trxHash,
                         account: payloadInfo.response.account,
-                        originalPayload: payloadInfo
+                        originalPayload: payloadInfo,
+                        xummNodeUrl: nodeUrl
                     }
                 } else {
                     return {
                         success: false,
                         testnet: isTestNet,
                         account: payloadInfo.response.account,
-                        originalPayload: payloadInfo
+                        originalPayload: payloadInfo,
+                        xummNodeUrl: nodeUrl
                     }
                 }
             }
@@ -235,7 +240,8 @@ export class Special {
                 success: false,
                 testnet: isTestNet,
                 account: payloadInfo.response.account,
-                originalPayload: payloadInfo
+                originalPayload: payloadInfo,
+                xummNodeUrl: nodeUrl
             };
         }
     }

@@ -721,7 +721,7 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId, "check_signin_payload_endpoint");
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
-                    return {success: true, account: payloadInfo.response.account}
+                    return {success: true, account: payloadInfo.response.account, xummNodeUrl: payloadInfo.response.dispatched_to}
                 }
                 
                 //we didn't go into the success:true -> so return false :)
@@ -745,7 +745,7 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin');
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
-                    return {success: true, account: payloadInfo.response.account }
+                    return {success: true, account: payloadInfo.response.account, xummNodeUrl: payloadInfo.response.dispatched_to }
                 }
                 
                 //we didn't go into the success:true -> so return false :)
@@ -774,7 +774,7 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin', refererURL);
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
-                    return {success: true, account: payloadInfo.response.account }
+                    return {success: true, account: payloadInfo.response.account, xummNodeUrl: payloadInfo.response.dispatched_to }
                 }
                 
                 //we didn't go into the success:true -> so return false :)
@@ -1185,7 +1185,7 @@ async function handleWebhookRequest(request:any): Promise<any> {
         let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByAppId(webhookRequest.meta.application_uuidv4, webhookRequest.meta.payload_uuidv4, "websocket");
 
         //check if we have to actually submit the transaction!
-        if(payloadInfo && !payloadInfo.meta?.submit && payloadInfo.payload.request_json.TransactionType != "SignIn") {
+        if(payloadInfo && payloadInfo.meta?.signed && !payloadInfo.meta?.submit && payloadInfo.payload.request_json.TransactionType != "SignIn") {
             console.log("payload to submit:")
             console.log(JSON.stringify(payloadInfo));
 
