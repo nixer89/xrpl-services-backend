@@ -26,7 +26,7 @@ export class Special {
     private fixedNodes:string[];
     private currentNode:number = 0;
 
-    private clientPool:Map<string, ClientInfo>;
+    private clientPool:Map<string, ClientInfo> = new Map();
 
     async init() {
         await this.xummBackend.init();
@@ -553,13 +553,15 @@ export class Special {
     }
 
     cleanupConnections() {
-        this.clientPool.forEach((value, key, map) => {
-            if(Date.now() - 300000 - value.lastUsed > 0 ) { //expired!
-                console.log("Expired: " + value.client.url);
-                console.log("Removing it!");
-                this.clientPool.get(key).client.disconnect();
-                this.clientPool.delete(key);
-            }
-        });
+        if(this.clientPool && this.clientPool.size > 0) {
+            this.clientPool.forEach((value, key, map) => {
+                if(Date.now() - 300000 - value.lastUsed > 0 ) { //expired!
+                    console.log("Expired: " + value.client.url);
+                    console.log("Removing it!");
+                    this.clientPool.get(key).client.disconnect();
+                    this.clientPool.delete(key);
+                }
+            });
+        }
     }
 }
