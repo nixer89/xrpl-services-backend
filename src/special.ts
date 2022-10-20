@@ -7,10 +7,16 @@ import { XummTypes } from 'xumm-sdk';
 import { TransactionValidation } from './util/types';
 import { Client, TxRequest, TxResponse } from 'xrpl'
 import { XummGetPayloadResponse } from 'xumm-sdk/dist/src/types';
+import * as scheduler from 'node-schedule';
 //import { FormattedTransactionType, RippleAPI } from 'ripple-lib';
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 });
+
+interface ClientInfo {
+    client: Client,
+    lastUsed: number
+}
 
 export class Special {
 
@@ -20,7 +26,7 @@ export class Special {
     private fixedNodes:string[];
     private currentNode:number = 0;
 
-    private xrplClients:Map<string, Client>;
+    private clientPool:Map<string, ClientInfo>;
 
     async init() {
         await this.xummBackend.init();
@@ -31,10 +37,12 @@ export class Special {
 
             for(let i = 0; i < this.fixedNodes.length; i++) {
                 if(this.fixedNodes[i]?.trim().length > 0) {
-                    this.xrplClients.set(this.fixedNodes[i], new Client(this.fixedNodes[i]));
+                    this.clientPool.set(this.fixedNodes[i], { client: new Client(this.fixedNodes[i]), lastUsed: Date.now()});
                 }
             }
         }
+
+        scheduler.scheduleJob("cleanupConnections", {second: 0}, () => this.cleanupConnections());
     }
 
     resetDBCache() {
@@ -376,11 +384,11 @@ export class Special {
                 }
             }
 
-            if(!this.xrplClients.has(nodeToUse)) {
-                this.xrplClients.set(nodeToUse, new Client(nodeToUse));
+            if(!this.clientPool.has(nodeToUse)) {
+                this.clientPool.set(nodeToUse, { client: new Client(nodeToUse), lastUsed: Date.now() });
             }
 
-            clientToUse = this.xrplClients.get(nodeToUse);
+            clientToUse = this.clientPool.get(nodeToUse).client;            
 
             try {
                 if(!clientToUse.isConnected()) {
@@ -414,6 +422,14 @@ export class Special {
             console.log("Somthing serious happened connecting to the node.")
             clientToUse = null;
         }
+        
+        //update last used time
+        try {
+            this.clientPool.get(clientToUse.url).lastUsed = Date.now();
+        } catch(err) {
+            //log but ignore
+            console.log(err);
+        }
 
         return clientToUse;
     }
@@ -444,7 +460,7 @@ export class Special {
         let newConnection =  new Client(newUrl);
         await newConnection.connect();
 
-        this.xrplClients.set(newUrl, newConnection);
+        this.clientPool.set(newUrl, { client: newConnection, lastUsed: Date.now() });
 
         return newConnection;
     }
@@ -534,5 +550,16 @@ export class Special {
         } catch(err) {
             console.log(err);
         }
+    }
+
+    cleanupConnections() {
+        this.clientPool.forEach((value, key, map) => {
+            if(Date.now() - 300000 - value.lastUsed > 0 ) { //expired!
+                console.log("Expired: " + value.client.url);
+                console.log("Removing it!");
+                this.clientPool.get(key).client.disconnect();
+                this.clientPool.delete(key);
+            }
+        });
     }
 }
