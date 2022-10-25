@@ -8,7 +8,7 @@ import DeviceDetector = require("device-detector-js");
 import { AllowedOrigins, GenericBackendPostRequestOptions, TransactionValidation } from './util/types';
 import { XummGetPayloadResponse } from 'xumm-sdk/dist/src/types';
 import * as crypto from 'crypto';
-import { Client, TxResponse } from 'xrpl';
+import { Client, SubmitResponse, TxResponse } from 'xrpl';
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 });
@@ -1192,14 +1192,13 @@ async function handleWebhookRequest(request:any): Promise<any> {
             console.log(JSON.stringify(payloadInfo));
 
             let nodeUrl:string = payloadInfo.custom_meta.blob.custom_node && typeof(payloadInfo.custom_meta.blob.custom_node) === 'string' ? payloadInfo.custom_meta.blob.custom_node : payloadInfo.response.dispatched_to;
-            let submitResult:TxResponse = await special.submitTransaction(payloadInfo, nodeUrl);
+            let submitResult:SubmitResponse = await special.submitTransaction(payloadInfo, nodeUrl);
 
             console.log(JSON.stringify(submitResult));
 
             payloadInfo.response.dispatched_to = nodeUrl;
-            if(typeof(submitResult?.result?.meta) === 'object') {
-                payloadInfo.response.dispatched_result = submitResult.result.meta.TransactionResult;
-                payloadInfo.response.txid = submitResult.result.hash;
+            if(submitResult?.result?.accepted) {
+                payloadInfo.response.dispatched_result = submitResult.result.engine_result
             }
         }
         

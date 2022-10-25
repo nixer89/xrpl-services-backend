@@ -5,7 +5,7 @@ import * as fetch from 'node-fetch';
 import {verifySignature} from 'verify-xrpl-signature'
 import { XummTypes } from 'xumm-sdk';
 import { TransactionValidation } from './util/types';
-import { Client, TxRequest, TxResponse } from 'xrpl'
+import { Client, SubmitResponse, TxRequest, TxResponse } from 'xrpl'
 import { XummGetPayloadResponse } from 'xumm-sdk/dist/src/types';
 import * as scheduler from 'node-schedule';
 //import { FormattedTransactionType, RippleAPI } from 'ripple-lib';
@@ -352,13 +352,17 @@ export class Special {
         return found;
     }
 
-    async submitTransaction(payload:XummGetPayloadResponse, customNode?: string): Promise<TxResponse> {
+    async submitTransaction(payload:XummGetPayloadResponse, customNode?: string): Promise<SubmitResponse> {
         try {
             let clientToUse = await this.connectToNode(customNode);
 
+            console.log("CONNECTED, SUBMITTING NOW!");
+
             let signedBlob = payload.response.hex;
 
-            return clientToUse.submitAndWait(signedBlob);
+            console.log("signedBlob: " + signedBlob);
+
+            return clientToUse.submit(signedBlob);
         } catch(err) {
             console.log("FAILED TO SUBMIT TRANSACTION!!!");
             console.log(err);
