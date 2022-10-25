@@ -1194,6 +1194,8 @@ async function handleWebhookRequest(request:any): Promise<any> {
             let nodeUrl:string = payloadInfo.custom_meta.blob.custom_node && typeof(payloadInfo.custom_meta.blob.custom_node) === 'string' ? payloadInfo.custom_meta.blob.custom_node : payloadInfo.response.dispatched_to;
             let submitResult:TxResponse = await special.submitTransaction(payloadInfo, nodeUrl);
 
+            console.log(JSON.stringify(submitResult));
+
             payloadInfo.response.dispatched_to = nodeUrl;
             if(typeof(submitResult?.result?.meta) === 'object') {
                 payloadInfo.response.dispatched_result = submitResult.result.meta.TransactionResult;
