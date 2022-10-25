@@ -1184,6 +1184,8 @@ async function handleWebhookRequest(request:any): Promise<any> {
         let webhookRequest:XummTypes.XummWebhookBody = request.body;
         let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByAppId(webhookRequest.meta.application_uuidv4, webhookRequest.meta.payload_uuidv4, "websocket");
 
+        console.log(JSON.stringify(payloadInfo));
+
         //check if we have to actually submit the transaction!
         if(payloadInfo && payloadInfo.meta?.signed && !payloadInfo.meta?.submit && payloadInfo.payload.request_json.TransactionType != "SignIn") {
             console.log("payload to submit:")
