@@ -121,7 +121,7 @@ export class Special {
                         success: false,
                         account: payloadInfo.response.account,
                         testnet: false,
-                        xummNodeUrl: payloadInfo.response.dispatched_to
+                        xummNodeUrl: payloadInfo.response['environment_nodeuri']
                     }
             }
 

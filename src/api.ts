@@ -722,8 +722,8 @@ export async function registerRoutes(fastify, opts, next) {
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
                     console.log(JSON.stringify(payloadInfo.response));
-                    
-                    return {success: true, account: payloadInfo.response.account, xummNodeUrl: payloadInfo.response.dispatched_to}
+
+                    return {success: true, account: payloadInfo.response.account, xummNodeUrl: payloadInfo.response['environment_nodeuri']}
                 }
                 
                 //we didn't go into the success:true -> so return false :)
@@ -747,7 +747,7 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin');
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
-                    return {success: true, account: payloadInfo.response.account, xummNodeUrl: payloadInfo.response.dispatched_to }
+                    return {success: true, account: payloadInfo.response.account, xummNodeUrl: payloadInfo.response['environment_nodeuri'] }
                 }
                 
                 //we didn't go into the success:true -> so return false :)
@@ -776,7 +776,7 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await special.getPayloadInfoForFrontendId(request.headers.origin, request.params, 'signin', refererURL);
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
-                    return {success: true, account: payloadInfo.response.account, xummNodeUrl: payloadInfo.response.dispatched_to }
+                    return {success: true, account: payloadInfo.response.account, xummNodeUrl: payloadInfo.response['environment_nodeuri'] }
                 }
                 
                 //we didn't go into the success:true -> so return false :)
@@ -1193,7 +1193,7 @@ async function handleWebhookRequest(request:any): Promise<any> {
             console.log("payload to submit:")
             console.log(JSON.stringify(payloadInfo));
 
-            let nodeUrl:string = payloadInfo.custom_meta.blob.custom_node && typeof(payloadInfo.custom_meta.blob.custom_node) === 'string' ? payloadInfo.custom_meta.blob.custom_node : payloadInfo.response.dispatched_to;
+            let nodeUrl:string = payloadInfo.custom_meta.blob.custom_node && typeof(payloadInfo.custom_meta.blob.custom_node) === 'string' ? payloadInfo.custom_meta.blob.custom_node : payloadInfo.response['environment_nodeuri'];
             let submitResult:SubmitResponse = await special.submitTransaction(payloadInfo, nodeUrl);
 
             console.log(JSON.stringify(submitResult));
