@@ -723,7 +723,11 @@ export async function registerRoutes(fastify, opts, next) {
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
                     console.log(JSON.stringify(payloadInfo.response));
 
-                    return {success: true, account: payloadInfo.response.account, xummNodeUrl: payloadInfo.response['environment_nodeuri']}
+                    let xummNodeUrl = payloadInfo.response['environment_nodeuri'];
+
+                    console.log("XUMM URL: " + xummNodeUrl)
+
+                    return {success: true, account: payloadInfo.response.account, xummNodeUrl: xummNodeUrl}
                 }
                 
                 //we didn't go into the success:true -> so return false :)
