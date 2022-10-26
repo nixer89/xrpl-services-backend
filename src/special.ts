@@ -205,10 +205,10 @@ export class Special {
         console.log("VALIDATING PAYLOAD:")
         console.log(JSON.stringify(payloadInfo));
         
-        if(trxHash && "tesSUCCESS" === payloadInfo.response.dispatched_result) {
+        if(trxHash && ("tesSUCCESS" === payloadInfo.response.dispatched_result || customNodeUrl)) {
 
             //do not execute on ledger verification for trustset transactions!
-            if(payloadInfo.payload.tx_type === 'TrustSet') {
+            if(payloadInfo.payload.tx_type === 'TrustSet' && !customNodeUrl) {
                 return {
                     success: true,
                     testnet: isTestNet,
