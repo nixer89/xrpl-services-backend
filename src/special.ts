@@ -198,8 +198,8 @@ export class Special {
 
         let isTestNet:boolean = "MAINNET" != payloadInfo.response.dispatched_nodetype;
         let trxHash:string = payloadInfo.response.txid;
-        let nodeType = payloadInfo.response.dispatched_nodetype;
-        let nodeUrl = payloadInfo.response.dispatched_to;
+
+        let xummConnectedUrl = payloadInfo.response['environment_nodeuri'];
         let customNodeUrl:string = payloadInfo.custom_meta.blob.custom_node && typeof(payloadInfo.custom_meta.blob.custom_node) === 'string' ? payloadInfo.custom_meta.blob.custom_node : null;
 
         console.log("VALIDATING PAYLOAD:")
@@ -215,7 +215,7 @@ export class Special {
                     txid: trxHash,
                     account: payloadInfo.response.account,
                     originalPayload: payloadInfo,
-                    xummNodeUrl: nodeUrl
+                    xummNodeUrl: xummConnectedUrl
                     
                 }
             } else {
@@ -234,7 +234,7 @@ export class Special {
                         txid: trxHash,
                         account: payloadInfo.response.account,
                         originalPayload: payloadInfo,
-                        xummNodeUrl: nodeUrl
+                        xummNodeUrl: xummConnectedUrl
                     }
                 } else {
                     return {
@@ -242,7 +242,7 @@ export class Special {
                         testnet: isTestNet,
                         account: payloadInfo.response.account,
                         originalPayload: payloadInfo,
-                        xummNodeUrl: nodeUrl
+                        xummNodeUrl: xummConnectedUrl
                     }
                 }
             }
@@ -252,7 +252,7 @@ export class Special {
                 testnet: isTestNet,
                 account: payloadInfo.response.account,
                 originalPayload: payloadInfo,
-                xummNodeUrl: nodeUrl
+                xummNodeUrl: xummConnectedUrl
             };
         }
     }
