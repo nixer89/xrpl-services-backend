@@ -201,6 +201,9 @@ export class Special {
         let nodeType = payloadInfo.response.dispatched_nodetype;
         let nodeUrl = payloadInfo.response.dispatched_to;
         let customNodeUrl:string = payloadInfo.custom_meta.blob.custom_node && typeof(payloadInfo.custom_meta.blob.custom_node) === 'string' ? payloadInfo.custom_meta.blob.custom_node : null;
+
+        console.log("VALIDATING PAYLOAD:")
+        console.log(JSON.stringify(payloadInfo));
         
         if(trxHash && "tesSUCCESS" === payloadInfo.response.dispatched_result) {
 
