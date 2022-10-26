@@ -400,16 +400,18 @@ export class Special {
                     await clientToUse.connect();
 
                     if(clientToUse.isConnected()) {
-                        console.log("connecting to " + clientToUse.url);
+                        console.log("connected to " + clientToUse.url);
                     } else {
                         console.log("could not connect! switching nodes!")
-                        clientToUse = await this.switchNodes(clientToUse);
+                        await this.switchNodes(clientToUse);
+                        clientToUse = this.clientPool.get(nodeToUse).client; 
                     }
                 }
             } catch(err) {
                 console.log("could not connect to: " + clientToUse.url);
                 try {
-                    clientToUse = await this.switchNodes(clientToUse);
+                    await this.switchNodes(clientToUse);
+                    clientToUse = this.clientPool.get(nodeToUse).client; 
 
                     if(!clientToUse.isConnected()) {
                         console.log("could not connect 2nd try to: " + clientToUse.url);
@@ -438,7 +440,7 @@ export class Special {
         return clientToUse;
     }
 
-    async switchNodes(originalClient: Client): Promise<Client> {
+    async switchNodes(originalClient: Client): Promise<void> {
         console.log("SWITCHING NODES!!!");
 
         let newUrl = null;
@@ -464,9 +466,12 @@ export class Special {
         let newConnection =  new Client(newUrl);
         await newConnection.connect();
 
-        this.clientPool.set(newUrl, { client: newConnection, lastUsed: Date.now() });
-
-        return newConnection;
+        if(newConnection.isConnected()) {
+            console.log("connected!")
+            this.clientPool.set(newUrl, { client: newConnection, lastUsed: Date.now() });
+        } else {
+            return null;
+        }
     }
 
     async addEscrow(escrow: any): Promise<any> {

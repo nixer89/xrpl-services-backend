@@ -721,6 +721,8 @@ export async function registerRoutes(fastify, opts, next) {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin,request.params.payloadId, "check_signin_payload_endpoint");
 
                 if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo)) {
+                    console.log(JSON.stringify(payloadInfo.response));
+                    
                     return {success: true, account: payloadInfo.response.account, xummNodeUrl: payloadInfo.response.dispatched_to}
                 }
                 
