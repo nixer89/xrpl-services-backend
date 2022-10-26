@@ -261,7 +261,7 @@ export class Special {
 
         try {
             //console.log("checking bithomp with trxHash: " + trxHash);
-            //console.log("checking transaction with testnet: " + testnet + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount));
+            console.log("checking transaction with trxHash: " + trxHash + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount) + " - customNode: " + customNode);
 
             clientToUse = await this.connectToNode(customNode);
             
@@ -274,6 +274,9 @@ export class Special {
             }
 
             let transaction:TxResponse = await clientToUse.request(transactionRequest);
+
+            console.log("TRANSACTION RESULT:");
+            console.log(JSON.stringify(transaction));
 
             if(transaction && transaction.result) {
                 //console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(transaction));
