@@ -1385,6 +1385,11 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
                 }
             }
 
+            if(!countryCode) {
+                //no country code? handle as german customer!
+                countryCode = 'DE';
+            }
+
             if(ip && countryCode) {
                 await sendToSevDesk(date, txhash, ip, xrp, eurAmount, exchangeRate, countryCode, account, purpose);
             } else {
@@ -1498,7 +1503,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         }
     } else {        
         //are we germany?
-        if(countryCode === 'DE') {
+        if(countryCode === 'DE' || countryCode === 'XX') {
             taxSet = null
             //console.log("GERMAN TAX");
             taxType = "default";
@@ -1528,6 +1533,14 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
                 taxRate = 5;
             } else if(countryCode === 'AM') {
                 taxRate = 20;
+            } else if(countryCode === 'CW') {
+                taxRate = 6;
+            } else if(countryCode === 'PK') {
+                taxRate = 17;
+            } else if(countryCode === 'BJ') {
+                taxRate = 18;
+            } else if(countryCode === 'LS') {
+                taxRate = 15;
             } else {
                 let redisRate = await redis.get(countryCode);
                 //console.log("REDISRATE: " + redisRate)
