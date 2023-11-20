@@ -199,7 +199,7 @@ const start = async () => {
         console.log("finished declaring routes");
 
         try {
-          await fastify.listen(Number(config.SERVER_PORT), '0.0.0.0');
+          await fastify.listen({ port: Number(config.SERVER_PORT), host: '0.0.0.0' });
 
           console.log("http://localhost:"+config.SERVER_PORT);
 
