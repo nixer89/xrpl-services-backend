@@ -27,7 +27,7 @@ const start = async () => {
       logger: {
         level: 'warn',
         //level: 'info',
-        //file: '/home/ubuntu/fastify-logs/fastify.log' // Will use pino.destination()
+        file: '/home/ubuntu/fastify-logs/xahau/fastify.log' // Will use pino.destination()
       }
     });
     
