@@ -3,9 +3,8 @@ import * as config from './util/config';
 import * as DB from './db';
 import { XummTypes } from 'xumm-sdk';
 import { GenericBackendPostRequestOptions, AllowedOrigins } from './util/types';
-require('console-stamp')(console, { 
-    format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
-});
+
+require('log-timestamp');
 
 export class Xumm {
 

@@ -8,9 +8,8 @@ import DeviceDetector = require("device-detector-js");
 import { AllowedOrigins, GenericBackendPostRequestOptions, TransactionValidation } from './util/types';
 import { XummGetPayloadResponse } from 'xumm-sdk/dist/src/types';
 import * as crypto from 'crypto';
-require('console-stamp')(console, { 
-    format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
-});
+
+require('log-timestamp');
 
 let xummBackend = new Xumm.Xumm();
 let db = new Db.DB();
@@ -20,23 +19,11 @@ let deviceDetector = new DeviceDetector();
 let ipRanges:string[] = ["76.201.20.","76.201.21.","76.201.22.","76.201.23.","120.29.68.","212.117.20.","169.0.102.","61.57.124.", "61.57.125.","61.57.12.","61.57.127.","121.54.10.","175.176.49.", "211.176.124.", "211.176.125.",
                          "211.176.126.", "211.176.127.","94.129.197.","182.0.237.", "175.176.92.","110.54.129.", "80.229.222.", "80.229.223."]
 
-let appIdsForPaymentCheck:string[] = [
-                                        "cc3cc9da-67f3-4b63-9cc8-2ea869cee7a9", //blackhole xApp
-                                        "e9e1fbfd-c58b-4bf9-823d-4fe748a65d4c", //nftcreate xApp
-                                        "0517bec0-abf8-4e66-aeb2-f667bbf23e7d", //nftcreate xApp TEST
-                                        "b42f7609-3cc1-476d-9b29-af1d7ded8eac", //escrow create xApp
-                                        "96a32b48-206f-433d-9e32-a6634c712139", //escrow create xApp TEST
-                                        "dd1e8d7e-8017-4375-9afa-9a67678f0974", //token create xApp
-                                        "16a3660a-2852-4d0e-84bb-f88b1baf6dee", //token create xApp TEST
-                                        "9ea0a9e1-3e5c-4b71-8b3e-d0f39f26e084", //xrpl.services
-                                        "5e69b042-1cb4-4c07-b5c8-6cadafab4b1d", //localhost xrpl.services
-                                        "282206ef-7b2b-473a-85ba-4f1fc6b17266", // Token Trasher xApp
-                                        "8dee4e57-c128-4803-9494-c23743d97e7e"  // Token Trasher xApp TEST
-                                    ];
+let appIdsForPaymentCheck:string[] = [];
 
 const Redis = require('ioredis')
 const redis = new Redis({
-  connectionName: 'xumm-backend',
+  connectionName: 'xahau-xumm-backend',
   host: process.env.DB_IP || '127.0.0.1',
   port: 6379,
   connectTimeout: 500,
@@ -1354,7 +1341,7 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
                 ]
             }
 
-            let transaction = await fetch.default("https://xrplcluster.com", {method: "POST", body: JSON.stringify(payload)});
+            let transaction = await fetch.default("https://xahau.network", {method: "POST", body: JSON.stringify(payload)});
 
             if(transaction && transaction.ok) {
                 let jsonResponse = await transaction.json();
@@ -1399,7 +1386,7 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
             }
             
         } else {
-            console.log("XRP Amount too small!");
+            console.log("XAH Amount too small!");
         }
     } catch(err) {
         console.log("ERROR SEVDESK INTEGRATION")
@@ -1411,7 +1398,7 @@ async function getEurAmountFromXrp(xrp:number): Promise<any> {
     let amountEur = null;
     let exchangerate = null;
 
-    let callstring = "https://api.coingecko.com/api/v3/coins/ripple";
+    let callstring = "https://api.coingecko.com/api/v3/coins/xahau";
 
     let exchangeResponse = await fetch.default(callstring);
 
@@ -1633,7 +1620,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
                 "isAsset": "false",
                 "sumNet": null,
                 "sumGross": eur,
-                "comment": purpose + xrp + " XRP zu " + exchangerate + " EUR.",
+                "comment": purpose + xrp + " XAH zu " + exchangerate + " EUR.",
                 "mapAll": "true",
                 "objectName": "VoucherPos"
               }
@@ -1660,7 +1647,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         "entryDate": dateString,
         "status": "100",
         "amount": eur,
-        "paymentPurpose": "XRP Ledger Services and Tools",
+        "paymentPurpose": "Xahau Services and Tools",
         "payeePayerName": account + " (" + countryCode + ")"
         }
 
@@ -1699,7 +1686,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount?token="+config.SEVDESK_TOKEN,{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "PUT", body: JSON.stringify(booking)});
         
         await db.saveSevdeskTransaction(hash, account, ip, countryCode, xrp, eur, date);
-        console.log("SEVDESK TRANSACTION STORED: - IP: " + ip + " - countryCode: " + countryCode + " - TaxRate: " + taxRate + " - XRP: " + xrp + " - EUR: " + eur + " - date: " + date.toLocaleString() + " - HASH: " + hash);
+        console.log("SEVDESK TRANSACTION STORED: - IP: " + ip + " - countryCode: " + countryCode + " - TaxRate: " + taxRate + " - XAH: " + xrp + " - EUR: " + eur + " - date: " + date.toLocaleString() + " - HASH: " + hash);
     }
   }
 

@@ -5,9 +5,7 @@ import * as config from './util/config';
 import * as scheduler from 'node-schedule';
 import * as fs from 'fs';
 
-require('console-stamp')(console, { 
-  format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
-});
+require('log-timestamp');
 
 const Redis = require('ioredis')
 const redis = new Redis({
@@ -29,20 +27,20 @@ const start = async () => {
       logger: {
         level: 'warn',
         //level: 'info',
-        file: '/home/ubuntu/fastify-logs/fastify.log' // Will use pino.destination()
+        //file: '/home/ubuntu/fastify-logs/fastify.log' // Will use pino.destination()
       }
     });
     
     console.log("registering middleware")
-    await fastify.register(require('middie'))
+    await fastify.register(require('@fastify/middie'))
     
     console.log("adding response compression");
-    await fastify.register(require('fastify-compress'));
+    await fastify.register(require('@fastify/compress'));
     
     console.log("adding some security headers");
-    await fastify.register(require('fastify-helmet'));
+    await fastify.register(require('@fastify/helmet'));
 
-    await fastify.register(require('fastify-rate-limit'), {
+    await fastify.register(require('@fastify/rate-limit'), {
       global: false,
       redis: redis,
       skipOnError: true,
@@ -68,15 +66,6 @@ const start = async () => {
       }
       reply.send(error)
     });
-    
-    await fastify.register(require('fastify-swagger'), {
-      mode: 'static',
-      specification: {
-        path: './src/doc/swagger-doc.yaml'
-      },
-      exposeRoute: true,
-      routePrefix: '/docs'
-    });
   
     if(!config.BITHOMP_API_TOKEN) {
       console.log("No BITHOMP_API_TOKEN set");
@@ -94,7 +83,7 @@ const start = async () => {
       allowedOrigins = await mongo.getAllowedOriginsAsArray();
 
       console.log("setting allowed origins: " + allowedOrigins);
-      await fastify.register(require('fastify-cors'), {
+      await fastify.register(require('@fastify/cors'), {
         origin: (origin, cb) => {
 
           //console.log("checking request with origin: " + origin);

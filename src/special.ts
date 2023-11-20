@@ -7,17 +7,16 @@ import { XummTypes } from 'xumm-sdk';
 import { TransactionValidation } from './util/types';
 import { Client, TxRequest, TxResponse } from 'xrpl'
 //import { FormattedTransactionType, RippleAPI } from 'ripple-lib';
-require('console-stamp')(console, { 
-    format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
-});
+
+require('log-timestamp');
 
 export class Special {
 
     xummBackend = new Xumm.Xumm();
     db = new DB.DB();
 
-    private mainNodes:string[] = ['wss://xrplcluster.com', 'wss://s2.ripple.com'];
-    private testNodes:string[] = ['wss://s.altnet.rippletest.net', 'wss://testnet.xrpl-labs.com'];
+    private mainNodes:string[] = ['wss://xahau.network'];
+    private testNodes:string[] = ['wss://xahau-test.net'];
 
     private currentMainNode:number = 0;
     private currentTestNode:number = 0;
@@ -182,7 +181,7 @@ export class Special {
             }
         }
 
-        let isTestNet:boolean = "MAINNET" != payloadInfo.response.dispatched_nodetype;
+        let isTestNet:boolean = "XAHAU" != payloadInfo.response.dispatched_nodetype;
         let trxHash:string = payloadInfo.response.txid;
         
         if(trxHash && "tesSUCCESS" === payloadInfo.response.dispatched_result) {
@@ -259,7 +258,7 @@ export class Special {
         try {
             //console.log("checking bithomp with trxHash: " + trxHash);
             //console.log("checking bithomp with testnet: " + testnet + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount));
-            let bithompResponse:any = await fetch.default("https://"+(testnet?'test.':'')+"bithomp.com/api/v2/transaction/"+trxHash, {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN }});
+            let bithompResponse:any = await fetch.default("https://"+(testnet?'test.':'')+"xahauexplorer.com//api/v2/transaction/"+trxHash, {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN }});
             if(bithompResponse && bithompResponse.ok) {
                 let ledgerTrx:any = await bithompResponse.json();
                 //console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(ledgerTrx));
@@ -276,7 +275,7 @@ export class Special {
                             //validate delivered amount
                             else if(Number.isInteger(parseInt(amount))) {
                                 //handle XRP amount
-                                found = ledgerTrx.outcome.deliveredAmount.currency === 'XRP' && (parseFloat(ledgerTrx.outcome.deliveredAmount.value)*1000000 == parseInt(amount));
+                                found = ledgerTrx.outcome.deliveredAmount.currency === 'XAH' && (parseFloat(ledgerTrx.outcome.deliveredAmount.value)*1000000 == parseInt(amount));
                             } else {
                                 //amount not a number so it must be a IOU
                                 found = ledgerTrx.outcome.deliveredAmount.currency === amount.currency //check currency

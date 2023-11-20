@@ -1,6 +1,6 @@
 {
-  "name": "xrpl-services-backend",
-  "version": "4.3.2",
+  "name": "xahau-services-backend",
+  "version": "4.4.0",
   "description": "provides a generic backend, connected to xumm. Easy access of user tokens for push",
   "main": "src/server.ts",
   "scripts": {
@@ -26,32 +26,31 @@
   },
   "homepage": "https://github.com/nixer89/xrpl-services-backend#readme",
   "dependencies": {
-    "console-stamp": "^3.0.4",
+    "@fastify/compress": "^6.5.0",
+    "@fastify/cors": "^8.4.1",
+    "@fastify/helmet": "^11.1.1",
+    "@fastify/middie": "^8.3.0",
+    "@fastify/rate-limit": "^9.0.0",
+    "@transia/xrpl": "^2.7.3-alpha.19",
     "device-detector-js": "^2.2.10",
-    "fastify": "^3.24.0",
-    "fastify-compress": "^3.6.1",
-    "fastify-cors": "^6.0.2",
-    "fastify-helmet": "^5.3.2",
-    "fastify-rate-limit": "^5.6.2",
-    "fastify-swagger": "^4.12.6",
-    "ioredis": "^4.28.3",
-    "middie": "^5.3.0",
+    "fastify": "^4.24.3",
+    "ioredis": "^5.3.2",
+    "log-timestamp": "^0.3.0",
     "mongodb": "^3.7.3",
     "node-fetch": "^2.6.6",
-    "node-schedule": "^2.0.0",
+    "node-schedule": "^2.1.1",
     "verify-xrpl-signature": "^0.3.0",
-    "xrpl": "^2.0.0-beta.4",
+    "xrpl": "^2.13.0",
     "xumm-sdk": "^0.6.0"
   },
   "devDependencies": {
-    "@types/ioredis": "^4.28.7",
     "@types/mongodb": "^3.6.20",
-    "@types/node": "^12.20.37",
+    "@types/node": "^16.18.62",
     "@types/node-fetch": "^2.5.12",
-    "@types/node-schedule": "^1.3.2",
+    "@types/node-schedule": "^2.1.3",
     "@types/xumm-api": "^0.1.4",
     "concurrently": "^5.3.0",
     "nodemon": "^2.0.15",
-    "typescript": "^3.9.10"
+    "typescript": "^5.2.2"
   }
 }
