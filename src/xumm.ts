@@ -33,7 +33,7 @@ export class Xumm {
     }
 
     async pingXummBackend(): Promise<boolean> {
-        let pingResponse = await this.callXumm(await this.db.getAppIdForOrigin("http://localhost:4200"), "ping", "GET");
+        let pingResponse = await this.callXumm(await this.db.getAppIdForOrigin("http://localhost:4211"), "ping", "GET");
         console.log("[XUMM]: pingXummBackend response: " + JSON.stringify(pingResponse))
         return pingResponse && pingResponse.pong;
     }
