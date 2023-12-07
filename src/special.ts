@@ -5,7 +5,7 @@ import * as fetch from 'node-fetch';
 import {verifySignature} from 'verify-xrpl-signature'
 import { XummTypes } from 'xumm-sdk';
 import { TransactionValidation } from './util/types';
-import { Client, TxRequest, TxResponse } from 'xrpl'
+import { Client, TxRequest, TxResponse } from '@transia/xrpl'
 //import { FormattedTransactionType, RippleAPI } from 'ripple-lib';
 
 require('log-timestamp');

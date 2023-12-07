@@ -40,7 +40,6 @@
     "node-fetch": "^2.6.6",
     "node-schedule": "^2.1.1",
     "verify-xrpl-signature": "^0.3.0",
-    "xrpl": "^2.13.0",
     "xumm-sdk": "^0.6.0"
   },
   "devDependencies": {
