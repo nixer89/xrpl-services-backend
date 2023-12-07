@@ -3,6 +3,7 @@ import * as config from './util/config';
 import * as DB from './db';
 import { XummTypes } from 'xumm-sdk';
 import { GenericBackendPostRequestOptions, AllowedOrigins } from './util/types';
+
 require('console-stamp')(console, { 
     format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
 });
@@ -379,6 +380,8 @@ export class Xumm {
                 else if(originProperties.fixAmount['*'])
                     payload.txjson.Amount = originProperties.fixAmount['*'];
             }
+        } else if(payload.txjson && 'AccountDelete' === payload.txjson.TransactionType) {
+            payload.txjson.Fee = "2000000";
         }
 
         //handle return URLs
