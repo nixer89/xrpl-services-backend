@@ -1,6 +1,6 @@
 {
   "name": "xahau-services-backend",
-  "version": "4.4.4",
+  "version": "4.4.5",
   "description": "provides a generic backend, connected to xumm. Easy access of user tokens for push",
   "main": "src/server.ts",
   "scripts": {
@@ -31,7 +31,7 @@
     "@fastify/helmet": "^11.1.1",
     "@fastify/middie": "^8.3.0",
     "@fastify/rate-limit": "^9.0.0",
-    "@transia/xrpl": "^2.7.3-alpha.19",
+    "@transia/xrpl": "^2.7.3-alpha.21",
     "device-detector-js": "^2.2.10",
     "fastify": "^4.24.3",
     "ioredis": "^5.3.2",

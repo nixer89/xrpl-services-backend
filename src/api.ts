@@ -1258,27 +1258,27 @@ async function handleWebhookRequest(request:any): Promise<any> {
 }
 
 async function handleEscrowPayment(payloadInfo: XummTypes.XummGetPayloadResponse) {
-    //console.log("escrow/validatepayment PAYLOAD: " + JSON.stringify(payloadInfo));
+    console.log("escrow/validatepayment PAYLOAD: " + JSON.stringify(payloadInfo));
 
     try {
 
         if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
             let txResult:TransactionValidation = await special.validateTransactionOnLedger(payloadInfo);
 
-            //console.log("escrow/validatepayment TXRESULT: " + JSON.stringify(txResult));
+            console.log("escrow/validatepayment TXRESULT: " + JSON.stringify(txResult));
 
             if(txResult) {
                 if(payloadInfo.custom_meta.blob) {
                     txResult.account = payloadInfo.response.account;
                     let escrow:any = payloadInfo.custom_meta.blob;
 
-                    //console.log("escrow/validatepayment ESCROW: " + JSON.stringify(escrow));
+                    console.log("escrow/validatepayment ESCROW: " + JSON.stringify(escrow));
 
                     if(escrow && txResult.success && txResult.account == escrow.account && ((txResult.testnet == escrow.testnet) || (escrow.testnet && !txResult.testnet))) {
                         //insert escrow
                         let addEscrow:any = await special.addEscrow(escrow);
 
-                        //console.log("Add escrow: " + JSON.stringify(addEscrow));
+                        console.log("Add escrow result: " + JSON.stringify(addEscrow));
 
                         if(addEscrow && addEscrow.success)
                             console.log("Escrow stored!");
