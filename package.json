@@ -1,6 +1,6 @@
 {
   "name": "xahau-services-backend",
-  "version": "4.4.5",
+  "version": "4.4.6",
   "description": "provides a generic backend, connected to xumm. Easy access of user tokens for push",
   "main": "src/server.ts",
   "scripts": {
@@ -39,7 +39,7 @@
     "mongodb": "^3.7.3",
     "node-fetch": "^2.6.6",
     "node-schedule": "^2.1.1",
-    "verify-xrpl-signature": "^0.3.0",
+    "verify-xrpl-signature": "^4.1.5",
     "xumm-sdk": "^0.6.0"
   },
   "devDependencies": {
