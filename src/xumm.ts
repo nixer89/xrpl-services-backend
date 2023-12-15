@@ -56,6 +56,7 @@ export class Xumm {
         }
 
         try {
+
             //get xummId by frontendId
             if(options && (frontendId = options.frontendId) && !pushDisabled) {
                 let xummId:string = await this.db.getXummId(appId, options.frontendId);

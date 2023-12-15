@@ -1188,7 +1188,7 @@ async function handleWebhookRequest(request:any): Promise<any> {
 
             //check trustline
             if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == 'trustset'
-                && payloadInfo.response && payloadInfo.response.dispatched_nodetype == "MAINNET" && payloadInfo.response.dispatched_result =="tesSUCCESS") {
+                && payloadInfo.response && payloadInfo.response.dispatched_nodetype == "XAHAU" && payloadInfo.response.dispatched_result =="tesSUCCESS") {
                     saveTrustlineInfo(payloadInfo);
             }
 
@@ -1205,7 +1205,7 @@ async function handleWebhookRequest(request:any): Promise<any> {
                     //console.log("nodetype: " + payloadInfo?.response?.dispatched_nodetype);
                     //console.log("trx result: " + payloadInfo?.response?.dispatched_result)
 
-                    if(appIdsForPaymentCheck.includes(payloadInfo.application.uuidv4) && payloadInfo.custom_meta?.blob?.ip && payloadInfo.response && payloadInfo.response.dispatched_nodetype === "MAINNET" && payloadInfo.response.dispatched_result === "tesSUCCESS") {
+                    if(appIdsForPaymentCheck.includes(payloadInfo.application.uuidv4) && payloadInfo.custom_meta?.blob?.ip && payloadInfo.response && payloadInfo.response.dispatched_nodetype === "XAHAU" && payloadInfo.response.dispatched_result === "tesSUCCESS") {
                         //check transaction on ledger
                         let transactionCheck = await special.validateTransactionOnLedger(payloadInfo);
                         //console.log(transactionCheck);
@@ -1318,7 +1318,7 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
         let date = new Date();
         let account:string = payloadInfo.response.account;
         let txhash:string = payloadInfo.response.txid;
-        let xrp:any = payloadInfo.payload.request_json.Amount
+        let xrp:any = payloadInfo.payload.request_json.Amount;
         let purpose:any = payloadInfo?.custom_meta?.blob?.purpose;
 
         if(purpose && (typeof purpose === 'string')) {
@@ -1354,7 +1354,7 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
 
         xrp = Number(xrp) / 1000000;
 
-        if(xrp && xrp >= 0.1) { //only handle transactions where XRP >= 0.1 !
+        if(xrp && xrp >= 0.5) { //only handle transactions where XAH >= 0.5 !
 
             let exchangeResponse = await getEurAmountFromXrp(xrp)
             let eurAmount = exchangeResponse[0];
@@ -1472,7 +1472,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         //console.log("EU TAX");
         let taxSetId = taxRates[countryCode];
         //get tax set
-        let result = await fetch.default("https://my.sevdesk.de/api/v1/TaxSet?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}});
+        let result = await fetch.default("https://my.sevdesk.de/api/v1/TaxSet?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau"}});
 
         if(result && result.ok) {
             let jsonResult = await result.json();
@@ -1502,7 +1502,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
             taxType = "noteu";
             accountingType = 714094;
 
-            let result = await fetch.default("https://my.sevdesk.de/api/v1/TaxSet?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}});
+            let result = await fetch.default("https://my.sevdesk.de/api/v1/TaxSet?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau"}});
 
             if(result && result.ok) {
                 let jsonResult = await result.json();
@@ -1630,7 +1630,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         }
 
 
-        let result = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/Factory/saveVoucher?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "POST", body: JSON.stringify(beleg)});
+        let result = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/Factory/saveVoucher?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau"}, method: "POST", body: JSON.stringify(beleg)});
         
         let resultJson = await result.json();
         //console.log("result: " + JSON.stringify(resultJson));
@@ -1651,7 +1651,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         "payeePayerName": account + " (" + countryCode + ")"
         }
 
-        let transactionResult = await fetch.default("https://my.sevdesk.de/api/v1/CheckAccountTransaction?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL",}, method: "POST", body: JSON.stringify(transaction)});
+        let transactionResult = await fetch.default("https://my.sevdesk.de/api/v1/CheckAccountTransaction?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau",}, method: "POST", body: JSON.stringify(transaction)});
         
         let transactionResultJson = await transactionResult.json();
         //console.log("transactionResult: " + JSON.stringify(transactionResultJson));
@@ -1683,7 +1683,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         //console.log("bookResult: " + JSON.stringify(bookingResultJson));
 
         //store booking
-        await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount?token="+config.SEVDESK_TOKEN,{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "PUT", body: JSON.stringify(booking)});
+        await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount?token="+config.SEVDESK_TOKEN,{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau"}, method: "PUT", body: JSON.stringify(booking)});
         
         await db.saveSevdeskTransaction(hash, account, ip, countryCode, xrp, eur, date);
         console.log("SEVDESK TRANSACTION STORED: - IP: " + ip + " - countryCode: " + countryCode + " - TaxRate: " + taxRate + " - XAH: " + xrp + " - EUR: " + eur + " - date: " + date.toLocaleString() + " - HASH: " + hash);
