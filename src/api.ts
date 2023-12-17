@@ -8,9 +8,8 @@ import DeviceDetector = require("device-detector-js");
 import { AllowedOrigins, GenericBackendPostRequestOptions, TransactionValidation } from './util/types';
 import { XummGetPayloadResponse } from 'xumm-sdk/dist/src/types';
 import * as crypto from 'crypto';
-require('console-stamp')(console, { 
-    format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
-});
+
+require('log-timestamp');
 
 let xummBackend = new Xumm.Xumm();
 let db = new Db.DB();

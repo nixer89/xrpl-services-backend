@@ -5,9 +5,7 @@ import * as config from './util/config';
 import * as scheduler from 'node-schedule';
 import * as fs from 'fs';
 
-require('console-stamp')(console, { 
-  format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
-});
+require('log-timestamp');
 
 const Redis = require('ioredis')
 const redis = new Redis({
@@ -34,15 +32,15 @@ const start = async () => {
     });
     
     console.log("registering middleware")
-    await fastify.register(require('middie'))
+    await fastify.register(require('@fastify/middie'))
     
     console.log("adding response compression");
-    await fastify.register(require('fastify-compress'));
+    await fastify.register(require('@fastify/compress'));
     
     console.log("adding some security headers");
-    await fastify.register(require('fastify-helmet'));
+    await fastify.register(require('@fastify/helmet'));
 
-    await fastify.register(require('fastify-rate-limit'), {
+    await fastify.register(require('@fastify/rate-limit'), {
       global: false,
       redis: redis,
       skipOnError: true,

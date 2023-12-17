@@ -7,9 +7,7 @@ import { XummTypes } from 'xumm-sdk';
 import { TransactionValidation } from './util/types';
 import { Client, TxRequest, TxResponse } from 'xrpl'
 //import { FormattedTransactionType, RippleAPI } from 'ripple-lib';
-require('console-stamp')(console, { 
-    format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
-});
+require('log-timestamp');
 
 export class Special {
 

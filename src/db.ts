@@ -1,8 +1,7 @@
 import { MongoClient, Collection } from 'mongodb';
 import { AllowedOrigins, ApplicationApiKeys, UserIdCollection, FrontendIdPayloadCollection, XummIdPayloadCollection, XrplAccountPayloadCollection, StatisticsCollection, TrustSetCollection, TransactionSevdeskCollection } from './util/types';
-require('console-stamp')(console, { 
-    format: ':date(yyyy-mm-dd HH:MM:ss) :label' 
-});
+
+require('log-timestamp');
 
 export class DB {
     dbIp = process.env.DB_IP || "127.0.0.1"
@@ -609,7 +608,7 @@ export class DB {
             let connection:MongoClient = await MongoClient.connect('mongodb://'+this.dbIp+':27017', { useNewUrlParser: true, useUnifiedTopology: true });
             connection.on('error', ()=>{console.log("[DB]: Connection to MongoDB could NOT be established")});
         
-            if(connection && connection.isConnected()) {
+            if(connection) {
                 let existingCollections:Collection<any>[] = await connection.db('XummBackend').collections();
                 //create collection if not exists
                 if(existingCollections.filter(collection => collection.collectionName === collectionName).length == 0)
