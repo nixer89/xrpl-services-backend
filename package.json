@@ -1,6 +1,6 @@
 {
   "name": "xrpl-services-backend",
-  "version": "4.3.3",
+  "version": "4.3.4",
   "description": "provides a generic backend, connected to xumm. Easy access of user tokens for push",
   "main": "src/server.ts",
   "scripts": {
@@ -39,8 +39,8 @@
     "mongodb": "^3.7.3",
     "node-fetch": "^2.6.6",
     "node-schedule": "^2.0.0",
-    "verify-xrpl-signature": "^0.3.0",
-    "xrpl": "^2.0.0-beta.4",
+    "verify-xrpl-signature": "^4.1.5",
+    "xrpl": "^2.14.0",
     "xumm-sdk": "^0.6.0"
   },
   "devDependencies": {
