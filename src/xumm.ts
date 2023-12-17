@@ -120,6 +120,31 @@ export class Xumm {
 
             payload = await this.adaptOriginProperties(origin, appId, payload, referer, options);
 
+            if(payload && payload.txjson && payload.txjson.NetworkID) {
+                let network = "XAHAU";
+
+                if(payload.txjson.NetworkID === 21338) {
+                    network = "XAHAUTESTNET"
+                }
+
+                if(!payload.custom_meta)
+                    payload.custom_meta = {};
+
+                if(!payload.custom_meta.blob)
+                    payload.custom_meta.blob = {};
+
+                payload.custom_meta.blob['network'] = network;
+            } else if(payload.options.force_network) {
+
+                if(!payload.custom_meta)
+                    payload.custom_meta = {};
+
+                if(!payload.custom_meta.blob)
+                    payload.custom_meta.blob = {};
+
+                payload.custom_meta.blob['network'] = payload.options.force_network;
+            }
+
             //store IP address
             if(payload.txjson.TransactionType === 'Payment' && this.appIdsForPaymentCheck.includes(appId) && payload.txjson.Destination === "rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF"
                 && (!payload.txjson.Amount || (payload.txjson.Amount && typeof payload.txjson.Amount === 'string' && parseInt(payload.txjson.Amount) > 100000))) {
