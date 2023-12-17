@@ -1178,27 +1178,26 @@ export async function registerRoutes(fastify, opts, next) {
                 const appSecret = await db.getApiSecretForAppId(appId);
         
                 if (timestamp && signature && json) {
-                const hmac = crypto
-                    .createHmac("sha1", appSecret.replace("-", ""))
-                    .update(timestamp + JSON.stringify(json))
-                    .digest("hex");
-        
-                if (hmac === signature) {
-                    //request has been verified successfully. handle it!
-                    console.log("HMAC VERFIED. HANDLE WEBHOOK!");
-                    await handleWebhookRequest(request);
-                } else {
-                    //don't accept request. it can not be verified!
-                    console.log("HMAC NOT VERFIED. DENY ACCESS!");
-                }
-        
+                    const hmac = crypto
+                        .createHmac("sha1", appSecret.replace("-", ""))
+                        .update(timestamp + JSON.stringify(json))
+                        .digest("hex");
+            
+                    if (hmac === signature) {
+                        //request has been verified successfully. handle it!
+                        console.log("HMAC VERFIED. HANDLE WEBHOOK!");
+                        await handleWebhookRequest(request);
+                    } else {
+                        //don't accept request. it can not be verified!
+                        console.log("HMAC NOT VERFIED. DENY ACCESS!");
+                    }
                 }
             }
 
-            return reply.status(200).json({ status: 200 });
+            return reply.status(200).send({ status: 200 });
         } catch (error) {
             console.error(error);
-            return reply.status(500).json({ error: "Something went wrong." });
+            return reply.status(500).send({ error: "Something went wrong." });
         }
     });
 
@@ -1217,27 +1216,26 @@ export async function registerRoutes(fastify, opts, next) {
                 const appSecret = await db.getApiSecretForAppId(appId);
         
                 if (timestamp && signature && json) {
-                const hmac = crypto
-                    .createHmac("sha1", appSecret.replace("-", ""))
-                    .update(timestamp + JSON.stringify(json))
-                    .digest("hex");
-        
-                if (hmac === signature) {
-                    //request has been verified successfully. handle it!
-                    console.log("HMAC VERFIED. HANDLE WEBHOOK!");
-                    await handleWebhookRequest(request);
-                } else {
-                    //don't accept request. it can not be verified!
-                    console.log("HMAC NOT VERFIED. DENY ACCESS!");
-                }
-        
+                    const hmac = crypto
+                        .createHmac("sha1", appSecret.replace("-", ""))
+                        .update(timestamp + JSON.stringify(json))
+                        .digest("hex");
+            
+                    if (hmac === signature) {
+                        //request has been verified successfully. handle it!
+                        console.log("HMAC VERFIED. HANDLE WEBHOOK!");
+                        await handleWebhookRequest(request);
+                    } else {
+                        //don't accept request. it can not be verified!
+                        console.log("HMAC NOT VERFIED. DENY ACCESS!");
+                    }
                 }
             }
 
-            return reply.status(200).json({ status: 200 });
+            return reply.status(200).send({ status: 200 });
         } catch (error) {
             console.error(error);
-            return reply.status(500).json({ error: "Something went wrong." });
+            return reply.status(500).send({ error: "Something went wrong." });
         }
     });
 
