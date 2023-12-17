@@ -1152,11 +1152,71 @@ export async function registerRoutes(fastify, opts, next) {
     });
 
     fastify.post('/api/v1/webhook', async (request, reply) => {
-        return handleWebhookRequest(request);
+        try {
+            //verify webhook call
+            const timestamp = request.headers?.["x-xumm-request-timestamp"] || "";
+            const signature = request.headers?.["x-xumm-request-signature"];
+            const json:XummTypes.XummWebhookBody = request.body;
+
+            const appId = json.meta.application_uuidv4;
+            const appSecret = await db.getApiSecretForAppId(appId);
+      
+            if (timestamp && signature && json) {
+              const hmac = crypto
+                .createHmac("sha1", appSecret.replace("-", ""))
+                .update(timestamp + JSON.stringify(json))
+                .digest("hex");
+      
+              if (hmac === signature) {
+                //request has been verified successfully. handle it!
+                console.log("HMAC VERFIED. HANDLE WEBHOOK!");
+                await handleWebhookRequest(request);
+              } else {
+                //don't accept request. it can not be verified!
+                console.log("HMAC NOT VERFIED. DENY ACCESS!");
+              }
+      
+            }
+
+            return reply.status(200).json({ status: 200 });
+        } catch (error) {
+            console.error(error);
+            return reply.status(500).json({ error: "Something went wrong." });
+        }
     });
 
     fastify.post('/api/v1/webhook/*', async (request, reply) => {
-        return handleWebhookRequest(request);
+        try {
+            //verify webhook call
+            const timestamp = request.headers?.["x-xumm-request-timestamp"] || "";
+            const signature = request.headers?.["x-xumm-request-signature"];
+            const json:XummTypes.XummWebhookBody = request.body;
+
+            const appId = json.meta.application_uuidv4;
+            const appSecret = await db.getApiSecretForAppId(appId);
+      
+            if (timestamp && signature && json) {
+              const hmac = crypto
+                .createHmac("sha1", appSecret.replace("-", ""))
+                .update(timestamp + JSON.stringify(json))
+                .digest("hex");
+      
+              if (hmac === signature) {
+                //request has been verified successfully. handle it!
+                console.log("HMAC VERFIED. HANDLE WEBHOOK!");
+                await handleWebhookRequest(request);
+              } else {
+                //don't accept request. it can not be verified!
+                console.log("HMAC NOT VERFIED. DENY ACCESS!");
+              }
+      
+            }
+
+            return reply.status(200).json({ status: 200 });
+        } catch (error) {
+            console.error(error);
+            return reply.status(500).json({ error: "Something went wrong." });
+        }
     });
 
     next()
