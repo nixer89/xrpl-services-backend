@@ -1178,10 +1178,10 @@ export async function registerRoutes(fastify, opts, next) {
       
             }
 
-            return reply.status(200).json({ status: 200 });
+            return reply.status(200).send({ status: 200 });
         } catch (error) {
             console.error(error);
-            return reply.status(500).json({ error: "Something went wrong." });
+            return reply.status(500).send({ error: "Something went wrong." });
         }
     });
 
@@ -1212,10 +1212,10 @@ export async function registerRoutes(fastify, opts, next) {
       
             }
 
-            return reply.status(200).json({ status: 200 });
+            return reply.status(200).send({ status: 200 });
         } catch (error) {
             console.error(error);
-            return reply.status(500).json({ error: "Something went wrong." });
+            return reply.status(500).send({ error: "Something went wrong." });
         }
     });
 
