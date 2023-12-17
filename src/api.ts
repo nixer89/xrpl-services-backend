@@ -1185,7 +1185,6 @@ export async function registerRoutes(fastify, opts, next) {
             
                     if (hmac === signature) {
                         //request has been verified successfully. handle it!
-                        console.log("HMAC VERFIED. HANDLE WEBHOOK!");
                         await handleWebhookRequest(request);
                     } else {
                         //don't accept request. it can not be verified!
@@ -1223,7 +1222,6 @@ export async function registerRoutes(fastify, opts, next) {
             
                     if (hmac === signature) {
                         //request has been verified successfully. handle it!
-                        console.log("HMAC VERFIED. HANDLE WEBHOOK!");
                         await handleWebhookRequest(request);
                     } else {
                         //don't accept request. it can not be verified!
