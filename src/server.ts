@@ -66,16 +66,7 @@ const start = async () => {
       }
       reply.send(error)
     });
-    
-    await fastify.register(require('fastify-swagger'), {
-      mode: 'static',
-      specification: {
-        path: './src/doc/swagger-doc.yaml'
-      },
-      exposeRoute: true,
-      routePrefix: '/docs'
-    });
-  
+      
     if(!config.BITHOMP_API_TOKEN) {
       console.log("No BITHOMP_API_TOKEN set");
       process.exit(1);
@@ -92,7 +83,7 @@ const start = async () => {
       allowedOrigins = await mongo.getAllowedOriginsAsArray();
 
       console.log("setting allowed origins: " + allowedOrigins);
-      await fastify.register(require('fastify-cors'), {
+      await fastify.register(require('@fastify/cors'), {
         origin: (origin, cb) => {
 
           //console.log("checking request with origin: " + origin);
