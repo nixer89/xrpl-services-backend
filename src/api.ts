@@ -1157,15 +1157,21 @@ export async function registerRoutes(fastify, opts, next) {
             console.log("INCOMING WEBHOOK");
             const timestamp = request.headers?.["x-xumm-request-timestamp"] || "";
             const signature = request.headers?.["x-xumm-request-signature"];
-            const json:XummTypes.XummWebhookBody = request.body;
+            let json:XummTypes.XummWebhookBody;
+            
+            try {
+                json = JSON.parse(request.body)
+            } catch(err) {
+                json = request.body;
+            }
 
             console.log("JSON:")
             console.log(JSON.stringify(json));
 
-            const appId = json.meta.application_uuidv4;
+            const appId = json?.meta?.application_uuidv4;
             const appSecret = await db.getApiSecretForAppId(appId);
       
-            if (timestamp && signature && json) {
+            if (appSecret && timestamp && signature && json) {
               const hmac = crypto
                 .createHmac("sha1", appSecret.replace("-", ""))
                 .update(timestamp + JSON.stringify(json))
@@ -1180,6 +1186,10 @@ export async function registerRoutes(fastify, opts, next) {
                 console.log("HMAC NOT VERFIED. DENY ACCESS!");
               }
       
+            } else {
+                if(!appSecret) {
+                    console.log("TO APP SECRET FOUND FOR APP ID: " + appId);
+                }
             }
 
             return reply.status(200).send({ status: 200 });
