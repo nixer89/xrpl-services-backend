@@ -1159,6 +1159,9 @@ export async function registerRoutes(fastify, opts, next) {
             const signature = request.headers?.["x-xumm-request-signature"];
             const json:XummTypes.XummWebhookBody = request.body;
 
+            console.log("JSON:")
+            console.log(JSON.stringify(json));
+
             const appId = json.meta.application_uuidv4;
             const appSecret = await db.getApiSecretForAppId(appId);
       
