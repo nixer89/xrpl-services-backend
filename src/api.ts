@@ -1154,6 +1154,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.post('/api/v1/webhook', async (request, reply) => {
         try {
             //verify webhook call
+            console.log("INCOMING WEBHOOK");
             const timestamp = request.headers?.["x-xumm-request-timestamp"] || "";
             const signature = request.headers?.["x-xumm-request-signature"];
             const json:XummTypes.XummWebhookBody = request.body;
@@ -1188,6 +1189,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.post('/api/v1/webhook/*', async (request, reply) => {
         try {
             //verify webhook call
+            console.log("INCOMING WEBHOOK");
             const timestamp = request.headers?.["x-xumm-request-timestamp"] || "";
             const signature = request.headers?.["x-xumm-request-signature"];
             const json:XummTypes.XummWebhookBody = request.body;
