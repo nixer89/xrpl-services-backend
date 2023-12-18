@@ -1165,9 +1165,6 @@ export async function registerRoutes(fastify, opts, next) {
                 json = request.body;
             }
 
-            console.log("JSON:")
-            console.log(JSON.stringify(json));
-
             const appId = json?.meta?.application_uuidv4;
             const appSecret = await db.getApiSecretForAppId(appId);
       
@@ -1180,7 +1177,7 @@ export async function registerRoutes(fastify, opts, next) {
               if (hmac === signature) {
                 //request has been verified successfully. handle it!
                 console.log("HMAC VERFIED. HANDLE WEBHOOK!");
-                await handleWebhookRequest(request);
+                await handleWebhookRequest(json);
               } else {
                 //don't accept request. it can not be verified!
                 console.log("HMAC NOT VERFIED. DENY ACCESS!");
@@ -1205,10 +1202,13 @@ export async function registerRoutes(fastify, opts, next) {
             console.log("INCOMING WEBHOOK");
             const timestamp = request.headers?.["x-xumm-request-timestamp"] || "";
             const signature = request.headers?.["x-xumm-request-signature"];
-            const json:XummTypes.XummWebhookBody = request.body;
-
-            console.log("JSON:")
-            console.log(JSON.stringify(json));
+            let json:XummTypes.XummWebhookBody;
+            
+            try {
+                json = JSON.parse(request.body)
+            } catch(err) {
+                json = request.body;
+            }
 
             const appId = json.meta.application_uuidv4;
             const appSecret = await db.getApiSecretForAppId(appId);
@@ -1222,7 +1222,7 @@ export async function registerRoutes(fastify, opts, next) {
               if (hmac === signature) {
                 //request has been verified successfully. handle it!
                 console.log("HMAC VERFIED. HANDLE WEBHOOK!");
-                await handleWebhookRequest(request);
+                await handleWebhookRequest(json);
               } else {
                 //don't accept request. it can not be verified!
                 console.log("HMAC NOT VERFIED. DENY ACCESS!");
@@ -1244,12 +1244,12 @@ export async function registerRoutes(fastify, opts, next) {
     next()
 }
 
-async function handleWebhookRequest(request:any): Promise<any> {
+async function handleWebhookRequest(json:any): Promise<any> {
     //console.log("webhook headers: " + JSON.stringify(request.headers));
     //console.log("webhook body: " + JSON.stringify(request.body));
     
     try {
-        let webhookRequest:XummTypes.XummWebhookBody = request.body;
+        let webhookRequest:XummTypes.XummWebhookBody = json;
         let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByAppId(webhookRequest.meta.application_uuidv4, webhookRequest.meta.payload_uuidv4, "websocket");
         
         //check if we have to store the user
