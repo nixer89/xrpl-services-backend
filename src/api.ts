@@ -1331,10 +1331,12 @@ async function handleWebhookRequest(request:any): Promise<any> {
             }
         } catch(err) {
             console.log("ERROR '/api/v1/webhook': " + JSON.stringify(err));
+            console.log(err);
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
     } catch(err) {
         console.log("ERROR '/api/v1/webhook': " + JSON.stringify(err));
+        console.log(err);
         return { success : false, error: true, message: 'Something went wrong. Please check your request'};
     }
 }
