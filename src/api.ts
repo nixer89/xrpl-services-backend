@@ -1174,7 +1174,7 @@ export async function registerRoutes(fastify, opts, next) {
                 console.log("FOUND WEBHOOK CALL FOR XAHAU:")
                 console.log("Network: " + json?.custom_meta?.blob?.network);
                 
-                return fetch.default("http://127.0.0.1:4401/api/v1/webhook", {headers: request.headers, body: request.body});
+                return fetch.default("http://127.0.0.1:4401/api/v1/webhook", {method: 'POST', headers: request.headers, body: request.body});
             } else {
 
                 const appId = json.meta.application_uuidv4;
