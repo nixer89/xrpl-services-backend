@@ -1171,6 +1171,9 @@ export async function registerRoutes(fastify, opts, next) {
             const json:XummTypes.XummWebhookBody = request.body;
 
             if(json?.custom_meta?.blob?.network == 'XAHAU' || json?.custom_meta?.blob?.network == 'XAHAUTESTNET') {
+                console.log("FOUND WEBHOOK CALL FOR XAHAU:")
+                console.log("Network: " + json?.custom_meta?.blob?.network);
+                
                 return fetch.default("http://127.0.0.1:4401/api/v1/webhook", {headers: request.headers, body: request.body});
             } else {
 
