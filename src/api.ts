@@ -1167,7 +1167,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.post('/api/v1/webhook', async (request, reply) => {
         try {
             //verify webhook call
-            console.log("INCOMING WEBHOOK");
+            //console.log("INCOMING WEBHOOK");
             const timestamp = request.headers?.["x-xumm-request-timestamp"] || "";
             const signature = request.headers?.["x-xumm-request-signature"];
             let json:XummTypes.XummWebhookBody;
@@ -1189,7 +1189,7 @@ export async function registerRoutes(fastify, opts, next) {
       
               if (hmac === signature) {
                 //request has been verified successfully. handle it!
-                console.log("HMAC VERFIED. HANDLE WEBHOOK!");
+                //console.log("HMAC VERFIED. HANDLE WEBHOOK!");
                 await handleWebhookRequest(json);
               } else {
                 //don't accept request. it can not be verified!
