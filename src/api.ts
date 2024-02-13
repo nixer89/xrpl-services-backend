@@ -19,7 +19,11 @@ let deviceDetector = new DeviceDetector();
 let ipRanges:string[] = ["76.201.20.","76.201.21.","76.201.22.","76.201.23.","120.29.68.","212.117.20.","169.0.102.","61.57.124.", "61.57.125.","61.57.12.","61.57.127.","121.54.10.","175.176.49.", "211.176.124.", "211.176.125.",
                          "211.176.126.", "211.176.127.","94.129.197.","182.0.237.", "175.176.92.","110.54.129.", "80.229.222.", "80.229.223."]
 
-let appIdsForPaymentCheck:string[] = [];
+let appIdsForPaymentCheck:string[] = [
+                                        "b1d9c741-ca1e-465b-9ed1-c132c8966987", //xahau.services
+                                        "96a32b48-206f-433d-9e32-a6634c712139", //Escrow creator test
+                                        "b42f7609-3cc1-476d-9b29-af1d7ded8eac"  // Escrow creator Prod
+                                     ];
 
 const Redis = require('ioredis')
 const redis = new Redis({
