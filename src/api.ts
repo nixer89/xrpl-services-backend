@@ -1260,18 +1260,30 @@ async function handleWebhookRequest(json:any): Promise<any> {
             //store transaction statistic
             //check if payload was signed and submitted successfully (or is a SignIn request which is not submitted)
             if(payloadInfo && payloadInfo.meta.signed && origin && ((payloadInfo.response && payloadInfo.response.dispatched_result && payloadInfo.response.dispatched_result == "tesSUCCESS") || ( payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == "signin" ))) {
-                db.saveTransactionInStatistic(origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
+                console.log("save in stats");
+                
+                try {
+                    db.saveTransactionInStatistic(origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
+                } catch(err) {
+                    //noop
+                }
             }
 
             //check escrow payment
             if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == 'payment' && payloadInfo.custom_meta && payloadInfo.custom_meta.blob && payloadInfo.custom_meta.blob.account) {
+                console.log("handle escrow");
                 handleEscrowPayment(payloadInfo);
             }
 
             //check trustline
             if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == 'trustset'
                 && payloadInfo.response && payloadInfo.response.dispatched_nodetype == "XAHAU" && payloadInfo.response.dispatched_result =="tesSUCCESS") {
-                    saveTrustlineInfo(payloadInfo);
+                    console.log("save in trustline");
+                    try {
+                        saveTrustlineInfo(payloadInfo);
+                    } catch(err) {
+                        //noop
+                    }
             }
 
             try {
@@ -1294,6 +1306,7 @@ async function handleWebhookRequest(json:any): Promise<any> {
 
                         if(transactionCheck && transactionCheck.success && !transactionCheck.testnet) {
                             //console.log("transaction successfull");
+                            console.log("handle sevdesk payment");
                             handlePaymentToSevdesk(payloadInfo);                    
                         } else {
                             console.log("TRANSACTION COULD NOT BE VALIDATED!")
