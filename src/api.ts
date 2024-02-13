@@ -1276,6 +1276,7 @@ async function handleWebhookRequest(json:any): Promise<any> {
             }
 
             //check trustline
+            /**
             if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == 'trustset'
                 && payloadInfo.response && payloadInfo.response.dispatched_nodetype == "XAHAU" && payloadInfo.response.dispatched_result =="tesSUCCESS") {
                     console.log("save in trustline");
@@ -1285,6 +1286,7 @@ async function handleWebhookRequest(json:any): Promise<any> {
                         //noop
                     }
             }
+            */
 
             try {
                 //sevdesk only for payments!
