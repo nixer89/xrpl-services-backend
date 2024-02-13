@@ -1212,7 +1212,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.post('/api/v1/webhook/*', async (request, reply) => {
         try {
             //verify webhook call
-            console.log("INCOMING WEBHOOK");
+            //console.log("INCOMING WEBHOOK");
             const timestamp = request.headers?.["x-xumm-request-timestamp"] || "";
             const signature = request.headers?.["x-xumm-request-signature"];
             let json:XummTypes.XummWebhookBody;
@@ -1234,7 +1234,7 @@ export async function registerRoutes(fastify, opts, next) {
       
               if (hmac === signature) {
                 //request has been verified successfully. handle it!
-                console.log("HMAC VERFIED. HANDLE WEBHOOK!");
+                //console.log("HMAC VERFIED. HANDLE WEBHOOK!");
                 await handleWebhookRequest(json);
               } else {
                 //don't accept request. it can not be verified!
@@ -1273,7 +1273,7 @@ async function handleWebhookRequest(json:any): Promise<any> {
             //store transaction statistic
             //check if payload was signed and submitted successfully (or is a SignIn request which is not submitted)
             if(payloadInfo && payloadInfo.meta.signed && origin && ((payloadInfo.response && payloadInfo.response.dispatched_result && payloadInfo.response.dispatched_result == "tesSUCCESS") || ( payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == "signin" ))) {
-                console.log("save in stats");
+                //console.log("save in stats");
                 
                 try {
                     db.saveTransactionInStatistic(origin, payloadInfo.application.uuidv4, payloadInfo.payload.tx_type);
@@ -1284,7 +1284,7 @@ async function handleWebhookRequest(json:any): Promise<any> {
 
             //check escrow payment
             if(payloadInfo && payloadInfo.payload && payloadInfo.payload.tx_type && payloadInfo.payload.tx_type.toLowerCase() == 'payment' && payloadInfo.custom_meta && payloadInfo.custom_meta.blob && payloadInfo.custom_meta.blob.account) {
-                console.log("handle escrow");
+                //console.log("handle escrow");
                 handleEscrowPayment(payloadInfo);
             }
 
@@ -1305,23 +1305,23 @@ async function handleWebhookRequest(json:any): Promise<any> {
                 //sevdesk only for payments!
                 if(payloadInfo?.payload?.tx_type === "Payment" && payloadInfo?.payload?.request_json?.Destination === "rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF" && payloadInfo.meta.signed) {
 
-                    console.log("checking sevdesk");
-                    console.log("appid: " + payloadInfo.application.uuidv4)
-                    console.log("appid included: " + appIdsForPaymentCheck.includes(payloadInfo.application.uuidv4));
-                    console.log("has ip: " + payloadInfo?.custom_meta?.blob?.ip);
-                    console.log("countrycode: " + payloadInfo?.custom_meta?.blob?.countryCode)
+                    //console.log("checking sevdesk");
+                    //console.log("appid: " + payloadInfo.application.uuidv4)
+                    //console.log("appid included: " + appIdsForPaymentCheck.includes(payloadInfo.application.uuidv4));
+                    //console.log("has ip: " + payloadInfo?.custom_meta?.blob?.ip);
+                    //console.log("countrycode: " + payloadInfo?.custom_meta?.blob?.countryCode)
 
-                    console.log("nodetype: " + payloadInfo?.response?.dispatched_nodetype);
-                    console.log("trx result: " + payloadInfo?.response?.dispatched_result)
+                    //console.log("nodetype: " + payloadInfo?.response?.dispatched_nodetype);
+                    //console.log("trx result: " + payloadInfo?.response?.dispatched_result)
 
                     if(appIdsForPaymentCheck.includes(payloadInfo.application.uuidv4) && payloadInfo.custom_meta?.blob?.ip && payloadInfo.response && payloadInfo.response.dispatched_nodetype === "XAHAU" && payloadInfo.response.dispatched_result === "tesSUCCESS") {
                         //check transaction on ledger
                         let transactionCheck = await special.validateTransactionOnLedger(payloadInfo);
-                        console.log(transactionCheck);
+                        //console.log(transactionCheck);
 
                         if(transactionCheck && transactionCheck.success && !transactionCheck.testnet) {
-                            console.log("transaction successfull");
-                            console.log("handle sevdesk payment");
+                            //console.log("transaction successfull");
+                            //console.log("handle sevdesk payment");
                             handlePaymentToSevdesk(payloadInfo);                    
                         } else {
                             console.log("TRANSACTION COULD NOT BE VALIDATED!")
@@ -1439,7 +1439,7 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
             purpose = "";
         }
 
-        console.log("DROPS BEFORE: " + xrp);
+        //console.log("DROPS BEFORE: " + xrp);
 
         if(!xrp) {
             //no amount set by request, must be a donation! resolve amount from xrpl
@@ -1462,11 +1462,11 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
             }
         }
 
-        console.log("DROPS AFTER: " + xrp);
+        //console.log("DROPS AFTER: " + xrp);
 
         xrp = Number(xrp) / 1000000;
 
-        if(xrp && xrp >= 0.5) { //only handle transactions where XAH >= 0.5 !
+        if(xrp && xrp >= 1) { //only handle transactions where XAH >= 1 !
 
             let exchangeResponse = await getEurAmountFromXrp(xrp)
             let eurAmount = exchangeResponse[0];
@@ -1498,7 +1498,7 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
             }
             
         } else {
-            console.log("XAH Amount too small!");
+            console.log("XAH Amount too small: " + xrp + " XAH.");
         }
     } catch(err) {
         console.log("ERROR SEVDESK INTEGRATION")
@@ -1516,11 +1516,11 @@ async function getEurAmountFromXrp(xrp:number): Promise<any> {
 
     if(exchangeResponse && exchangeResponse.ok) {
         let jsonResponse:any = await exchangeResponse.json();
-        console.log("exchangeResponse: " + JSON.stringify(exchangeResponse));
+        //console.log("exchangeResponse: " + JSON.stringify(exchangeResponse));
         if(jsonResponse) {
             if(jsonResponse?.market_data?.current_price?.["eur"]) {
                 exchangerate = jsonResponse.market_data.current_price["eur"]
-                console.log("EXCHANGE RATE: " + exchangerate)
+                //console.log("EXCHANGE RATE: " + exchangerate)
 
                 amountEur = xrp * parseFloat(exchangerate);
 
@@ -1581,7 +1581,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
 
     //check if we are EU rate
     if(taxRates[countryCode] != null) {
-        console.log("EU TAX");
+        //console.log("EU TAX");
         let taxSetId = taxRates[countryCode];
         //get tax set
         let result = await fetch.default("https://my.sevdesk.de/api/v1/TaxSet?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau"}});
@@ -1591,8 +1591,8 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
             let receivedRates:any[] = jsonResult.objects
             taxSet = receivedRates.filter(set => set.id === taxSetId)[0];
 
-            console.log("taxSetId: " + taxSetId);
-            console.log("TAX SET: " + JSON.stringify(taxSet));
+            //console.log("taxSetId: " + taxSetId);
+            //console.log("TAX SET: " + JSON.stringify(taxSet));
 
             if(taxSet != null) {
                 taxType = "custom";
@@ -1604,13 +1604,13 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         //are we germany?
         if(countryCode === 'DE' || countryCode === 'XX') {
             taxSet = null
-            console.log("GERMAN TAX");
+            //console.log("GERMAN TAX");
             taxType = "default";
             taxRate = 19;
             accountingType = 26;
 
         } else {
-            console.log("DRITTLAND TAX");
+            //console.log("DRITTLAND TAX");
             taxType = "noteu";
             accountingType = 714094;
 
@@ -1642,15 +1642,15 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
                 taxRate = 15;
             } else {
                 let redisRate = await redis.get(countryCode);
-                console.log("REDISRATE: " + redisRate)
+                //console.log("REDISRATE: " + redisRate)
 
                 if(redisRate) {
-                    console.log("vat taken from redis. Country: " + countryCode + " Rate: " + redisRate);
+                    //console.log("vat taken from redis. Country: " + countryCode + " Rate: " + redisRate);
                     taxRate = parseInt(redisRate+"");
                 } else {
                     let vatRate = await retrieveVatRate(countryCode);
 
-                    console.log("vat resolved from API. Country: " + countryCode + " Rate: " + vatRate);
+                    //console.log("vat resolved from API. Country: " + countryCode + " Rate: " + vatRate);
 
                     if(typeof vatRate === 'number')
                         taxRate = vatRate;
@@ -1665,17 +1665,17 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         }
     }
 
-    console.log("hash: " + hash);
-    console.log("date: " + dateString);
-    console.log("amountEur: " + eur);
-    console.log("amountXah: " + xrp);
-    console.log("exchangerate: " + exchangerate);
-    console.log("taxType: " + taxType);
-    console.log("taxSet: " + JSON.stringify(taxSet));
-    console.log("taxRate: " + taxRate);
-    console.log("countrycode: " + countryCode);
-    console.log("accountingType: " + accountingType);
-    console.log("account: " + account);
+    //console.log("hash: " + hash);
+    //console.log("date: " + dateString);
+    //console.log("amountEur: " + eur);
+    //console.log("amountXah: " + xrp);
+    //console.log("exchangerate: " + exchangerate);
+    //console.log("taxType: " + taxType);
+    //console.log("taxSet: " + JSON.stringify(taxSet));
+    //console.log("taxRate: " + taxRate);
+    //console.log("countrycode: " + countryCode);
+    //console.log("accountingType: " + accountingType);
+    //console.log("account: " + account);
 
     if(config.IMPORT_SEVDESK === "true") {
 
@@ -1745,7 +1745,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         let result = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/Factory/saveVoucher?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau"}, method: "POST", body: JSON.stringify(beleg)});
         
         let resultJson = await result.json();
-        console.log("result: " + JSON.stringify(resultJson));
+        //console.log("result: " + JSON.stringify(resultJson));
 
         let voucherId = resultJson.objects.voucher.id;
 
@@ -1766,11 +1766,11 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         let transactionResult = await fetch.default("https://my.sevdesk.de/api/v1/CheckAccountTransaction?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau",}, method: "POST", body: JSON.stringify(transaction)});
         
         let transactionResultJson = await transactionResult.json();
-        console.log("transactionResult: " + JSON.stringify(transactionResultJson));
+        //console.log("transactionResult: " + JSON.stringify(transactionResultJson));
 
         let checkTransactionId = transactionResultJson.objects.id;
 
-        console.log("transaction id: " + checkTransactionId);
+        //console.log("transaction id: " + checkTransactionId);
 
         //also create the transaction/booking
         let booking = {
@@ -1807,7 +1807,7 @@ async function retrieveVatRate(countryCode: string): Promise<number> {
     let vatRatesResponse = await fetch.default("https://api.vatsense.com/1.0/rates?country_code="+countryCode, { headers: {"Authorization": basicAuth, "content-type": "application/json"}, method: "GET"});
 
     let vatRatesJson = await vatRatesResponse.json();
-    console.log("vatRatesJson: " + JSON.stringify(vatRatesJson));
+    //console.log("vatRatesJson: " + JSON.stringify(vatRatesJson));
 
     if(vatRatesJson?.success && vatRatesJson.data?.standard && typeof vatRatesJson.data.standard.rate === 'number') {
         let vat = vatRatesJson.data.standard.rate;

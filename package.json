@@ -1,6 +1,6 @@
 {
   "name": "xahau-services-backend",
-  "version": "4.6.4",
+  "version": "4.7.0",
   "description": "provides a generic backend, connected to xumm. Easy access of user tokens for push",
   "main": "src/server.ts",
   "scripts": {
