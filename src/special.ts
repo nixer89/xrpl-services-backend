@@ -15,8 +15,8 @@ export class Special {
     xummBackend = new Xumm.Xumm();
     db = new DB.DB();
 
-    private mainNodes:string[] = ['wss://xahau.network'];
-    private testNodes:string[] = ['wss://xahau-test.net'];
+    private mainNodes:string[] = ['wss://xahau.network', "ws://xyz.xahaudata.com"];
+    private testNodes:string[] = ['wss://xahau-test.net','wss://xahau-test.net'];
 
     private currentMainNode:number = 0;
     private currentTestNode:number = 0;
