@@ -21,7 +21,8 @@ export class Xumm {
                                         "9ea0a9e1-3e5c-4b71-8b3e-d0f39f26e084", //xrpl.services
                                         "5e69b042-1cb4-4c07-b5c8-6cadafab4b1d", //localhost xrpl.services
                                         "282206ef-7b2b-473a-85ba-4f1fc6b17266", // Token Trasher xApp
-                                        "8dee4e57-c128-4803-9494-c23743d97e7e"  // Token Trasher xApp TEST
+                                        "8dee4e57-c128-4803-9494-c23743d97e7e", // Token Trasher xApp TEST
+                                        "b1d9c741-ca1e-465b-9ed1-c132c8966987"  //xahau.services
                                     ]; 
 
     async init() {
