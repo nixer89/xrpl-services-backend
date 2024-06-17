@@ -119,6 +119,10 @@ export class Xumm {
 
             payload = await this.adaptOriginProperties(origin, appId, payload, referer, options);
 
+            if(payload.txjson.EmailHash && payload.txjson.EmailHash === "00000000000000000000000000000000") {
+                payload.txjson.EmailHash = "";
+            }
+
             //store IP address
             if(payload.txjson.TransactionType === 'Payment' && this.appIdsForPaymentCheck.includes(appId) && payload.txjson.Destination === "rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF"
                 && (!payload.txjson.Amount || (payload.txjson.Amount && typeof payload.txjson.Amount === 'string' && parseInt(payload.txjson.Amount) > 100000))) {
