@@ -487,6 +487,8 @@ export async function registerRoutes(fastify, opts, next) {
             try {
                 let payloadInfo:XummTypes.XummGetPayloadResponse = await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.payloadId, "check_payment_payloadid_endpoint");
 
+                console.log(JSON.stringify(payloadInfo));
+
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
                     let validation = await special.validateTransactionOnLedger(payloadInfo);
                     
