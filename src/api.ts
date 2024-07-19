@@ -1552,23 +1552,36 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
 
     //check if we are EU rate
     if(taxRates[countryCode] != null) {
-        //console.log("EU TAX");
-        let taxSetId = taxRates[countryCode];
-        //get tax set
-        let result = await fetch.default("https://my.sevdesk.de/api/v1/TaxSet?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}});
 
-        if(result && result.ok) {
-            let jsonResult = await result.json();
-            let receivedRates:any[] = jsonResult.objects
-            taxSet = receivedRates.filter(set => set.id === taxSetId)[0];
+        //disabled OOS from 1st of October 2024
+        let disabledOOS = new Date("2024-10-01T01:00:00.000Z");
 
-            //console.log("taxSetId: " + taxSetId);
-            //console.log("TAX SET: " + JSON.stringify(taxSet));
+        //disabled OOS from 1st of October 2024. All EU sales are taxed with 19% (DE rate) from this date on.
+        if(Date.now() >= disabledOOS.getTime()) {
+            taxSet = null;
+            taxType = "default";
+            taxRate = 19;
+            accountingType = 26;
+        } else {
 
-            if(taxSet != null) {
-                taxType = "custom";
-                taxRate = taxSet.taxRate
-                accountingType = 714106;
+            //console.log("EU TAX");
+            let taxSetId = taxRates[countryCode];
+            //get tax set
+            let result = await fetch.default("https://my.sevdesk.de/api/v1/TaxSet?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}});
+
+            if(result && result.ok) {
+                let jsonResult = await result.json();
+                let receivedRates:any[] = jsonResult.objects
+                taxSet = receivedRates.filter(set => set.id === taxSetId)[0];
+
+                //console.log("taxSetId: " + taxSetId);
+                //console.log("TAX SET: " + JSON.stringify(taxSet));
+
+                if(taxSet != null) {
+                    taxType = "custom";
+                    taxRate = taxSet.taxRate
+                    accountingType = 714106;
+                }
             }
         }
     } else {        
