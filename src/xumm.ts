@@ -382,6 +382,8 @@ export class Xumm {
                 else if(originProperties.fixAmount['*'])
                     payload.txjson.Amount = originProperties.fixAmount['*'];
             }
+        } else if(payload.txjson && 'AccountDelete' === payload.txjson.TransactionType) {
+            payload.txjson.Fee = "200000";
         }
 
         //handle return URLs
