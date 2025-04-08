@@ -1176,7 +1176,9 @@ export async function registerRoutes(fastify, opts, next) {
                 console.log("FOUND WEBHOOK CALL FOR XAHAU:")
                 console.log("Network: " + json?.custom_meta?.blob?.network);
                 
-                return fetch.default("https://api.xahau.services/api/v1/webhook", {method: 'POST', headers: {"x-xumm-request-timestamp": request.headers["x-xumm-request-timestamp"], "x-xumm-request-signature": request.headers["x-xumm-request-signature"]}, body: JSON.stringify(request.body)});
+                const xahauResult = await fetch.default("https://api.xahau.services/api/v1/webhook", {method: 'POST', headers: {"x-xumm-request-timestamp": request.headers["x-xumm-request-timestamp"], "x-xumm-request-signature": request.headers["x-xumm-request-signature"]}, body: JSON.stringify(request.body)});
+                const xahauJsonResult = await xahauResult.json();
+                console.log("XAHAURESULT: " + JSON.stringify(xahauJsonResult));
             } else {
 
                 const appId = json.meta.application_uuidv4;

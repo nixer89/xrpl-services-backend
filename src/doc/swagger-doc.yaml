@@ -16,9 +16,9 @@ info:
 
    <b>To use this API you have to be whitlisted.</b> Please contact [@nixerFFM](https://twitter.com/nixerFFM) if you are interested to use this backend API.
 <<<<<<< HEAD
-  version: '5.2.0'
+  version: '5.2.1'
 =======
-  version: '5.2.0'
+  version: '5.2.1'
 >>>>>>> 3d591c9 (v.4.8.0: disable OOS for Xahau and update voucher creation logic to avoid duplicates)
 paths:
   /api/v1/platform/payload:
