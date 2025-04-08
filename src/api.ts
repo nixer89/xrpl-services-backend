@@ -1581,23 +1581,36 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
 
     //check if we are EU rate
     if(taxRates[countryCode] != null) {
-        //console.log("EU TAX");
-        let taxSetId = taxRates[countryCode];
-        //get tax set
-        let result = await fetch.default("https://my.sevdesk.de/api/v1/TaxSet?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau"}});
 
-        if(result && result.ok) {
-            let jsonResult = await result.json();
-            let receivedRates:any[] = jsonResult.objects
-            taxSet = receivedRates.filter(set => set.id === taxSetId)[0];
+        //disabled OOS from 1st of October 2024
+        let disabledOOS = new Date("2024-10-01T01:00:00.000Z");
 
-            //console.log("taxSetId: " + taxSetId);
-            //console.log("TAX SET: " + JSON.stringify(taxSet));
+        //disabled OOS from 1st of October 2024. All EU sales are taxed with 19% (DE rate) from this date on.
+        if(Date.now() >= disabledOOS.getTime()) {
+            taxSet = null;
+            taxType = "default";
+            taxRate = 19;
+            accountingType = 26;
+        } else {
 
-            if(taxSet != null) {
-                taxType = "custom";
-                taxRate = taxSet.taxRate
-                accountingType = 714106;
+            //console.log("EU TAX");
+            let taxSetId = taxRates[countryCode];
+            //get tax set
+            let result = await fetch.default("https://my.sevdesk.de/api/v1/TaxSet", {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau"}});
+
+            if(result && result.ok) {
+                let jsonResult = await result.json();
+                let receivedRates:any[] = jsonResult.objects
+                taxSet = receivedRates.filter(set => set.id === taxSetId)[0];
+
+                //console.log("taxSetId: " + taxSetId);
+                //console.log("TAX SET: " + JSON.stringify(taxSet));
+
+                if(taxSet != null) {
+                    taxType = "custom";
+                    taxRate = taxSet.taxRate
+                    accountingType = 714106;
+                }
             }
         }
     } else {        
@@ -1614,7 +1627,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
             taxType = "noteu";
             accountingType = 714094;
 
-            let result = await fetch.default("https://my.sevdesk.de/api/v1/TaxSet?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau"}});
+            let result = await fetch.default("https://my.sevdesk.de/api/v1/TaxSet", {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau"}});
 
             if(result && result.ok) {
                 let jsonResult = await result.json();
@@ -1679,126 +1692,138 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
 
     if(config.IMPORT_SEVDESK === "true") {
 
-        //call sevDesk API for automatic import
-        let beleg = {
-            "voucher": {
-              "voucherDate": dateString,
-              "supplier": null,
-              "supplierName": account + " (" + countryCode + ")",
-              "description": hash,
-              "document": null,
-              "resultDisdar": null,
-              "documentPreview": null,
-              "payDate": null,
-              "status": 100,
-              "showNet": "1",
-              "taxType": taxType,
-              "creditDebit": "D",
-              "hidden": null,
-              "costCentre": null,
-              "voucherType": "VOU",
-              "recurringIntervall": null,
-              "recurringInterval": null,
-              "recurringStartDate": null,
-              "recurringNextVoucher": null,
-              "recurringLastVoucher": null,
-              "recurringEndDate": null,
-              "enshrined": null,
-              "inSource": null,
-              "taxSet": taxSet,
-              "iban": null,
-              "accountingSpecialCase": null,
-              "paymentDeadline": null,
-              "tip": null,
-              "mileageRate": null,
-              "selectedForPaymentFile": null,
-              "supplierNameAtSave": account + " (" + countryCode + ")",
-              "taxmaroStockAccount": null,
-              "vatNumber": null,
-              "deliveryDate": dateString,
-              "deliveryDateUntil": null,
-              "mapAll": "true",
-              "objectName": "Voucher"
-            },
-            "voucherPosSave": [
-              {
-                "accountingType": {
-                  "id": accountingType,
-                  "objectName": "AccountingType"
-                },
-                "taxRate": taxRate,
-                "sum": null,
-                "net": "false",
-                "isAsset": "false",
-                "sumNet": null,
-                "sumGross": eur,
-                "comment": purpose + xrp + " XAH zu " + exchangerate + " EUR.",
+        //chec if we already have a voucher for this transaction
+        let checkResult = await fetch.default("https://my.sevdesk.de/api/v1/Voucher?descriptionLike="+hash+"&creditDebit=D", {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau"}, method: "GET"});
+
+        let checkResultJson = await checkResult.json();
+
+        //no voucher found? create one.
+        if(checkResultJson && checkResultJson.objects && checkResultJson.objects.length == 0) {
+
+            //call sevDesk API for automatic import
+            let beleg = {
+                "voucher": {
+                "voucherDate": dateString,
+                "supplier": null,
+                "supplierName": account + " (" + countryCode + ")",
+                "description": hash,
+                "document": null,
+                "resultDisdar": null,
+                "documentPreview": null,
+                "payDate": null,
+                "status": 100,
+                "showNet": "1",
+                "taxType": taxType,
+                "creditDebit": "D",
+                "hidden": null,
+                "costCentre": null,
+                "voucherType": "VOU",
+                "recurringIntervall": null,
+                "recurringInterval": null,
+                "recurringStartDate": null,
+                "recurringNextVoucher": null,
+                "recurringLastVoucher": null,
+                "recurringEndDate": null,
+                "enshrined": null,
+                "inSource": null,
+                "taxSet": taxSet,
+                "iban": null,
+                "accountingSpecialCase": null,
+                "paymentDeadline": null,
+                "tip": null,
+                "mileageRate": null,
+                "selectedForPaymentFile": null,
+                "supplierNameAtSave": account + " (" + countryCode + ")",
+                "taxmaroStockAccount": null,
+                "vatNumber": null,
+                "deliveryDate": dateString,
+                "deliveryDateUntil": null,
                 "mapAll": "true",
-                "objectName": "VoucherPos"
-              }
-            ],
-            "voucherPosDelete": null,
-            "filename": null
-        }
+                "objectName": "Voucher"
+                },
+                "voucherPosSave": [
+                {
+                    "accountingType": {
+                    "id": accountingType,
+                    "objectName": "AccountingType"
+                    },
+                    "taxRate": taxRate,
+                    "sum": null,
+                    "net": "false",
+                    "isAsset": "false",
+                    "sumNet": null,
+                    "sumGross": eur,
+                    "comment": purpose + xrp + " XAH zu " + exchangerate + " EUR.",
+                    "mapAll": "true",
+                    "objectName": "VoucherPos"
+                }
+                ],
+                "voucherPosDelete": null,
+                "filename": null
+            }
 
 
-        let result = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/Factory/saveVoucher?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau"}, method: "POST", body: JSON.stringify(beleg)});
-        
-        let resultJson = await result.json();
-        //console.log("result: " + JSON.stringify(resultJson));
+            let result = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/Factory/saveVoucher", {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau"}, method: "POST", body: JSON.stringify(beleg)});
+            
+            let resultJson = await result.json();
+            //console.log("result: " + JSON.stringify(resultJson));
 
-        let voucherId = resultJson.objects.voucher.id;
+            let voucherId = resultJson.objects.voucher.id;
 
-        //create transaction
-        let transaction = {
-        "checkAccount": {
-            "id": 5620566,
-            "objectName": "CheckAccount"  
-        },
-        "valueDate": dateString,
-        "entryDate": dateString,
-        "status": "100",
-        "amount": eur,
-        "paymentPurpose": "Xahau Services and Tools",
-        "payeePayerName": account + " (" + countryCode + ")"
-        }
-
-        let transactionResult = await fetch.default("https://my.sevdesk.de/api/v1/CheckAccountTransaction?token="+config.SEVDESK_TOKEN, {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau",}, method: "POST", body: JSON.stringify(transaction)});
-        
-        let transactionResultJson = await transactionResult.json();
-        //console.log("transactionResult: " + JSON.stringify(transactionResultJson));
-
-        let checkTransactionId = transactionResultJson.objects.id;
-
-        //console.log("transaction id: " + checkTransactionId);
-
-        //also create the transaction/booking
-        let booking = {
-
-            "amount": eur,
-            "date": dateString,
-            "type": "N",
+            //create transaction
+            let transaction = {
             "checkAccount": {
                 "id": 5620566,
                 "objectName": "CheckAccount"  
             },
-            "checkAccountTransaction": {
-                "id": checkTransactionId,
-                "objectName": "CheckAccountTransaction"
-            },
-            "createFeed": true
+            "valueDate": dateString,
+            "entryDate": dateString,
+            "status": "100",
+            "amount": eur,
+            "paymentPurpose": "Xahau Services and Tools",
+            "payeePayerName": account + " (" + countryCode + ")"
+            }
+
+            let transactionResult = await fetch.default("https://my.sevdesk.de/api/v1/CheckAccountTransaction", {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau",}, method: "POST", body: JSON.stringify(transaction)});
+            
+            let transactionResultJson = await transactionResult.json();
+            //console.log("transactionResult: " + JSON.stringify(transactionResultJson));
+
+            let checkTransactionId = transactionResultJson.objects.id;
+
+            //console.log("transaction id: " + checkTransactionId);
+
+            //also create the transaction/booking
+            let booking = {
+
+                "amount": eur,
+                "date": dateString,
+                "type": "N",
+                "checkAccount": {
+                    "id": 5620566,
+                    "objectName": "CheckAccount"  
+                },
+                "checkAccountTransaction": {
+                    "id": checkTransactionId,
+                    "objectName": "CheckAccountTransaction"
+                },
+                "createFeed": true
+            }
+
+            //let bookResult = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount?token="+config.SEVDESK_TOKEN,{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "PUT", body: JSON.stringify(booking)});
+
+            //let bookingResultJson = await bookResult.json();
+            //console.log("bookResult: " + JSON.stringify(bookingResultJson));
+
+            //store booking
+            await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount",{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau"}, method: "PUT", body: JSON.stringify(booking)});
+            
+            await db.saveSevdeskTransaction(hash, account, ip, countryCode, xrp, eur, date);
+            console.log("SEVDESK TRANSACTION STORED: - IP: " + ip + " - countryCode: " + countryCode + " - TaxRate: " + taxRate + " - XAH: " + xrp + " - EUR: " + eur + " - date: " + date.toLocaleString() + " - HASH: " + hash);
+        } else {
+            console.log("SEVDESK TRANSACTION ALREADY EXISTS! - HASH: " + hash);
+            console.log("RESULT: " + JSON.stringify(checkResultJson));
         }
-
-        //let bookResult = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount?token="+config.SEVDESK_TOKEN,{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "PUT", body: JSON.stringify(booking)});
-
-        //let bookingResultJson = await bookResult.json();
-        //console.log("bookResult: " + JSON.stringify(bookingResultJson));
-
-        //store booking
-        await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount?token="+config.SEVDESK_TOKEN,{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau"}, method: "PUT", body: JSON.stringify(booking)});
-        
-        await db.saveSevdeskTransaction(hash, account, ip, countryCode, xrp, eur, date);
-        console.log("SEVDESK TRANSACTION STORED: - IP: " + ip + " - countryCode: " + countryCode + " - TaxRate: " + taxRate + " - XAH: " + xrp + " - EUR: " + eur + " - date: " + date.toLocaleString() + " - HASH: " + hash);
     }
   }
 
