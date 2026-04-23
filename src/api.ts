@@ -46,6 +46,8 @@ export async function registerRoutes(fastify, opts, next) {
     await xummBackend.init();
     await db.initDb("api");
     await special.init();
+
+    console.log("DONE INIT DBs in register routes")
     
     fastify.post('/api/v1/platform/payload', {
         config: {
@@ -1170,24 +1172,24 @@ export async function registerRoutes(fastify, opts, next) {
             //verify webhook call
             const timestamp = request.headers?.["x-xumm-request-timestamp"] || "";
             const signature = request.headers?.["x-xumm-request-signature"];
-            const json:XummTypes.XummWebhookBody = request.body;
+            const jsonBody:XummTypes.XummWebhookBody = request.body;
 
-            if(json?.custom_meta?.blob?.network == 'XAHAU' || json?.custom_meta?.blob?.network == 'XAHAUTESTNET') {
+            if(jsonBody?.custom_meta?.blob?.network == 'XAHAU' || jsonBody?.custom_meta?.blob?.network == 'XAHAUTESTNET') {
                 console.log("FOUND WEBHOOK CALL FOR XAHAU:")
-                console.log("Network: " + json?.custom_meta?.blob?.network);
+                console.log("Network: " + jsonBody?.custom_meta?.blob?.network);
                 
                 const xahauResult = await fetch.default("https://api.xahau.services/api/v1/webhook", {method: 'POST', headers: {"x-xumm-request-timestamp": request.headers["x-xumm-request-timestamp"], "x-xumm-request-signature": request.headers["x-xumm-request-signature"]}, body: JSON.stringify(request.body)});
                 const xahauJsonResult = await xahauResult.json();
                 console.log("XAHAURESULT: " + JSON.stringify(xahauJsonResult));
             } else {
 
-                const appId = json.meta.application_uuidv4;
+                const appId = jsonBody.meta.application_uuidv4;
                 const appSecret = await db.getApiSecretForAppId(appId);
         
-                if (timestamp && signature && json) {
+                if (timestamp && signature && jsonBody) {
                     const hmac = crypto
                         .createHmac("sha1", appSecret.replace("-", ""))
-                        .update(timestamp + JSON.stringify(json))
+                        .update(timestamp + JSON.stringify(jsonBody))
                         .digest("hex");
             
                     if (hmac === signature) {
@@ -1245,6 +1247,8 @@ export async function registerRoutes(fastify, opts, next) {
             return reply.status(500).send({ error: "Something went wrong." });
         }
     });
+
+    console.log("DONE registering routes, calling next() now.")
 
     next()
 }
@@ -1719,8 +1723,8 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
                 "voucherPosSave": [
                 {
                     "accountingType": {
-                    "id": accountingType,
-                    "objectName": "AccountingType"
+                        "id": accountingType,
+                        "objectName": "AccountingType"
                     },
                     "taxRate": taxRate,
                     "sum": null,
