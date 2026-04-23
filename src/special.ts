@@ -27,10 +27,19 @@ export class Special {
         await this.xummBackend.init();
         await this.db.initDb("special");
         console.log("db init special done!");
-        await this.mainnetApi.connect();
-        console.log("mainnet api connected!")
-        await this.testnetApi.connect();
-        console.log("testnet api connected!")
+        try {
+            await this.mainnetApi.connect();
+        } catch(err) {
+            console.log(err);
+            console.log("COULD NOT CONNECT MAIN NET API!")
+        }
+
+        try {
+            await this.testnetApi.connect();
+        } catch(err) {
+            console.log(err);
+            console.log("COULD NOT CONNECT TEST NET API!")
+        }
     }
 
     resetDBCache() {
