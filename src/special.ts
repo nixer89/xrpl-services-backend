@@ -32,6 +32,12 @@ export class Special {
         } catch(err) {
             console.log(err);
             console.log("COULD NOT CONNECT MAIN NET API!")
+            try {
+                await this.switchNodes(false);
+            } catch(err) {
+                console.log(err);
+                console.log("COULD NOT CONNECT TO SECONDARY MAINNET NODE!")
+            }
         }
 
         try {
@@ -39,6 +45,12 @@ export class Special {
         } catch(err) {
             console.log(err);
             console.log("COULD NOT CONNECT TEST NET API!")
+            try {
+                await this.switchNodes(true);
+            } catch(err) {
+                console.log(err);
+                console.log("COULD NOT CONNECT TO SECONDARY TESTNET NODE!")
+            }
         }
     }
 
