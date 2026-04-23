@@ -717,7 +717,7 @@ export class DB {
                 await this.trustsetCollection.createIndex({issuer: 1, currency: 1,  sourceAccount: 1}, {unique: true});
 
             if(!(await this.trustsetCollection.indexExists("issuer_1_currency_1")))
-                await this.trustsetCollection.createIndex({issuer: 1, currency: 1}, {unique: true});
+                await this.trustsetCollection.createIndex({issuer: 1, currency: 1}, {unique: false});
 
             if(!(await this.trustsetCollection.indexExists("updated_1")))
                 await this.trustsetCollection.createIndex({updated: 1});
