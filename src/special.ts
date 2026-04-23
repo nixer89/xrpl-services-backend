@@ -26,8 +26,11 @@ export class Special {
     async init() {
         await this.xummBackend.init();
         await this.db.initDb("special");
+        console.log("db init special done!");
         await this.mainnetApi.connect();
+        console.log("mainnet api connected!")
         await this.testnetApi.connect();
+        console.log("testnet api connected!")
     }
 
     resetDBCache() {
