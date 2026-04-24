@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import * as zlib from "zlib";
 import fetch from "node-fetch";
 import * as config from "../util/config";
 
@@ -44,6 +45,18 @@ function listLogFiles(logPath: string, prefix?: string): string[] {
   // best effort: stable processing order
   files.sort();
   return files;
+}
+
+function readLogFileText(filePath: string): string {
+  const buf = fs.readFileSync(filePath);
+
+  // PM2 logrotate often stores as .gz
+  if (filePath.toLowerCase().endsWith(".gz")) {
+    const unzipped = zlib.gunzipSync(buf);
+    return unzipped.toString("utf8");
+  }
+
+  return buf.toString("utf8");
 }
 
 function extractJsonAfterMarker(line: string, marker: string): any | null {
@@ -127,7 +140,7 @@ async function main() {
   for (const file of files) {
     let content: string;
     try {
-      content = fs.readFileSync(file, "utf8");
+      content = readLogFileText(file);
     } catch (e) {
       console.log(`WARN: could not read ${file}`);
       continue;
