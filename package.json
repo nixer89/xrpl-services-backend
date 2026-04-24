@@ -7,6 +7,7 @@
     "start": "node dist/server.js",
     "develop": "tsc && concurrently \"tsc -w\" \"nodemon dist/server.js\"",
     "build": "tsc",
+    "reprocess:escrows": "tsc && node dist/scripts/reprocessEscrowsFromLogs.js",
     "postinstall": "sh ./src/doc/updateSwaggerVersion.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
