@@ -8,6 +8,7 @@
     "develop": "tsc && concurrently \"tsc -w\" \"nodemon dist/server.js\"",
     "build": "tsc",
     "reprocess:escrows": "tsc && node dist/scripts/reprocessEscrowsFromLogs.js",
+    "scan:autorelease-payments": "tsc && node dist/scripts/scanAutoReleasePayments.js",
     "postinstall": "sh ./src/doc/updateSwaggerVersion.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
