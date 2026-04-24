@@ -107,11 +107,7 @@ function isOneXrpInboundPayment(tx: any, destination: string): boolean {
 }
 
 function refundMemoMessage(refundCountXrp: number) {
-  if (refundCountXrp === 1) {
-    return "1 XRP refund for duplicate Escrow Releaser Service fee paymet. Your Escow has been added and will be processed automatically.";
-  }
-
-  return `${refundCountXrp} XRP refund for duplicate Escrow Releaser Service fee paymet. Your Escow has been added and will be processed automatically.`;
+  return `${refundCountXrp} XRP refund for duplicate Escrow Releaser Service fee payment. Your Escrow has been added and will be processed automatically.`;
 }
 
 async function createRefundPayloadsForDuplicates(params: {
