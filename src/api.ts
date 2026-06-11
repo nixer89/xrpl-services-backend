@@ -1745,7 +1745,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
             let result = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/Factory/saveVoucher", {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "POST", body: JSON.stringify(beleg)});
             
             let resultJson = await result.json();
-            //console.log("result: " + JSON.stringify(resultJson));
+            console.log("result: " + JSON.stringify(resultJson));
 
             let voucherId = resultJson.objects.voucher.id;
 
@@ -1766,7 +1766,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
             let transactionResult = await fetch.default("https://my.sevdesk.de/api/v1/CheckAccountTransaction", {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL",}, method: "POST", body: JSON.stringify(transaction)});
             
             let transactionResultJson = await transactionResult.json();
-            //console.log("transactionResult: " + JSON.stringify(transactionResultJson));
+            console.log("transactionResult: " + JSON.stringify(transactionResultJson));
 
             let checkTransactionId = transactionResultJson.objects.id;
 
@@ -1789,10 +1789,10 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
                 "createFeed": true
             }
 
-            //let bookResult = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount?token="+config.SEVDESK_TOKEN,{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "PUT", body: JSON.stringify(booking)});
+            let bookResult = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount?token="+config.SEVDESK_TOKEN,{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "PUT", body: JSON.stringify(booking)});
 
-            //let bookingResultJson = await bookResult.json();
-            //console.log("bookResult: " + JSON.stringify(bookingResultJson));
+            let bookingResultJson = await bookResult.json();
+            console.log("bookResult: " + JSON.stringify(bookingResultJson));
 
             //store booking
             await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount",{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "PUT", body: JSON.stringify(booking)});
