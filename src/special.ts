@@ -15,7 +15,7 @@ export class Special {
     db = new DB.DB();
 
     private mainNodes:string[] = ['wss://xrplcluster.com', 'wss://s2.ripple.com'];
-    private testNodes:string[] = ['wss://s.altnet.rippletest.net', 'wss://testnet.xrpl-labs.com'];
+    private testNodes:string[] = ['wss://testnet.xrpl-labs.com','wss://s.altnet.rippletest.net'];
 
     private currentMainNode:number = 0;
     private currentTestNode:number = 0;
