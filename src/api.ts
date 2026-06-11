@@ -1770,30 +1770,11 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
 
             let voucherId = resultJson.objects.voucher.id;
 
-            //create transaction
-            let transaction = {
-            "checkAccount": {
-                "id": 5620566,
-                "objectName": "CheckAccount"  
-            },
-            "valueDate": dateString,
-            "entryDate": dateString,
-            "status": "100",
-            "amount": eur,
-            "paymentPurpose": "Xahau Services and Tools",
-            "payeePayerName": account + " (" + countryCode + ")"
-            }
-
-            let transactionResult = await fetch.default("https://my.sevdesk.de/api/v1/CheckAccountTransaction", {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau",}, method: "POST", body: JSON.stringify(transaction)});
-            
-            let transactionResultJson = await transactionResult.json();
-            //console.log("transactionResult: " + JSON.stringify(transactionResultJson));
-
-            let checkTransactionId = transactionResultJson.objects.id;
-
-            //console.log("transaction id: " + checkTransactionId);
-
-            //also create the transaction/booking
+            //Book the voucher amount directly.
+            //sevDesk no longer allows creating a CheckAccountTransaction manually on non-online
+            //check accounts ("You can only create transactions on online checkaccounts. Use document
+            //bookAmount to create transactions on other types."). The bookAmount endpoint creates the
+            //transaction on the check account for us, so we don't pass a checkAccountTransaction link.
             let booking = {
 
                 "amount": eur,
@@ -1803,20 +1784,18 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
                     "id": 5620566,
                     "objectName": "CheckAccount"  
                 },
-                "checkAccountTransaction": {
-                    "id": checkTransactionId,
-                    "objectName": "CheckAccountTransaction"
-                },
                 "createFeed": true
             }
 
-            //let bookResult = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount?token="+config.SEVDESK_TOKEN,{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "PUT", body: JSON.stringify(booking)});
-
-            //let bookingResultJson = await bookResult.json();
-            //console.log("bookResult: " + JSON.stringify(bookingResultJson));
-
             //store booking
-            await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount",{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau"}, method: "PUT", body: JSON.stringify(booking)});
+            let bookResult = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/"+voucherId+"/bookAmount",{headers: {"Authorization":config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau"}, method: "PUT", body: JSON.stringify(booking)});
+
+            let bookResultJson = await bookResult.json();
+            console.log("bookResult: " + JSON.stringify(bookResultJson));
+
+            if(!bookResultJson || !bookResultJson.objects) {
+                throw new Error("SEVDESK bookAmount failed for voucher " + voucherId + ": " + JSON.stringify(bookResultJson));
+            }
             
             await db.saveSevdeskTransaction(hash, account, ip, countryCode, xrp, eur, date);
             console.log("SEVDESK TRANSACTION STORED: - IP: " + ip + " - countryCode: " + countryCode + " - TaxRate: " + taxRate + " - XAH: " + xrp + " - EUR: " + eur + " - date: " + date.toLocaleString() + " - HASH: " + hash);
