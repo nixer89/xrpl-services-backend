@@ -1777,7 +1777,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
             }
             
             await db.saveSevdeskTransaction(hash, account, ip, countryCode, xrp, eur, date);
-            console.log("SEVDESK TRANSACTION STORED: - IP: " + ip + " - countryCode: " + countryCode + " - TaxRate: " + taxRate + " - XAH: " + xrp + " - EUR: " + eur + " - date: " + date.toLocaleString() + " - HASH: " + hash);
+            console.log("SEVDESK TRANSACTION STORED: - IP: " + ip + " - countryCode: " + countryCode + " - TaxRate: " + taxRate + " - XRP: " + xrp + " - EUR: " + eur + " - date: " + date.toLocaleString() + " - HASH: " + hash);
         } else {
             console.log("SEVDESK TRANSACTION ALREADY EXISTS! - HASH: " + hash);
             console.log("RESULT: " + JSON.stringify(checkResultJson));
