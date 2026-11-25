@@ -1,18 +1,26 @@
 {
     "compilerOptions": {
-      "declaration": false,
-      "emitDecoratorMetadata": true,
-      "experimentalDecorators": true,
-      "esModuleInterop": true,
-      "lib": ["es6", "dom"],
-      "mapRoot": "dist",
-      "module": "commonjs",
-      "moduleResolution": "node",
-      "outDir": "dist",
-      "sourceMap": true,
-      "target": "es6",
-      "typeRoots": [
-        "node_modules/@types"
-      ]
+        "declaration": false,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "esModuleInterop": true,
+        "lib": [
+            "es6",
+            "dom"
+        ],
+        "mapRoot": "dist",
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "outDir": "dist",
+        "sourceMap": true,
+        "target": "es6",
+        "typeRoots": [
+            "node_modules/@types"
+        ],
+        "strict": false,
+        "types": [
+            "node"
+        ],
+        "rootDir": "./src"
     }
 }

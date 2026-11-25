@@ -41,7 +41,7 @@ export class DB {
         //console.log("[DB]: saveUser:" + " origin: " + origin + " userId: " + userId + " xummId: " + xummId);
         try {
             if((await this.userIdCollection.find({origin: origin, applicationId: applicationId, frontendUserId: userId, xummUserId: xummId}).toArray()).length == 0) {
-                return this.userIdCollection.insertOne({origin: origin, applicationId: applicationId, frontendUserId: userId, xummUserId: xummId, created: new Date()});
+                return await this.userIdCollection.insertOne({origin: origin, applicationId: applicationId, frontendUserId: userId, xummUserId: xummId, created: new Date()});
             } else {
                 return Promise.resolve();
             }
@@ -331,8 +331,8 @@ export class DB {
                 //console.log("[DB]: getAppIdForOrigin:" + " origin from CACHE: " + origin);
             }
 
-            let searchResult:AllowedOrigins[] = this.allowedOriginCache.filter(originProperties => originProperties.origin.split(',').includes(origin));
-            if(searchResult)
+            let searchResult:AllowedOrigins[] = this.allowedOriginCache.filter(originProperties => typeof origin === 'string' && originProperties.origin && originProperties.origin.split(',').includes(origin));
+            if(searchResult && searchResult.length > 0)
                 return searchResult[0].applicationId;
             return null;
 
@@ -428,7 +428,7 @@ export class DB {
         //console.log("[DB]: saveTempInfo");
         try {
             anyInfo.created = new Date().toUTCString();
-            return this.tmpInfoTable.insertOne(anyInfo);
+            return await this.tmpInfoTable.insertOne(anyInfo);
         } catch(err) {
             console.log("[DB]: error saveTempInfo");
             console.log(JSON.stringify(err));
@@ -452,7 +452,8 @@ export class DB {
 
             expirationDate.setMinutes(expirationDate.getMinutes()-5);
 
-            return this.tmpInfoTable.find({expires: {lt: expirationDate}}).toArray();
+            //"expires" is stored as ISO date string (see Xumm.storePayloadInfo), ISO strings can be compared as strings. Limited to keep memory usage low
+            return await this.tmpInfoTable.find({expires: {$lt: expirationDate.toISOString()}}).limit(5000).toArray();
         } catch(err) {
             console.log("[DB]: error getAllTempInfo");
             console.log(JSON.stringify(err));
@@ -556,7 +557,7 @@ export class DB {
         //console.log("[DB]: saveUser:" + " origin: " + origin + " userId: " + userId + " xummId: " + xummId);
         try {
             if((await this.transactionSevdeskCollection.find({txid: txid}).toArray()).length == 0) {
-                return this.transactionSevdeskCollection.insertOne({txid: txid, account: account, ip: ip, country_code: country_code, amount_xrp: amount_xrp, amount_eur: amount_eur, date: date});
+                return await this.transactionSevdeskCollection.insertOne({txid: txid, account: account, ip: ip, country_code: country_code, amount_xrp: amount_xrp, amount_eur: amount_eur, date: date});
             } else {
                 return Promise.resolve();
             }
@@ -605,7 +606,8 @@ export class DB {
     async getNewDbModel(collectionName: string): Promise<Collection<any>> {
         try {
             console.log("[DB]: connecting to mongo db with collection: " + collectionName +" and an schema");
-            let connection:MongoClient = await MongoClient.connect('mongodb://'+this.dbIp+':27017', { useNewUrlParser: true, useUnifiedTopology: true });
+            //useNewUrlParser / useUnifiedTopology were removed in mongodb driver v4 (both behaviours are now always on)
+            let connection:MongoClient = await MongoClient.connect('mongodb://'+this.dbIp+':27017');
             connection.on('error', ()=>{console.log("[DB]: Connection to MongoDB could NOT be established")});
         
             if(connection) {
@@ -628,13 +630,13 @@ export class DB {
         try {
             console.log("ensureIndexes");
             //AllowedOrigins
-            if(!(await this.applicationApiKeysCollection.indexExists("origin_-1")))
+            if(!(await this.allowedOriginsCollection.indexExists("origin_-1")))
                 await this.allowedOriginsCollection.createIndex({origin: -1});
 
-            if(!(await this.applicationApiKeysCollection.indexExists("applicationId_-1")))
+            if(!(await this.allowedOriginsCollection.indexExists("applicationId_-1")))
                 await this.allowedOriginsCollection.createIndex({applicationId: -1});
 
-            if(!(await this.applicationApiKeysCollection.indexExists("origin_-1_applicationId_-1")))
+            if(!(await this.allowedOriginsCollection.indexExists("origin_-1_applicationId_-1")))
                 await this.allowedOriginsCollection.createIndex({origin:-1, applicationId: -1}, {unique: true});
 
             //ApplicationApiKeys

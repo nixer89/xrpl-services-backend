@@ -237,6 +237,9 @@ async function main() {
         ledger_index_max: -1,
         limit: limitPerRequest,
         forward: false,
+        //xrpl.js >= 4 defaults to API v2 (entry.tx_json, Amount -> DeliverMax, hash/ledger_index on the entry).
+        //This script reads the v1 shape (entry.tx.Amount, entry.tx.hash, ...), so request v1 explicitly.
+        api_version: 1,
       };
       if (marker) req.marker = marker;
 
