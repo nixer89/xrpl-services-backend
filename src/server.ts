@@ -4,6 +4,8 @@ import * as apiRoute from './api';
 import * as config from './util/config';
 import * as scheduler from 'node-schedule';
 import * as fs from 'fs';
+import pino from 'pino';
+import { isOriginAllowed, safeEqual } from './util/security';
 
 require('log-timestamp');
 
@@ -23,16 +25,15 @@ let allowedOrigins:string[];
 // Run the server!
 const start = async () => {
 
+    //logger.file opens the log file asynchronously and without creating the directory. A missing directory crashed the
+    //process (ENOENT) and any early process.exit() threw "sonic boom is not ready yet", hiding the real error.
+    //sync: true opens the file immediately (no 'ready' wait, no exit flush), mkdir: true creates the directory if missing.
     const fastify = require('fastify')({
       logger: {
         level: 'warn',
-        //level: 'info',
-        file: '/home/ubuntu/fastify-logs/xahau/fastify.log' // Will use pino.destination()
+        //file: '/home/ubuntu/fastify-logs/xahau/fastify.log' // Will use pino.destination()
       }
     });
-    
-    console.log("registering middleware")
-    await fastify.register(require('@fastify/middie'))
     
     console.log("adding response compression");
     await fastify.register(require('@fastify/compress'));
@@ -66,10 +67,9 @@ const start = async () => {
       }
       reply.send(error)
     });
-  
+      
     if(!config.BITHOMP_API_TOKEN) {
       console.log("No BITHOMP_API_TOKEN set");
-      process.exit(1);
     }
 
     console.log("starting server");
@@ -93,25 +93,19 @@ const start = async () => {
             return;
           }
 
-          if(allowedOrigins) {
-            if(allowedOrigins.includes(origin)) {
-              // Requests will pass
-              cb(null, true);
-              return;
-            }
-
-            for(let i = 0; i < allowedOrigins.length; i++) {
-              if(new RegExp(allowedOrigins[i]).test(origin)) {
-                // Request will pass
-                cb(null, true)
-                return
-              }
-            }
+          //exact match, or fully anchored pattern match (see util/security.ts)
+          if(isOriginAllowed(origin, allowedOrigins)) {
+            // Requests will pass
+            cb(null, true);
+            return;
           }
 
-          
-          
-          cb(new Error("Origin not allowed"), false);
+          //reject with 403 instead of a generic 500: fastify logs errors with a 4xx statusCode at info level (no stack trace at level 'warn').
+          //origin is JSON encoded so a crafted header can not inject fake log lines
+          console.log("CORS: origin not allowed: " + JSON.stringify(origin));
+          const originError:any = new Error("Origin not allowed");
+          originError.statusCode = 403;
+          cb(originError, false);
         },
         methods: 'GET, POST, DELETE, OPTIONS',
         allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'Referer']
@@ -131,6 +125,9 @@ const start = async () => {
         {
           if(!request.headers.origin)
             reply.code(400).send('Please provide an origin header. Calls without origin are not allowed');
+          else if(!isOriginAllowed(request.headers.origin, allowedOrigins))
+            //origin must be on the allow-list (AllowedOrigins collection). Note: non-browser clients can still set any Origin header
+            reply.code(403).send('Origin not allowed');
           else
             done()
         } else {
@@ -144,21 +141,17 @@ const start = async () => {
           let responseTime = Date.now() - request['start'];
           if(responseTime > 2000) {
             console.log("response time: " + responseTime + ' ms.')
+            //only log non sensitive data (no body, headers, params, query, url or response payload -> they contain tokens)
             fs.appendFileSync('./longRunners.txt', JSON.stringify({
-              time: responseTime, 
+              time: responseTime,
               request: {
-                query: request.query,
-                body: request.body,
-                params: request.params,
-                headers: request.headers,
                 ip: request.ip,
                 hostname: request.hostname,
                 method: request.method,
-                url: request.url,
-                routerPath: request.routerPath
+                routerPath: request.routeOptions?.url //request.routerPath was removed in fastify v5
               },
               response: {
-                payload: payload,
+                statusCode: reply.statusCode
               }
             })+",\n");
             console.log("saved long runner!")
@@ -171,7 +164,7 @@ const start = async () => {
       await fastify.get('/api/resetOrigins/:token', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
         try {
-            if(config.RESET_CACHE_TOKEN === request.params.token) {
+            if(safeEqual(config.RESET_CACHE_TOKEN, request.params.token)) {
                 mongo.resetCache();
                 xummBackend.resetDBCache();
                 allowedOrigins = await mongo.getAllowedOriginsAsArray();
@@ -246,4 +239,8 @@ async function cleanupTrustlineTable() {
 }
 
 console.log("running server");
-start();
+start().catch(err => {
+  console.log("Error starting server:");
+  console.log(err);
+  process.exit(1);
+});

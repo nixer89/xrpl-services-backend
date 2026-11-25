@@ -8,6 +8,8 @@ import DeviceDetector = require("device-detector-js");
 import { AllowedOrigins, GenericBackendPostRequestOptions, TransactionValidation } from './util/types';
 import { XummGetPayloadResponse } from 'xumm-sdk/dist/src/types';
 import * as crypto from 'crypto';
+import * as net from 'net';
+import { safeEqual, fetchPublicHttpsJson, RequestNotAllowedError } from './util/security';
 
 require('log-timestamp');
 
@@ -47,6 +49,13 @@ export async function registerRoutes(fastify, opts, next) {
     await xummBackend.init();
     await db.initDb("api");
     await special.init();
+
+    console.log("DONE INIT DBs in register routes")
+
+    //security: never hand out the users push token or the payers IP address / country to API clients
+    fastify.addHook('preSerialization', async (request, reply, payload) => {
+        return removePrivateData(payload);
+    });
     
     fastify.post('/api/v1/platform/payload', {
         config: {
@@ -72,8 +81,14 @@ export async function registerRoutes(fastify, opts, next) {
       }, async (request, reply) => {
         //console.log("post payload headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
-        if(!request.body.payload)
+        if(!request.body || !request.body.payload || typeof request.body.payload !== 'object')
             reply.code(400).send('Please provide a xumm payload. Calls without xumm payload are not allowed');
+        else if(request.body.options != null && (typeof request.body.options !== 'object' || Array.isArray(request.body.options)
+                    || (request.body.options.frontendId != null && typeof request.body.options.frontendId !== 'string')
+                    || (request.body.options.xrplAccount != null && typeof request.body.options.xrplAccount !== 'string')
+                    || (request.body.options.referer != null && typeof request.body.options.referer !== 'string')))
+            //only strings are allowed as database lookup keys (no objects / mongo operators)
+            reply.code(400).send('Invalid options. frontendId, xrplAccount and referer have to be strings');
         else {
             //try parsing the user agent when unknown to determine if web or app
             try {
@@ -114,7 +129,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
-                return xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.id, "get_endpoint");
+                return await xummBackend.getPayloadInfoByOrigin(request.headers.origin, request.params.id, "get_endpoint");
             } catch(err) {
                 console.log("ERROR '/api/v1/platform/payload/:id': " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -128,7 +143,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(400).send('Please provide a custom_identifier. Calls without custom_identifier are not allowed');
         } else {
             try {
-                return xummBackend.getPayloadForCustomIdentifierByOrigin(request.headers.origin, request.params.custom_identifier);
+                return await xummBackend.getPayloadForCustomIdentifierByOrigin(request.headers.origin, request.params.custom_identifier);
             } catch(err) {
                 console.log("ERROR '/api/v1/platform/payload/ci/:custom_identifier': " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -142,7 +157,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(400).send('Please provide a payload id. Calls without payload id are not allowed');
         } else {
             try {
-                return xummBackend.deletePayload(request.headers.origin, request.params.id);
+                return await xummBackend.deletePayload(request.headers.origin, request.params.id);
             } catch(err) {
                 console.log("ERROR '/api/v1/platform/payload/:id': " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -156,7 +171,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(400).send('Please provide a token. Calls without token are not allowed');
         } else {
             try {
-                return xummBackend.getxAppOTT(request.headers.origin, request.params.token);
+                return await xummBackend.getxAppOTT(request.headers.origin, request.params.token);
             } catch(err) {
                 console.log("ERROR '/api/v1/platform/xapp/ott/:token': " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -172,7 +187,7 @@ export async function registerRoutes(fastify, opts, next) {
             reply.code(400).send('Please provide a hash. Calls without hash are not allowed');
         } else {
             try {
-                return xummBackend.getxAppOTTRefetch(request.headers.origin, request.params.token, request.params.hash);
+                return await xummBackend.getxAppOTTRefetch(request.headers.origin, request.params.token, request.params.hash);
             } catch(err) {
                 console.log("ERROR '/api/v1/platform/xapp/ott/:token': " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -204,7 +219,7 @@ export async function registerRoutes(fastify, opts, next) {
       }, async (request, reply) => {
         //console.log("post xApp event headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
-        if(!request.body.user_token || !request.body.subtitle)
+        if(!request.body || typeof request.body.user_token !== 'string' || !request.body.user_token || !request.body.subtitle)
             reply.code(400).send('Please provide a xumm user_token and subtitle. Calls without xumm user_token and subtitle are not allowed');
         else {
             //try parsing the user agent when unknown to determine if web or app
@@ -242,7 +257,7 @@ export async function registerRoutes(fastify, opts, next) {
       }, async (request, reply) => {
         //console.log("post xApp push headers: " + JSON.stringify(request.headers));
         //console.log("body: " + JSON.stringify(request.body));
-        if(!request.body.user_token || !request.body.subtitle)
+        if(!request.body || typeof request.body.user_token !== 'string' || !request.body.user_token || !request.body.subtitle)
             reply.code(400).send('Please provide a xumm user_token and subtitle. Calls without xumm user_token and subtitle are not allowed');
         else {
             //try parsing the user agent when unknown to determine if web or app
@@ -445,7 +460,8 @@ export async function registerRoutes(fastify, opts, next) {
             let payload:XummTypes.XummPostPayloadResponse = await xummBackend.submitPayload(xummPayload, request.headers.origin, refererURL, request, genericPayloadOptions);
 
             if(payload && payload.next && payload.next.always) {
-                reply.redirect(307, payload.next.always);
+                //fastify v5: reply.redirect(url, code) - the old (code, url) order was removed
+                reply.redirect(payload.next.always, 307);
             } else {
                 reply.send({ success : false, error: true, message: 'Something went wrong. Please check your request'});
             }
@@ -472,7 +488,7 @@ export async function registerRoutes(fastify, opts, next) {
                     refererURL = refererURL.substring(0, refererURL.indexOf('?'));
                 }
                 
-                return special.checkSignInToValidatePayment(request.params.signinPayloadId, request.headers.origin, refererURL);
+                return await special.checkSignInToValidatePayment(request.params.signinPayloadId, request.headers.origin, refererURL);
             } catch(err) {
                 console.log("ERROR '/api/v1/check/signinToValidatePayment/:signinPayloadId': " + JSON.stringify(err));
                 return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -843,12 +859,16 @@ export async function registerRoutes(fastify, opts, next) {
                 //console.log("escrow/validatepayment PAYLOAD: " + JSON.stringify(payloadInfo));
 
                 if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
+                    //security: the payment has to match the destination account / amount configured on the server (client options can not change that)
+                    if(!(await special.isPaymentToConfiguredDestination(payloadInfo)))
+                        return {success : false, testnet: false, account: payloadInfo.response.account, error: true, message: "Your payment does not match the required destination account or amount. Auto Release could not be enabled!" }
+
                     let txResult:TransactionValidation = await special.validateTransactionOnLedger(payloadInfo);
 
                     //console.log("escrow/validatepayment TXRESULT: " + JSON.stringify(txResult));
 
                     if(txResult) {
-                        if(payloadInfo.custom_meta.blob) {
+                        if(payloadInfo.custom_meta && payloadInfo.custom_meta.blob) {
                             txResult.account = payloadInfo.response.account;
                             let escrow:any = payloadInfo.custom_meta.blob;
 
@@ -904,7 +924,10 @@ export async function registerRoutes(fastify, opts, next) {
 
                 //console.log("escrow/signinToDeleteEscrow PAYLOAD: " + JSON.stringify(payloadInfo));
 
-                if(payloadInfo && special.successfullSignInPayloadValidation(payloadInfo) && payloadInfo.custom_meta && payloadInfo.custom_meta.blob && payloadInfo.response.account === payloadInfo.custom_meta.blob.account ) {
+                //security: only a fresh sign in (max. 15 minutes old) is accepted to delete an escrow. The escrow has to belong to the signing account (blob is validated in deleteEscrow)
+                let signInIsFresh:boolean = payloadInfo && payloadInfo.response && payloadInfo.response.resolved_at && (Date.now() - new Date(payloadInfo.response.resolved_at).getTime()) <= 15*60*1000;
+
+                if(payloadInfo && signInIsFresh && special.successfullSignInPayloadValidation(payloadInfo) && payloadInfo.custom_meta && payloadInfo.custom_meta.blob && payloadInfo.response.account === payloadInfo.custom_meta.blob.account ) {
                     let deleteSuccess = await special.deleteEscrow(payloadInfo.custom_meta.blob);
                     //console.log("escrow/signinToDeleteEscrow deleteSuccess: " + JSON.stringify(deleteSuccess));
                     deleteSuccess.account = payloadInfo.response.account;
@@ -937,12 +960,12 @@ export async function registerRoutes(fastify, opts, next) {
 
     fastify.post('/api/v1/sevdesk/hasTransaction', async (request, reply) => {
         //console.log("body params escrow: " + JSON.stringify(request.body));
-        if(!request.body || !request.body.token || !request.body.txid) {
+        if(!request.body || !request.body.token || !request.body.txid || typeof request.body.txid !== 'string') {
             reply.code(400).send('Not all parameters set. Request blocked.');
         } else {
             try {
                 let xHash = crypto.createHash('sha256').update(config.SEVDESK_TOKEN).digest("hex");
-                if(xHash === request.body.token) {
+                if(safeEqual(xHash, request.body.token)) {
                     let hasTxid = await db.hasSevdeskTransactionId(request.body.txid);
                     return {
                         hasTransaction: hasTxid
@@ -966,7 +989,7 @@ export async function registerRoutes(fastify, opts, next) {
         } else {
             try {
                 let xHash = crypto.createHash('sha256').update(config.SEVDESK_TOKEN).digest("hex");
-                if(xHash === request.body.token) {
+                if(safeEqual(xHash, request.body.token)) {
                     let transactionIds = await db.getSevdeskTransactions(new Date(request.body.from), new Date(request.body.to));
                     return {
                         transactions: transactionIds
@@ -999,7 +1022,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/statistics/escrows/nextRelease', async (request, reply) => {
         
         try {
-            return special.getEscrowNextOrLastRelease(true);
+            return await special.getEscrowNextOrLastRelease(true);
         } catch(err) {
             console.log("ERROR '/api/v1/statistics/escrows/nextRelease': " + JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -1009,7 +1032,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/statistics/escrows/lastRelease', async (request, reply) => {
         
         try {
-            return special.getEscrowNextOrLastRelease(false);
+            return await special.getEscrowNextOrLastRelease(false);
         } catch(err) {
             console.log("ERROR '/api/v1/statistics/escrows/lastRelease': " + JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -1019,7 +1042,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/v1/statistics/escrows/currentCount', async (request, reply) => {
         
         try {
-            return special.getEscrowCurrentCount();              
+            return await special.getEscrowCurrentCount();              
         } catch(err) {
             console.log("ERROR '/api/v1/statistics/escrows/currentCount': " + JSON.stringify(err));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
@@ -1137,7 +1160,7 @@ export async function registerRoutes(fastify, opts, next) {
     fastify.get('/api/resetCache/:token', async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
         try {
-            if(config.RESET_CACHE_TOKEN === request.params.token) {
+            if(safeEqual(config.RESET_CACHE_TOKEN, request.params.token)) {
                 await db.resetCache();
                 await xummBackend.resetDBCache();
                 await special.resetDBCache();
@@ -1151,110 +1174,107 @@ export async function registerRoutes(fastify, opts, next) {
         }
     });
 
-    fastify.post('/api/tools/unlchecker', async (request, reply) => {
+    fastify.post('/api/tools/unlchecker', {
+        config: {
+          rateLimit: {
+            max: 10,
+            timeWindow: '1 minute'
+          }
+        }
+      }, async (request, reply) => {
         //console.log("request params: " + JSON.stringify(request.params));
         try {
             if(request?.body?.url) {
-                return (await fetch.default(request.body.url)).json();
+                //security: only public https hosts, no internal addresses, validated redirects, timeout and size limit (see util/security.ts)
+                return await fetchPublicHttpsJson(request.body.url);
             } else
                 return {success: false }
         } catch(err) {
-            console.log("ERROR '/api/tools/unlchecker/': " + JSON.stringify(err));
+            if(err instanceof RequestNotAllowedError) {
+                return reply.code(400).send('URL not allowed. Please provide a public https URL');
+            }
+
+            console.log("ERROR '/api/tools/unlchecker/': " + (err && err.message ? err.message : JSON.stringify(err)));
             return { success : false, error: true, message: 'Something went wrong. Please check your request'};
         }
     });
 
     fastify.post('/api/v1/webhook', async (request, reply) => {
-        try {
-            //verify webhook call
-            //console.log("INCOMING WEBHOOK");
-            const timestamp = request.headers?.["x-xumm-request-timestamp"] || "";
-            const signature = request.headers?.["x-xumm-request-signature"];
-            let json:XummTypes.XummWebhookBody;
-            
-            try {
-                json = JSON.parse(request.body)
-            } catch(err) {
-                json = request.body;
-            }
-
-            const appId = json?.meta?.application_uuidv4;
-            const appSecret = await db.getApiSecretForAppId(appId);
-      
-            if (appSecret && timestamp && signature && json) {
-              const hmac = crypto
-                .createHmac("sha1", appSecret.replace("-", ""))
-                .update(timestamp + JSON.stringify(json))
-                .digest("hex");
-      
-              if (hmac === signature) {
-                //request has been verified successfully. handle it!
-                //console.log("HMAC VERFIED. HANDLE WEBHOOK!");
-                await handleWebhookRequest(json);
-              } else {
-                //don't accept request. it can not be verified!
-                console.log("HMAC NOT VERFIED. DENY ACCESS!");
-              }
-      
-            } else {
-                if(!appSecret) {
-                    console.log("TO APP SECRET FOUND FOR APP ID: " + appId);
-                }
-            }
-
-            return reply.status(200).send({ status: 200 });
-        } catch (error) {
-            console.error(error);
-            return reply.status(500).send({ error: "Something went wrong." });
-        }
+        return processWebhookCall(request, reply);
     });
 
     fastify.post('/api/v1/webhook/*', async (request, reply) => {
-        try {
-            //verify webhook call
-            //console.log("INCOMING WEBHOOK");
-            const timestamp = request.headers?.["x-xumm-request-timestamp"] || "";
-            const signature = request.headers?.["x-xumm-request-signature"];
-            let json:XummTypes.XummWebhookBody;
-            
-            try {
-                json = JSON.parse(request.body)
-            } catch(err) {
-                json = request.body;
-            }
-
-            const appId = json.meta.application_uuidv4;
-            const appSecret = await db.getApiSecretForAppId(appId);
-      
-            if (appSecret && timestamp && signature && json) {
-              const hmac = crypto
-                .createHmac("sha1", appSecret.replace("-", ""))
-                .update(timestamp + JSON.stringify(json))
-                .digest("hex");
-      
-              if (hmac === signature) {
-                //request has been verified successfully. handle it!
-                //console.log("HMAC VERFIED. HANDLE WEBHOOK!");
-                await handleWebhookRequest(json);
-              } else {
-                //don't accept request. it can not be verified!
-                console.log("HMAC NOT VERFIED. DENY ACCESS!");
-              }
-      
-            } else {
-                if(!appSecret) {
-                    console.log("TO APP SECRET FOUND FOR APP ID: " + appId);
-                }
-            }
-
-            return reply.status(200).send({ status: 200 });
-        } catch (error) {
-            console.error(error);
-            return reply.status(500).send({ error: "Something went wrong." });
-        }
+        return processWebhookCall(request, reply);
     });
 
+    console.log("DONE registering routes, calling next() now.")
+
     next()
+}
+
+//removes data from API responses which must not reach the clients: the users push token and the payers IP address / country
+function removePrivateData(data:any): any {
+    try {
+        let payloadInfo:any = (data && data.originalPayload) ? data.originalPayload : data;
+
+        if(payloadInfo && typeof payloadInfo === 'object') {
+            if(payloadInfo.application && typeof payloadInfo.application === 'object')
+                delete payloadInfo.application.issued_user_token;
+
+            if(payloadInfo.custom_meta && payloadInfo.custom_meta.blob && typeof payloadInfo.custom_meta.blob === 'object') {
+                delete payloadInfo.custom_meta.blob.ip;
+                delete payloadInfo.custom_meta.blob.countryCode;
+            }
+        }
+    } catch(err) {
+        console.log("ERROR removePrivateData");
+        console.log(err);
+    }
+
+    return data;
+}
+
+//Xahau backend: webhooks arrive directly from Xumm or forwarded by the XRPL backend (api.xrpl.services).
+//Forwarded calls are sent as text/plain, so a string body is parsed here.
+//No forwarding on this backend: forwarding XAHAU webhooks to api.xahau.services would call this server again (endless loop).
+async function processWebhookCall(request:any, reply:any): Promise<any> {
+    try {
+        //verify webhook call
+        const timestamp = request.headers?.["x-xumm-request-timestamp"] || "";
+        const signature = request.headers?.["x-xumm-request-signature"];
+
+        let jsonBody:XummTypes.XummWebhookBody = null;
+        try {
+            jsonBody = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
+        } catch(err) {
+            jsonBody = null;
+        }
+
+        const appId = jsonBody?.meta?.application_uuidv4;
+        const appSecret = appId ? await db.getApiSecretForAppId(appId) : null;
+
+        if (appSecret && timestamp && signature && jsonBody) {
+            const hmac = crypto
+                .createHmac("sha1", appSecret.replace("-", ""))
+                .update(timestamp + JSON.stringify(jsonBody))
+                .digest("hex");
+
+            if(safeEqual(hmac, signature)) {
+                //request has been verified successfully. handle it!
+                await handleWebhookRequest(jsonBody);
+            } else {
+                //don't accept request. it can not be verified!
+                console.log("HMAC NOT VERFIED. DENY ACCESS!");
+            }
+        } else if(!appSecret) {
+            console.log("NO APP SECRET FOUND FOR APP ID: " + JSON.stringify(appId));
+        }
+
+        return reply.status(200).send({ status: 200 });
+    } catch (error) {
+        console.error(error);
+        return reply.status(500).send({ error: "Something went wrong." });
+    }
 }
 
 async function handleWebhookRequest(json:any): Promise<any> {
@@ -1348,7 +1368,7 @@ async function handleWebhookRequest(json:any): Promise<any> {
 
                 //store payload to XRPL account
                 if(payloadInfo && payloadInfo.response && payloadInfo.response.account) {
-                    await db.storePayloadForXRPLAccount(origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, webhookRequest.userToken.user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
+                    await db.storePayloadForXRPLAccount(origin, tmpInfo.referer, payloadInfo.application.uuidv4, payloadInfo.response.account, webhookRequest.userToken?.user_token, payloadInfo.meta.uuid, payloadInfo.payload.tx_type);
                 }
 
                 await db.deleteTempInfo(tmpInfo);
@@ -1375,12 +1395,18 @@ async function handleEscrowPayment(payloadInfo: XummTypes.XummGetPayloadResponse
     try {
 
         if(payloadInfo && special.successfullPaymentPayloadValidation(payloadInfo)) {
+            //security: the payment has to match the destination account / amount configured on the server (client options can not change that)
+            if(!(await special.isPaymentToConfiguredDestination(payloadInfo))) {
+                console.log("ERROR handleEscrowPayment: payment does not match the configured destination account or amount. Payload: " + payloadInfo.meta.uuid);
+                return;
+            }
+
             let txResult:TransactionValidation = await special.validateTransactionOnLedger(payloadInfo);
 
             console.log("escrow/validatepayment TXRESULT: " + JSON.stringify(txResult));
 
             if(txResult) {
-                if(payloadInfo.custom_meta.blob) {
+                if(payloadInfo.custom_meta && payloadInfo.custom_meta.blob) {
                     txResult.account = payloadInfo.response.account;
                     let escrow:any = payloadInfo.custom_meta.blob;
 
@@ -1448,17 +1474,20 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
                 "params": [
                     {
                         "transaction": txhash,
-                        "binary": false
+                        "binary": false,
+                        "api_version": 1
                     }
                 ]
             }
 
-            let transaction = await fetch.default("https://xahau.network", {method: "POST", body: JSON.stringify(payload)});
+            let transaction = await fetch.default("https://xahau.network", {method: "POST", body: JSON.stringify(payload), timeout: 15000});
 
             if(transaction && transaction.ok) {
                 let jsonResponse = await transaction.json();
 
-                xrp = jsonResponse?.result?.Amount;
+                //use the amount which was really delivered ("Amount" is only the maximum for partial payments). Only XRP (string of drops) of a validated transaction is accepted
+                if(jsonResponse?.result?.validated === true && typeof jsonResponse.result.meta?.delivered_amount === 'string')
+                    xrp = jsonResponse.result.meta.delivered_amount;
             }
         }
 
@@ -1469,12 +1498,19 @@ async function handlePaymentToSevdesk(payloadInfo: XummGetPayloadResponse) {
         if(xrp && xrp >= 1) { //only handle transactions where XAH >= 1 !
 
             let exchangeResponse = await getEurAmountFromXrp(xrp)
+
+            if(!exchangeResponse || exchangeResponse[0] == null || exchangeResponse[1] == null) {
+                //without an exchange rate the voucher would be created with 0 EUR
+                console.log("ERROR SEVDESK INTEGRATION: could not resolve EUR exchange rate. NO VOUCHER CREATED FOR HASH: " + txhash);
+                return;
+            }
+
             let eurAmount = exchangeResponse[0];
             let exchangeRate = exchangeResponse[1];
 
-            if(!countryCode) {
+            if(!countryCode && typeof ip === 'string' && net.isIP(ip)) {
                 //console.log("RESOLVING COUNTRY CODE BECAUSE IT WAS NOT GIVEN FOR IP: " + ip);
-                let countryCodeResponse = await fetch.default("http://ip-api.com/json/"+ip);
+                let countryCodeResponse = await fetch.default("http://ip-api.com/json/"+encodeURIComponent(ip), {timeout: 10000});
                 
                 if(countryCodeResponse && countryCodeResponse.ok) {
                     let jsonResponse = await countryCodeResponse.json();
@@ -1512,7 +1548,7 @@ async function getEurAmountFromXrp(xrp:number): Promise<any> {
 
     let callstring = "https://api.coingecko.com/api/v3/coins/xahau";
 
-    let exchangeResponse = await fetch.default(callstring);
+    let exchangeResponse = await fetch.default(callstring, {timeout: 15000});
 
     if(exchangeResponse && exchangeResponse.ok) {
         let jsonResponse:any = await exchangeResponse.json();
@@ -1579,8 +1615,11 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
     let accountingType:number = 26;
     let dateString = date.toLocaleDateString("de");
 
+    //Cloudflare / ip-api deliver the ISO code "GR" for Greece, the tax table uses the EU code "EL"
+    let euCountryCode:string = countryCode === 'GR' ? 'EL' : countryCode;
+
     //check if we are EU rate
-    if(taxRates[countryCode] != null) {
+    if(taxRates[euCountryCode] != null) {
 
         //disabled OOS from 1st of October 2024
         let disabledOOS = new Date("2024-10-01T01:00:00.000Z");
@@ -1594,7 +1633,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
         } else {
 
             //console.log("EU TAX");
-            let taxSetId = taxRates[countryCode];
+            let taxSetId = taxRates[euCountryCode];
             //get tax set
             let result = await fetch.default("https://my.sevdesk.de/api/v1/TaxSet", {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "Xahau"}});
 
@@ -1654,24 +1693,28 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
             } else if(countryCode === 'LS') {
                 taxRate = 15;
             } else {
-                let redisRate = await redis.get(countryCode);
+                //cached vat rates have their own key prefix and expire after 30 days
+                let redisRate = await redis.get("vat:"+countryCode);
                 //console.log("REDISRATE: " + redisRate)
 
-                if(redisRate) {
+                if(redisRate != null && !isNaN(parseFloat(redisRate+""))) {
                     //console.log("vat taken from redis. Country: " + countryCode + " Rate: " + redisRate);
-                    taxRate = parseInt(redisRate+"");
+                    taxRate = parseFloat(redisRate+"");
                 } else {
                     let vatRate = await retrieveVatRate(countryCode);
 
                     //console.log("vat resolved from API. Country: " + countryCode + " Rate: " + vatRate);
 
-                    if(typeof vatRate === 'number')
+                    if(typeof vatRate === 'number') {
                         taxRate = vatRate;
-                    else
-                        taxRate = 0;
 
-                    if(redis) {
-                        redis.set(countryCode, taxRate);
+                        //only successfully resolved rates are cached
+                        if(redis) {
+                            redis.set("vat:"+countryCode, taxRate, 'EX', 30*24*60*60);
+                        }
+                    } else {
+                        console.log("ERROR: vat rate could not be resolved for country " + countryCode + ". Using 0 for this voucher (not cached). PLEASE CHECK VOUCHER!");
+                        taxRate = 0;
                     }
                 }
             }
@@ -1744,8 +1787,8 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
                 "voucherPosSave": [
                 {
                     "accountingType": {
-                    "id": accountingType,
-                    "objectName": "AccountingType"
+                        "id": accountingType,
+                        "objectName": "AccountingType"
                     },
                     "taxRate": taxRate,
                     "sum": null,
@@ -1807,19 +1850,24 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
   }
 
 async function retrieveVatRate(countryCode: string): Promise<number> {
-    let basicAuth:string = "Basic " + Buffer.from("info@xrpl.services:"+config.VAT_RATES_KEY).toString('base64');
-    let vatRatesResponse = await fetch.default("https://api.vatsense.com/1.0/rates?country_code="+countryCode, { headers: {"Authorization": basicAuth, "content-type": "application/json"}, method: "GET"});
+    try {
+        let basicAuth:string = "Basic " + Buffer.from("info@xrpl.services:"+config.VAT_RATES_KEY).toString('base64');
+        let vatRatesResponse = await fetch.default("https://api.vatsense.com/1.0/rates?country_code="+encodeURIComponent(countryCode), { headers: {"Authorization": basicAuth, "content-type": "application/json"}, method: "GET", timeout: 15000});
 
-    let vatRatesJson = await vatRatesResponse.json();
-    //console.log("vatRatesJson: " + JSON.stringify(vatRatesJson));
+        let vatRatesJson = await vatRatesResponse.json();
+        //console.log("vatRatesJson: " + JSON.stringify(vatRatesJson));
 
-    if(vatRatesJson?.success && vatRatesJson.data?.standard && typeof vatRatesJson.data.standard.rate === 'number') {
-        let vat = vatRatesJson.data.standard.rate;
-        
-        return vat;
+        if(vatRatesJson?.success && vatRatesJson.data?.standard && typeof vatRatesJson.data.standard.rate === 'number') {
+            let vat = vatRatesJson.data.standard.rate;
+
+            return vat;
+        }
+    } catch(err) {
+        console.log("ERROR retrieveVatRate");
+        console.log(err);
     }
 
-    //something is wrong
-    return 0;
+    //something is wrong. No rate available (the caller must not cache this)
+    return null;
 }
 

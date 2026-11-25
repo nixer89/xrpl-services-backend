@@ -66,7 +66,9 @@ export class Xumm {
             }
 
             //get xummId by xrplAccount
-            if(options && (xrplAccount = options.xrplAccount) && !payload.user_token && !pushDisabled) {
+            //security: XRPL accounts are public, so a caller supplied account is no proof that the caller owns the push token.
+            //the token is only attached when the operator explicitly enabled it (ALLOW_PUSH_BY_XRPL_ACCOUNT). Otherwise: no push, user scans the QR code / opens the sign link.
+            if(config.ALLOW_PUSH_BY_XRPL_ACCOUNT && options && (xrplAccount = options.xrplAccount) && !payload.user_token && !pushDisabled) {
 
                 //resolve xummId by XrplAccount
                 let xummIdForXrplAccount:string = await this.db.getXummIdForXRPLAccount(appId, xrplAccount);
@@ -135,7 +137,7 @@ export class Xumm {
                     payload.custom_meta.blob = {};
 
                 payload.custom_meta.blob['network'] = network;
-            } else if(payload.options.force_network) {
+            } else if(payload && payload.options && payload.options.force_network) {
 
                 if(!payload.custom_meta)
                     payload.custom_meta = {};
@@ -146,9 +148,13 @@ export class Xumm {
                 payload.custom_meta.blob['network'] = payload.options.force_network;
             }
 
+            if(payload.txjson.EmailHash && payload.txjson.EmailHash === "00000000000000000000000000000000") {
+                payload.txjson.EmailHash = "";
+            }
+
             //store IP address
             if(payload.txjson.TransactionType === 'Payment' && this.appIdsForPaymentCheck.includes(appId) && payload.txjson.Destination === "rNixerUVPwrhxGDt4UooDu6FJ7zuofvjCF"
-                && (!payload.txjson.Amount || (payload.txjson.Amount && typeof payload.txjson.Amount === 'string' && parseInt(payload.txjson.Amount) > 100000))) {
+                && (!payload.txjson.Amount || (payload.txjson.Amount && typeof payload.txjson.Amount === 'string' && parseInt(payload.txjson.Amount) >= 100000))) {
 
                 //console.log("request headers: " + JSON.stringify(req.headers));
 
@@ -206,8 +212,8 @@ export class Xumm {
         if(payloadResponse) {
             //console.log("[XUMM]: payload submitted successfully: " + payloadResponse.uuid);
 
-            //don't block the response
-            setTimeout(() => { this.storePayloadInfo(origin, referer, frontendId, appId, payload, payloadResponse) },2000);
+            //don't block the response (not awaited). Stored right away so a fast webhook finds the temp info
+            this.storePayloadInfo(origin, referer, frontendId, appId, payload, payloadResponse).catch(err => { console.log("Error storePayloadInfo"); console.log(err); });
         }
 
         return payloadResponse;
@@ -217,7 +223,7 @@ export class Xumm {
         //saving payloadId to frontendId
         try {
             if(frontendId && payloadResponse && payloadResponse.uuid) {
-                this.db.storePayloadForFrontendId(origin, referer, appId, frontendId, payloadResponse.uuid, payload.txjson.TransactionType);
+                await this.db.storePayloadForFrontendId(origin, referer, appId, frontendId, payloadResponse.uuid, payload.txjson.TransactionType);
             }
         } catch(err) {
             console.log("Error saving PayloadForFrontendId");
@@ -229,7 +235,7 @@ export class Xumm {
             let expiresAt:Date = new Date();
             expiresAt.setMinutes(expiresAt.getMinutes()+expiresMinutes);
 
-            this.db.saveTempInfo({origin: origin, referer: referer, frontendId: frontendId, applicationId: appId, xummUserId: payload.user_token, payloadId: payloadResponse.uuid, expires: expiresAt.toISOString()});
+            await this.db.saveTempInfo({origin: origin, referer: referer, frontendId: frontendId, applicationId: appId, xummUserId: payload.user_token, payloadId: payloadResponse.uuid, expires: expiresAt.toISOString()});
         } catch(err) {
             console.log("Error saving TempInfo");
             console.log(JSON.stringify(err));
@@ -245,7 +251,7 @@ export class Xumm {
     }
 
     async getPayloadInfoByAppId(applicationId:string, payload_id:string, addInfo:string): Promise<XummTypes.XummGetPayloadResponse> {
-        let payloadResponse:XummTypes.XummGetPayloadResponse = await this.callXumm(applicationId, "payload/"+payload_id, "GET", null, addInfo);
+        let payloadResponse:XummTypes.XummGetPayloadResponse = await this.callXumm(applicationId, "payload/"+encodeURIComponent(payload_id), "GET", null, addInfo);
         //console.log("getPayloadInfo response: " + JSON.stringify(payloadResponse))
         return payloadResponse;
     }
@@ -259,7 +265,7 @@ export class Xumm {
     }
 
     async getPayloadForCustomIdentifierByAppId(applicationId:string, custom_identifier: string): Promise<XummTypes.XummGetPayloadResponse> {
-        let payloadResponse:XummTypes.XummGetPayloadResponse = await this.callXumm(applicationId, "payload/ci/"+custom_identifier, "GET");
+        let payloadResponse:XummTypes.XummGetPayloadResponse = await this.callXumm(applicationId, "payload/ci/"+encodeURIComponent(custom_identifier), "GET");
         //console.log("getPayloadInfo response: " + JSON.stringify(payloadResponse))
         return payloadResponse;
     }
@@ -269,7 +275,7 @@ export class Xumm {
         if(!appId)
             return null;
 
-        let payloadResponse = await this.callXumm(appId, "payload/"+payload_id, "DELETE");
+        let payloadResponse = await this.callXumm(appId, "payload/"+encodeURIComponent(payload_id), "DELETE");
         //console.log("deletePayload response: " + JSON.stringify(payloadResponse))
         return payloadResponse;
     }
@@ -279,7 +285,7 @@ export class Xumm {
         if(!appId)
             return null;
 
-        let ottData = await this.callXumm(appId, "xapp/ott/"+token, "GET");
+        let ottData = await this.callXumm(appId, "xapp/ott/"+encodeURIComponent(token), "GET");
         //console.log("getxAppOTT response: " + JSON.stringify(ottData))
         return ottData;
     }
@@ -289,7 +295,7 @@ export class Xumm {
         if(!appId)
             return null;
 
-        let ottData = await this.callXumm(appId, "xapp/ott/"+token+"/"+hash, "GET");
+        let ottData = await this.callXumm(appId, "xapp/ott/"+encodeURIComponent(token)+"/"+encodeURIComponent(hash), "GET");
         //console.log("getxAppOTT response: " + JSON.stringify(ottData))
         return ottData;
     }
@@ -332,7 +338,8 @@ export class Xumm {
                             "x-api-secret": appSecret
                         },
                         method: method,
-                        body: (body ? JSON.stringify(body) : null)
+                        body: (body ? JSON.stringify(body) : null),
+                        timeout: 20000
                     },
                 );
 
@@ -342,7 +349,7 @@ export class Xumm {
                     try {
                         if(xummResponse && xummResponse.body) {
                             console.log("ERROR calling XUMM:")
-                            console.log("input params: applicationId: " + applicationId + " path: " + path + " method: " + method+ " body: " + JSON.stringify(body) + "addInfo: " + addInfo);
+                            console.log("input params: applicationId: " + applicationId + " path: " + path + " method: " + method + " addInfo: " + addInfo);
 
                             let bodyResponse = await xummResponse.text()
                             console.log(JSON.stringify(bodyResponse))
@@ -405,6 +412,8 @@ export class Xumm {
                 else if(originProperties.fixAmount['*'])
                     payload.txjson.Amount = originProperties.fixAmount['*'];
             }
+        } else if(payload.txjson && 'AccountDelete' === payload.txjson.TransactionType) {
+            payload.txjson.Fee = "200000";
         }
 
         //handle return URLs
@@ -415,8 +424,8 @@ export class Xumm {
             if(!payload.options)
                 payload.options = {};
 
-            if(!payload.options.return_url)
-                payload.options.return_url = {};
+            //return urls are only taken from the server side configuration, never from the client request
+            payload.options.return_url = {};
 
             for(let i = 0; i < originProperties.return_urls.length; i++) {
                 if(originProperties.return_urls[i].from === referer) {

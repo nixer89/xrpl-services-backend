@@ -1,0 +1,2 @@
+{"time":20014,"request":{"ip":"127.0.0.1","hostname":"localhost","method":"POST","routerPath":"/api/v1/platform/payload"},"response":{"statusCode":200}},
+{"time":2282,"request":{"ip":"127.0.0.1","hostname":"localhost","method":"POST","routerPath":"/api/v1/platform/payload"},"response":{"statusCode":200}},

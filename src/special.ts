@@ -5,9 +5,9 @@ import * as fetch from 'node-fetch';
 import {verifySignature} from 'verify-xrpl-signature'
 import { XummTypes } from 'xumm-sdk';
 import { TransactionValidation } from './util/types';
-import { Client, TxRequest, TxResponse } from '@transia/xrpl'
+import { Client, TxRequest, TxResponse } from 'xahau'
+import { isValidEscrowReference } from './util/security';
 //import { FormattedTransactionType, RippleAPI } from 'ripple-lib';
-
 require('log-timestamp');
 
 export class Special {
@@ -27,8 +27,32 @@ export class Special {
     async init() {
         await this.xummBackend.init();
         await this.db.initDb("special");
-        await this.mainnetApi.connect();
-        await this.testnetApi.connect();
+        console.log("db init special done!");
+        try {
+            await this.mainnetApi.connect();
+        } catch(err) {
+            console.log(err);
+            console.log("COULD NOT CONNECT MAIN NET API!")
+            try {
+                await this.switchNodes(false);
+            } catch(err) {
+                console.log(err);
+                console.log("COULD NOT CONNECT TO SECONDARY MAINNET NODE!")
+            }
+        }
+
+        try {
+            await this.testnetApi.connect();
+        } catch(err) {
+            console.log(err);
+            console.log("COULD NOT CONNECT TEST NET API!")
+            try {
+                await this.switchNodes(true);
+            } catch(err) {
+                console.log(err);
+                console.log("COULD NOT CONNECT TO SECONDARY TESTNET NODE!")
+            }
+        }
     }
 
     resetDBCache() {
@@ -252,13 +276,41 @@ export class Special {
         }
     }
 
+    //security: the fee payment for a server side service (escrow auto release) must go to a destination account which is configured on the server
+    //for this application and must have one of the configured (fix) amounts. The client can skip the server side overwrite of Destination/Amount
+    //when creating the payload (options.isRawTrx / options.issuing), so this is checked again here against the server configuration only.
+    async isPaymentToConfiguredDestination(payloadInfo: XummTypes.XummGetPayloadResponse): Promise<boolean> {
+        try {
+            let request:any = payloadInfo.payload.request_json;
+            let originProperties:any = await this.db.getOriginProperties(payloadInfo.application.uuidv4);
+
+            let destinations:any[] = originProperties && originProperties.destinationAccount && typeof originProperties.destinationAccount === 'object' ? Object.values(originProperties.destinationAccount) : [];
+            let amounts:any[] = originProperties && originProperties.fixAmount && typeof originProperties.fixAmount === 'object' ? Object.values(originProperties.fixAmount) : [];
+
+            if(destinations.length > 0 && !destinations.some(destination => destination && destination.account === request.Destination
+                    && (!(destination.tag && Number.isInteger(destination.tag)) || request.DestinationTag == destination.tag)))
+                return false;
+
+            if(amounts.length > 0 && !amounts.some(amount => (amount && typeof amount === 'object')
+                    ? (request.Amount && typeof request.Amount === 'object' && amount.currency === request.Amount.currency && amount.issuer === request.Amount.issuer && String(amount.value) === String(request.Amount.value))
+                    : (typeof request.Amount === 'string' && String(amount) === request.Amount)))
+                return false;
+
+            return true;
+        } catch(err) {
+            console.log("ERROR isPaymentToConfiguredDestination");
+            console.log(err);
+            return false;
+        }
+    }
+
     async callBithompAndValidate(trxHash:string, testnet: boolean, destinationAccount?:any, amount?:any): Promise<boolean> {
         console.time("BITHOMP_"+trxHash)
         let found:boolean = false;
         try {
             //console.log("checking bithomp with trxHash: " + trxHash);
             //console.log("checking bithomp with testnet: " + testnet + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount));
-            let bithompResponse:any = await fetch.default("https://"+(testnet?'test.':'')+"xahauexplorer.com//api/v2/transaction/"+trxHash, {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN }});
+            let bithompResponse:any = await fetch.default("https://"+(testnet?'test.':'')+"xahauexplorer.com//api/v2/transaction/"+encodeURIComponent(trxHash), {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN }, timeout: 10000});
             if(bithompResponse && bithompResponse.ok) {
                 let ledgerTrx:any = await bithompResponse.json();
                 //console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(ledgerTrx));
@@ -272,10 +324,14 @@ export class Special {
                                 //no amount in request. Accept any amount then
                                 found = true;
                             }
+                            else if(!ledgerTrx.outcome.deliveredAmount) {
+                                //no delivered amount -> can not validate
+                                found = false;
+                            }
                             //validate delivered amount
                             else if(Number.isInteger(parseInt(amount))) {
-                                //handle XRP amount
-                                found = ledgerTrx.outcome.deliveredAmount.currency === 'XAH' && (parseFloat(ledgerTrx.outcome.deliveredAmount.value)*1000000 == parseInt(amount));
+                                //handle XAH amount (compare in whole drops to avoid float rounding issues)
+                                found = ledgerTrx.outcome.deliveredAmount.currency === 'XAH' && (Math.round(parseFloat(ledgerTrx.outcome.deliveredAmount.value)*1000000) == parseInt(amount));
                             } else {
                                 //amount not a number so it must be a IOU
                                 found = ledgerTrx.outcome.deliveredAmount.currency === amount.currency //check currency
@@ -283,7 +339,8 @@ export class Special {
                                         && ledgerTrx.outcome.deliveredAmount.value === amount.value; //check value
                             }
 
-                } else if( ledgerTrx && ledgerTrx.outcome  && ledgerTrx.outcome.result === 'tesSUCCESS') {
+                } else if( ledgerTrx && !(ledgerTrx.type && ledgerTrx.type.toLowerCase() === 'payment') && ledgerTrx.outcome  && ledgerTrx.outcome.result === 'tesSUCCESS') {
+                    //only non payment transactions are accepted without destination/amount check
                     found = true;
                 } else {
                     //transaction not valid
@@ -329,8 +386,8 @@ export class Special {
                 try {
                     await this.switchNodes(testnet);
 
-                    xrplClient = new Client((testnet ? this.testNodes[1] : this.mainNodes[1]));
-                    await xrplClient.connect();
+                    //switchNodes created and connected a new shared client -> use it (no extra client which never gets disconnected)
+                    xrplClient = testnet ? this.testnetApi : this.mainnetApi;
 
                     if(!xrplClient.isConnected()) {
                         console.log("could not connect 2nd try to: " + (testnet ? this.testNodes[this.currentTestNode] : this.mainNodes[this.currentMainNode]));
@@ -351,16 +408,31 @@ export class Special {
 
             let transaction:TxResponse = await xrplClient.request(transactionRequest);
 
+            //only validated transactions are final. Give the ledger a few seconds to validate a just submitted transaction
+            for(let i = 0; i < 4 && transaction && transaction.result && transaction.result.validated !== true; i++) {
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                transaction = await xrplClient.request(transactionRequest);
+            }
+
+            if(transaction && transaction.result && transaction.result.validated !== true) {
+                console.log("Transaction not validated yet: " + trxHash);
+                return false;
+            }
+
             if(transaction && transaction.result) {
                 //console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(transaction));
 
+                //the xahau lib defaults to API v1 (transaction fields on result), API v2 puts them into result.tx_json. meta and validated stay on result in both.
+                //Do NOT rely on only one layout: the fields would be undefined and payments would fall through to the generic tesSUCCESS branch below.
+                const txJson:any = (transaction.result as any).tx_json || transaction.result;
+
                 //standard validation of successfull transaction
-                if(transaction && transaction.result && transaction.result.TransactionType && transaction.result.TransactionType === "Payment") {
+                if(txJson && txJson.TransactionType === "Payment") {
 
-                    
 
-                    if(!destinationAccount || (transaction.result.Destination === destinationAccount.account
-                        && (!destinationAccount.tag || transaction.result.DestinationTag == destinationAccount.tag)) && transaction.result.meta && typeof(transaction.result.meta) === 'object' && transaction.result.meta.TransactionResult === 'tesSUCCESS') {
+
+                    if((!destinationAccount || (txJson.Destination === destinationAccount.account
+                        && (!destinationAccount.tag || txJson.DestinationTag == destinationAccount.tag))) && transaction.result.meta && typeof(transaction.result.meta) === 'object' && transaction.result.meta.TransactionResult === 'tesSUCCESS') {
 
                             const transactionMetaObject = typeof(transaction.result.meta) === 'object' ? transaction.result.meta : null;
 
@@ -375,11 +447,12 @@ export class Special {
                                     //handle XRP amount
                                     return transactionMetaObject.delivered_amount === amount;
 
-                                } else if(typeof(transactionMetaObject.delivered_amount) === 'object') {
-                                    //amount not a number so it must be a IOU
-                                    return transactionMetaObject.delivered_amount.currency === amount.currency //check currency
-                                        && transactionMetaObject.delivered_amount.issuer === amount.issuer //check issuer
-                                            && transactionMetaObject.delivered_amount.value === amount.value; //check value
+                                } else if(transactionMetaObject.delivered_amount && typeof(transactionMetaObject.delivered_amount) === 'object' && 'currency' in transactionMetaObject.delivered_amount && typeof(amount) === 'object') {
+                                    //amount not a number so it must be a IOU (MPT amounts have no currency/issuer and are rejected)
+                                    const deliveredIou = transactionMetaObject.delivered_amount;
+                                    return deliveredIou.currency === amount.currency //check currency
+                                        && deliveredIou.issuer === amount.issuer //check issuer
+                                            && Number(deliveredIou.value) === Number(amount.value); //check value (numeric, "1" equals "1.0")
 
                                 } else {
                                     console.log("something is wrong here!");
@@ -452,8 +525,14 @@ export class Special {
 
     async addEscrow(escrow: any): Promise<any> {
         //console.log("add escrow: account: " + JSON.stringify(escrow));
+
+        //escrow data comes from the client supplied custom_meta.blob -> validate it and only forward the known fields
+        if(!isValidEscrowReference(escrow) || !(typeof escrow.finishafter === 'string' || typeof escrow.finishafter === 'number'))
+            throw "invalid escrow data";
+
+        let escrowToStore = {account: escrow.account, sequence: escrow.sequence, finishafter: escrow.finishafter, testnet: escrow.testnet};
         
-        let escrowListResponse:fetch.Response = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/escrowFinish", {method: "post", body: JSON.stringify(escrow)});
+        let escrowListResponse:fetch.Response = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/escrowFinish", {method: "post", body: JSON.stringify(escrowToStore), timeout: 15000});
 
         if(escrowListResponse && escrowListResponse.ok) {
             return escrowListResponse.json();
@@ -464,8 +543,12 @@ export class Special {
 
     async deleteEscrow(escrow: any): Promise<any> {
         //console.log("delete escrow: " + JSON.stringify(escrow));
+
+        //escrow data comes from the client supplied custom_meta.blob -> validate it before building the URL
+        if(!isValidEscrowReference(escrow))
+            throw "invalid escrow data";
         
-        let escrowListResponse:fetch.Response = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/escrowFinish/"+escrow.account+"/"+escrow.sequence+"/"+escrow.testnet, {method: "delete"});
+        let escrowListResponse:fetch.Response = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/escrowFinish/"+encodeURIComponent(escrow.account)+"/"+encodeURIComponent(String(escrow.sequence))+"/"+encodeURIComponent(String(escrow.testnet)), {method: "delete", timeout: 15000});
 
         if(escrowListResponse && escrowListResponse.ok) {
             return escrowListResponse.json();
@@ -477,8 +560,12 @@ export class Special {
 
     async escrowExists(escrow: any): Promise<any> {
         //console.log("escrowExists: " + JSON.stringify(escrow));
+
+        //escrow data comes from the client supplied custom_meta.blob -> validate it before building the URL
+        if(!isValidEscrowReference(escrow))
+            throw "invalid escrow data";
         
-        let escrowListResponse:fetch.Response = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/escrowFinish/exists/"+escrow.account+"/"+escrow.sequence+"/"+escrow.testnet);
+        let escrowListResponse:fetch.Response = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/escrowFinish/exists/"+encodeURIComponent(escrow.account)+"/"+encodeURIComponent(String(escrow.sequence))+"/"+encodeURIComponent(String(escrow.testnet)), {timeout: 15000});
 
         if(escrowListResponse && escrowListResponse.ok) {
             return escrowListResponse.json();
@@ -491,7 +578,11 @@ export class Special {
     async loadEscrowsForAccount(accountInfo: any) {
         //console.log("loading escrows for account: " + accountInfo.account + " on " + (accountInfo.testnet ? "Testnet" : "Mainnet"));
         
-        let escrowListResponse:fetch.Response = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/escrows", {method: "post", body: JSON.stringify(accountInfo)});
+        //only forward the known fields with the expected types
+        if(!accountInfo || typeof accountInfo.account !== 'string' || !/^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(accountInfo.account) || (accountInfo.testnet != null && typeof accountInfo.testnet !== 'boolean'))
+            throw "invalid account info";
+
+        let escrowListResponse:fetch.Response = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/escrows", {method: "post", body: JSON.stringify({account: accountInfo.account, testnet: accountInfo.testnet}), timeout: 15000});
 
         if(escrowListResponse && escrowListResponse.ok) {
             return escrowListResponse.json();
@@ -505,9 +596,9 @@ export class Special {
         let escrowCountStats:fetch.Response = null;
 
         if(next)
-            escrowCountStats = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/stats/nextRelease");
+            escrowCountStats = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/stats/nextRelease", {timeout: 15000});
         else
-            escrowCountStats = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/stats/lastRelease");
+            escrowCountStats = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/stats/lastRelease", {timeout: 15000});
 
         if(escrowCountStats && escrowCountStats.ok) {
             return escrowCountStats.json();
@@ -519,7 +610,7 @@ export class Special {
     async getEscrowCurrentCount(): Promise<any> {
         //console.log("loading getEscrowCurrentCount");
         
-        let escrowCountStats:fetch.Response = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/stats/currentCount");
+        let escrowCountStats:fetch.Response = await fetch.default(config.TRANSACTION_EXECUTOR_API+"/api/v1/stats/currentCount", {timeout: 15000});
 
         if(escrowCountStats && escrowCountStats.ok) {
             return escrowCountStats.json();
