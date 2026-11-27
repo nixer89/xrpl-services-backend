@@ -1,6 +1,6 @@
 {
   "name": "xahau-services-backend",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "provides a generic backend, connected to xumm. Easy access of user tokens for push",
   "main": "src/server.ts",
   "scripts": {
@@ -8,7 +8,6 @@
     "develop": "tsc && concurrently \"tsc -w\" \"nodemon dist/server.js\"",
     "build": "tsc",
     "reprocess:escrows": "tsc && node dist/scripts/reprocessEscrowsFromLogs.js",
-    "scan:autorelease-payments": "tsc && node dist/scripts/scanAutoReleasePayments.js",
     "postinstall": "sh ./src/doc/updateSwaggerVersion.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

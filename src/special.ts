@@ -310,7 +310,7 @@ export class Special {
         try {
             //console.log("checking bithomp with trxHash: " + trxHash);
             //console.log("checking bithomp with testnet: " + testnet + " - destination account: " + JSON.stringify(destinationAccount) + " - amount: " + JSON.stringify(amount));
-            let bithompResponse:any = await fetch.default("https://"+(testnet?'test.':'')+"xahauexplorer.com//api/v2/transaction/"+encodeURIComponent(trxHash), {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN }, timeout: 10000});
+            let bithompResponse:any = await fetch.default("https://"+(testnet?'test.':'')+"xahauexplorer.com/api/v2/transaction/"+encodeURIComponent(trxHash), {headers: { "x-bithomp-token": config.BITHOMP_API_TOKEN }, timeout: 10000});
             if(bithompResponse && bithompResponse.ok) {
                 let ledgerTrx:any = await bithompResponse.json();
                 //console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(ledgerTrx));

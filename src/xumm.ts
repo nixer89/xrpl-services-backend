@@ -34,7 +34,7 @@ export class Xumm {
     }
 
     async pingXummBackend(): Promise<boolean> {
-        let pingResponse = await this.callXumm(await this.db.getAppIdForOrigin("http://localhost:4211"), "ping", "GET");
+        let pingResponse = await this.callXumm(await this.db.getAppIdForOrigin(config.PING_ORIGIN), "ping", "GET");
         console.log("[XUMM]: pingXummBackend response: " + JSON.stringify(pingResponse))
         return pingResponse && pingResponse.pong;
     }
@@ -123,11 +123,17 @@ export class Xumm {
 
             payload = await this.adaptOriginProperties(origin, appId, payload, referer, options);
 
-            if(payload && payload.txjson && payload.txjson.NetworkID) {
-                let network = "XAHAU";
+            //tag EVERY payload created by this backend: the XRPL backend (api.xrpl.services) forwards webhooks with this tag to this backend.
+            //Payloads without NetworkID (e.g. SignIn) must be tagged too, otherwise their webhook is handled by the XRPL backend.
+            //The tag is only a routing hint: the XRPL backend checks the network a payload was actually sent to.
+            if(payload) {
+                let network:string = "XAHAU";
 
-                if(payload.txjson.NetworkID === 21338) {
-                    network = "XAHAUTESTNET"
+                if(payload.txjson && payload.txjson.NetworkID) {
+                    if(payload.txjson.NetworkID === 21338)
+                        network = "XAHAUTESTNET";
+                } else if(payload.options && payload.options.force_network) {
+                    network = payload.options.force_network;
                 }
 
                 if(!payload.custom_meta)
@@ -136,16 +142,9 @@ export class Xumm {
                 if(!payload.custom_meta.blob)
                     payload.custom_meta.blob = {};
 
-                payload.custom_meta.blob['network'] = network;
-            } else if(payload && payload.options && payload.options.force_network) {
-
-                if(!payload.custom_meta)
-                    payload.custom_meta = {};
-
-                if(!payload.custom_meta.blob)
-                    payload.custom_meta.blob = {};
-
-                payload.custom_meta.blob['network'] = payload.options.force_network;
+                //a client may send a non object blob (e.g. a string): it can not carry the tag
+                if(typeof payload.custom_meta.blob === 'object' && !Array.isArray(payload.custom_meta.blob))
+                    payload.custom_meta.blob['network'] = network;
             }
 
             if(payload.txjson.EmailHash && payload.txjson.EmailHash === "00000000000000000000000000000000") {

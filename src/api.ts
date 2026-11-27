@@ -1237,6 +1237,25 @@ function removePrivateData(data:any): any {
 //Xahau backend: webhooks arrive directly from Xumm or forwarded by the XRPL backend (api.xrpl.services).
 //Forwarded calls are sent as text/plain, so a string body is parsed here.
 //No forwarding on this backend: forwarding XAHAU webhooks to api.xahau.services would call this server again (endless loop).
+
+//webhooks with an older (or future) timestamp are rejected, so a captured webhook can not be replayed later on
+const WEBHOOK_MAX_AGE_MS = 15 * 60 * 1000;
+
+function isWebhookTimestampFresh(timestamp:any): boolean {
+    const value = Number(timestamp);
+
+    if(!Number.isFinite(value) || value <= 0) {
+        //unknown format: do not block webhooks because of it, but make it visible in the logs
+        console.log("WEBHOOK: unexpected timestamp format: " + JSON.stringify(timestamp));
+        return true;
+    }
+
+    //accept unix timestamps in seconds and in milliseconds
+    const timestampMs = value < 1e12 ? value * 1000 : value;
+
+    return Math.abs(Date.now() - timestampMs) <= WEBHOOK_MAX_AGE_MS;
+}
+
 async function processWebhookCall(request:any, reply:any): Promise<any> {
     try {
         //verify webhook call
@@ -1259,12 +1278,19 @@ async function processWebhookCall(request:any, reply:any): Promise<any> {
                 .update(timestamp + JSON.stringify(jsonBody))
                 .digest("hex");
 
-            if(safeEqual(hmac, signature)) {
-                //request has been verified successfully. handle it!
-                await handleWebhookRequest(jsonBody);
-            } else {
+            if(!safeEqual(hmac, signature)) {
                 //don't accept request. it can not be verified!
                 console.log("HMAC NOT VERFIED. DENY ACCESS!");
+            } else if(!isWebhookTimestampFresh(timestamp)) {
+                //the timestamp is part of the signed data, so it can only be checked after the signature
+                console.log("WEBHOOK TIMESTAMP TOO OLD. DENY ACCESS! timestamp: " + JSON.stringify(timestamp));
+            } else {
+                //request has been verified successfully. Reply first and handle it in the background:
+                //ledger validation, sevdesk and escrow calls can take a while and Xumm (or the forwarding XRPL backend) should not time out
+                handleWebhookRequest(jsonBody).catch(err => {
+                    console.log("ERROR handleWebhookRequest");
+                    console.log(err);
+                });
             }
         } else if(!appSecret) {
             console.log("NO APP SECRET FOUND FOR APP ID: " + JSON.stringify(appId));
@@ -1390,7 +1416,7 @@ async function handleWebhookRequest(json:any): Promise<any> {
 }
 
 async function handleEscrowPayment(payloadInfo: XummTypes.XummGetPayloadResponse) {
-    console.log("escrow/validatepayment PAYLOAD: " + JSON.stringify(payloadInfo));
+    //console.log("escrow/validatepayment PAYLOAD: " + JSON.stringify(payloadInfo));
 
     try {
 
@@ -1403,20 +1429,20 @@ async function handleEscrowPayment(payloadInfo: XummTypes.XummGetPayloadResponse
 
             let txResult:TransactionValidation = await special.validateTransactionOnLedger(payloadInfo);
 
-            console.log("escrow/validatepayment TXRESULT: " + JSON.stringify(txResult));
+            //console.log("escrow/validatepayment TXRESULT: " + JSON.stringify(txResult));
 
             if(txResult) {
                 if(payloadInfo.custom_meta && payloadInfo.custom_meta.blob) {
                     txResult.account = payloadInfo.response.account;
                     let escrow:any = payloadInfo.custom_meta.blob;
 
-                    console.log("escrow/validatepayment ESCROW: " + JSON.stringify(escrow));
+                    //console.log("escrow/validatepayment ESCROW: " + JSON.stringify(escrow));
 
                     if(escrow && txResult.success && txResult.account == escrow.account && ((txResult.testnet == escrow.testnet) || (escrow.testnet && !txResult.testnet))) {
                         //insert escrow
                         let addEscrow:any = await special.addEscrow(escrow);
 
-                        console.log("Add escrow result: " + JSON.stringify(addEscrow));
+                        //console.log("Add escrow result: " + JSON.stringify(addEscrow));
 
                         if(addEscrow && addEscrow.success)
                             console.log("Escrow stored!");

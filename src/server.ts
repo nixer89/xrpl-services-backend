@@ -204,7 +204,8 @@ const start = async () => {
         }
 
         scheduler.scheduleJob("tmpInfoTableCleanup", {minute: 5}, () => cleanupTmpInfoTable());
-        scheduler.scheduleJob("trustlineTableCleanup", {minute: 1}, () => cleanupTrustlineTable());
+        //trustline tracking is disabled on Xahau (see handleWebhookRequest), so there is nothing to clean up
+        //scheduler.scheduleJob("trustlineTableCleanup", {minute: 1}, () => cleanupTrustlineTable());
 
       } else {
           console.log("Xumm backend not available");
