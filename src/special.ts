@@ -422,9 +422,9 @@ export class Special {
             if(transaction && transaction.result) {
                 //console.log("got ledger transaction from " + (testnet? "testnet:": "livenet:") + JSON.stringify(transaction));
 
-                //xrpl.js >= 4 uses rippled API v2 by default: transaction fields live in result.tx_json, meta and validated stay on result.
-                //Do NOT read them from result directly: they would be undefined and payments would fall through to the generic tesSUCCESS branch below.
-                const txJson:any = transaction.result.tx_json;
+                //API v2 (xrpl.js >= 4 default) puts the transaction fields into result.tx_json, API v1 (xahau lib default) keeps them on result. meta and validated stay on result in both.
+                //Do NOT rely on only one layout: the fields would be undefined and payments would fall through to the generic tesSUCCESS branch below.
+                const txJson:any = (transaction.result as any).tx_json || transaction.result;
 
                 //standard validation of successfull transaction
                 if(txJson && txJson.TransactionType === "Payment") {

@@ -1233,6 +1233,24 @@ function removePrivateData(data:any): any {
     return data;
 }
 
+//webhooks with an older (or future) timestamp are rejected, so a captured webhook can not be replayed later on
+const WEBHOOK_MAX_AGE_MS = 15 * 60 * 1000;
+
+function isWebhookTimestampFresh(timestamp:any): boolean {
+    const value = Number(timestamp);
+
+    if(!Number.isFinite(value) || value <= 0) {
+        //unknown format: do not block webhooks because of it, but make it visible in the logs
+        console.log("WEBHOOK: unexpected timestamp format: " + JSON.stringify(timestamp));
+        return true;
+    }
+
+    //accept unix timestamps in seconds and in milliseconds
+    const timestampMs = value < 1e12 ? value * 1000 : value;
+
+    return Math.abs(Date.now() - timestampMs) <= WEBHOOK_MAX_AGE_MS;
+}
+
 async function processWebhookCall(request:any, reply:any): Promise<any> {
     try {
         //verify webhook call
@@ -1252,6 +1270,12 @@ async function processWebhookCall(request:any, reply:any): Promise<any> {
                 .digest("hex");
 
             verified = safeEqual(hmac, signature);
+
+            //the timestamp is part of the signed data, so it can only be checked after the signature
+            if(verified && !isWebhookTimestampFresh(timestamp)) {
+                console.log("WEBHOOK TIMESTAMP TOO OLD. DENY ACCESS! timestamp: " + JSON.stringify(timestamp));
+                verified = false;
+            }
         }
 
         //custom_meta.blob is set by the client when the payload is created -> it is only a hint
@@ -1276,12 +1300,21 @@ async function processWebhookCall(request:any, reply:any): Promise<any> {
             console.log("FOUND WEBHOOK CALL FOR XAHAU:")
             console.log("Network: " + jsonBody?.custom_meta?.blob?.network);
 
-            const xahauResult = await fetch.default("https://api.xahau.services/api/v1/webhook", {method: 'POST', headers: {"x-xumm-request-timestamp": request.headers["x-xumm-request-timestamp"], "x-xumm-request-signature": request.headers["x-xumm-request-signature"]}, body: JSON.stringify(request.body), timeout: 20000});
-            const xahauJsonResult = await xahauResult.json();
-            console.log("XAHAURESULT: " + JSON.stringify(xahauJsonResult));
+            //the Xahau backend verifies the call itself and replies right after that, so this does not take long.
+            //if the forward fails, an error is returned so Xumm can deliver the webhook again
+            const xahauResult = await fetch.default("https://api.xahau.services/api/v1/webhook", {method: 'POST', headers: {"content-type": "application/json", "x-xumm-request-timestamp": timestamp, "x-xumm-request-signature": signature}, body: JSON.stringify(jsonBody), timeout: 20000});
+
+            if(!xahauResult || !xahauResult.ok) {
+                console.log("WEBHOOK FORWARD TO XAHAU FAILED. Status: " + (xahauResult ? xahauResult.status : "no response"));
+                return reply.status(502).send({ error: "Webhook could not be forwarded." });
+            }
         } else if(verified) {
-            //request has been verified successfully. handle it!
-            await handleWebhookRequest(request);
+            //request has been verified successfully. Reply first and handle it in the background:
+            //ledger validation, sevdesk and escrow calls can take a while and Xumm should not time out and send the webhook again
+            handleWebhookRequest(request).catch(err => {
+                console.log("ERROR handleWebhookRequest");
+                console.log(err);
+            });
         } else {
             //don't accept request. it can not be verified!
             console.log("HMAC NOT VERFIED. DENY ACCESS!");
@@ -1809,7 +1842,7 @@ async function sendToSevDesk(date: Date, hash: string, ip: string, xrp: number, 
             let result = await fetch.default("https://my.sevdesk.de/api/v1/Voucher/Factory/saveVoucher", {headers: {"Authorization": config.SEVDESK_TOKEN, "content-type": "application/json", "Origin": "XRPL"}, method: "POST", body: JSON.stringify(beleg)});
             
             let resultJson = await result.json();
-            console.log("result: " + JSON.stringify(resultJson));
+            //console.log("result: " + JSON.stringify(resultJson));
 
             let voucherId = resultJson.objects.voucher.id;
 
@@ -1855,7 +1888,7 @@ async function retrieveVatRate(countryCode: string): Promise<number> {
         let vatRatesResponse = await fetch.default("https://api.vatsense.com/1.0/rates?country_code="+encodeURIComponent(countryCode), { headers: {"Authorization": basicAuth, "content-type": "application/json"}, method: "GET", timeout: 15000});
 
         let vatRatesJson = await vatRatesResponse.json();
-        console.log("vatRatesJson: " + JSON.stringify(vatRatesJson));
+        //console.log("vatRatesJson: " + JSON.stringify(vatRatesJson));
 
         if(vatRatesJson?.success && vatRatesJson.data?.standard && typeof vatRatesJson.data.standard.rate === 'number') {
             let vat = vatRatesJson.data.standard.rate;

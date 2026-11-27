@@ -33,7 +33,7 @@ export class Xumm {
     }
 
     async pingXummBackend(): Promise<boolean> {
-        let pingResponse = await this.callXumm(await this.db.getAppIdForOrigin("http://localhost:4200"), "ping", "GET");
+        let pingResponse = await this.callXumm(await this.db.getAppIdForOrigin(config.PING_ORIGIN), "ping", "GET");
         console.log("[XUMM]: pingXummBackend response: " + JSON.stringify(pingResponse))
         return pingResponse && pingResponse.pong;
     }
@@ -141,17 +141,17 @@ export class Xumm {
                         || req.headers['x-forwarded-for'] // use this only if you trust the header
                         || req.ip // fallback to default
 
-                    console.log("original ip: " + ip);
+                    //console.log("original ip: " + ip);
     
                     let cleanedIp = ip.split(",");
                     if(cleanedIp && cleanedIp.length > 0 && cleanedIp[0] != null) {
                         ip = cleanedIp[0].trim();
                     }
     
-                    console.log("cleaned ip: " + ip);
+                    //console.log("cleaned ip: " + ip);
                 }
 
-                console.log("cleaned ip: " + ip);
+                //console.log("cleaned ip: " + ip);
                 
                 let countryCode:string = null;
 
